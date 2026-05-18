@@ -1,0 +1,14 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsShmSoftirq FreeRTOS
+start
+:(void) ulTaskNotifyTake(pdTRUE,portMAX_DELAY);;
+:Foreach outer loop waits on notification then processes instances guarded by ipc-os-freertos.c;
+note right
+  inner do-while calls rx_cb and taskYIELD until work below budget,re-enable MSCM interrupts
+  then block again on ulTaskNotifyTake
+end note
+stop
+@enduml

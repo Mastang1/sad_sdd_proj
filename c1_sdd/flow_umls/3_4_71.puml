@@ -1,0 +1,9 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsOsGetLocalShm Zephyr
+start
+:return local_shm_virt;;
+stop
+@enduml

@@ -1,0 +1,40 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsHwSetRxIrqIdx
+start
+:sint8 err=IPC_SHM_E_OK; uint16 irq=(uint16)cfg->inter_core_rx_irq;;
+:ipc_hw_priv[instance].mscm_rx_irq = cfg->inter_core_rx_irq;;
+if (cfg->inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
+  :ipc_hw_priv[instance].mscm_rx_irq = IPC_IRQ_NONE;
+elseif (irq == MSCM_INT0_IRQn?) then (yes)
+  :msi_rx_irq = 0u;
+elseif (irq == MSCM_INT1_IRQn?) then (yes)
+  :msi_rx_irq = 1u;
+elseif (irq == MSCM_INT2_IRQn?) then (yes)
+  :msi_rx_irq = 2u;
+elseif (irq == MSCM_INT3_IRQn?) then (yes)
+  :msi_rx_irq = 5u;
+elseif (irq == MSCM_INT4_IRQn?) then (yes)
+  :msi_rx_irq = 6u;
+elseif (irq == MSCM_INT5_IRQn?) then (yes)
+  :msi_rx_irq = 7u;
+elseif (irq == MSCM_INT6_IRQn?) then (yes)
+  :msi_rx_irq = 8u;
+elseif (irq == MCSCM_INT7_IRQn?) then (yes)
+  :msi_rx_irq = 9u;
+elseif (irq == MCSCM_INT8_IRQn?) then (yes)
+  :msi_rx_irq = 10u;
+elseif (irq == MCSCM_INT9_IRQn?) then (yes)
+  :msi_rx_irq = 11u;
+elseif (irq == MCSCM_INT10_IRQn?) then (yes)
+  :msi_rx_irq = 12u;
+elseif (irq == MCSCM_INT11_IRQn?) then (yes)
+  :msi_rx_irq = 13u;
+else (no)
+  :err = -IPC_SHM_E_INVAL;
+endif
+:return err;
+stop
+@enduml

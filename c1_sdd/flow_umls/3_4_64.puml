@@ -1,0 +1,14 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsShmSoftirq Zephyr
+start
+:(void) err = k_sem_take(&rx_sem,K_FOREVER); __ASSERT_NO_MSG;;
+:Repeated body from ipc-os-zephyr.c k_sem_take then instance loop;;
+note right
+  when irq!=NONE call irq_enable before ipcsHwIrqEnable instance
+end note
+:k_sem_take(&rx_sem,K_FOREVER) again at loop tail;
+stop
+@enduml

@@ -1,0 +1,23 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title findPoolForBuf
+start
+:pool_index = -1; uint8 pool_id = 0;
+while (pool_id < chan->num_pools?)
+  :pool = &chan->pools[pool_id];;
+  if (remote==1?) then (yes)
+    :addr = pool->remote_pool_addr;
+  else (no)
+    :addr = pool->local_pool_addr;
+  endif
+  :pool_size = num_bufs * buf_size;;
+  if ((buf >= addr) && (buf < addr+pool_size)?) then (yes)
+    :pool_index = (sint16)pool_id; break;
+  endif
+  :pool_id++;;
+endwhile
+:return pool_index;
+stop
+@enduml

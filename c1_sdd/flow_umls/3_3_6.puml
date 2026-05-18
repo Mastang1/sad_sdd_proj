@@ -1,0 +1,19 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsShmUnmanagedAcquire
+start
+:struct IPCS_UNMANAGED_CHANNEL_TYPE *chan = NULL; uint8_t *umng_mem = NULL;
+if (ipcsInstanceIsFree(instance) == IPC_SHM_INSTANCE_USED?) then (yes)
+  :ipcsHwFlushCacheLocal(instance); ipcsHwFlushCacheRemote(instance);;
+  :chan = getUnmanagedChan(instance, chan_id);;
+  if ((chan != NULL) && (ipcsCheckUchanIntegrity(chan) == OK)?) then (yes)
+    :umng_mem = chan->local_mem->mem;
+  else (no)
+  endif
+else (no)
+endif
+:return (void *)umng_mem;
+stop
+@enduml

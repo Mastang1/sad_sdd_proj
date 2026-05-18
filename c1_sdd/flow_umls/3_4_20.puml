@@ -1,0 +1,22 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsShmInitChannels
+start
+:local_shm = ipcsOsGetLocalShm; global pointer at start;;
+:local_chan remote_chan offset skip global size; sint32 err = -IPC_SHM_E_INVAL;;
+:i = 0;
+while (i < ipc_shm_priv_data[instance].num_channels?)
+  :err = ipcsShmInitChannel(instance,i,local_chan,remote_chan,&cfg->channels[i]);;
+  if (err == IPC_SHM_E_OK?) then (yes)
+    :advance local_chan/remote_chan by getChanMemmapSize(instance,i);;
+    :i++;;
+  else (no)
+    :ipcsOsFree(instance); ipcsHwFree(instance);;
+    break
+  endif
+endwhile
+:return err;
+stop
+@enduml

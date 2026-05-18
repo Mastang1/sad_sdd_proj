@@ -1,0 +1,35 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam component {
+  BackgroundColor #F5E6CC
+  BorderColor #8B7355
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #FAF0E0
+  BorderColor #A08060
+}
+skinparam arrowColor #5C4033
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+component [os/zephyr/ipc-os-zephyr.c] as SRC
+component [ipc-shm.h] as H0
+component [ipc-os.h] as H1
+component [ipc-hw.h] as H2
+component [<zephyr/sys/mem_manage.h>] as Z1 <<zephyr>>
+component [<zephyr/kernel.h>] as Z2 <<zephyr>>
+component [<zephyr/device.h>] as Z3 <<zephyr>>
+component [Mru_Ip.h] as MR <<S32ZE>>
+SRC ..> H0 : #include
+SRC ..> H1 : #include
+SRC ..> H2 : #include
+SRC ..> Z1 : #include
+SRC ..> Z2 : #include
+SRC ..> Z3 : #include
+SRC ..> MR : #elif defined(S32ZE)
+note bottom of MR
+  SAF85/S32R41/S32K3XX path defines IPC_INT_* macros only; excludes Mru_Ip.h.
+end note
+@enduml

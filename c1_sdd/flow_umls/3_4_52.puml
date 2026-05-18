@@ -1,0 +1,17 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsShmHardirqInstance baremetal
+start
+if (state!=DISABLED?) then (yes)
+  :HwDisable; HwClear;;
+  if (rx_irq != NONE?) then (yes)
+    repeat
+      :work=rx_cb(instance,budget);;
+    repeat while (work>=budget?)
+    :HwEnable(instance);;
+  endif
+endif
+stop
+@enduml

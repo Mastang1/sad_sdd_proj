@@ -1,0 +1,22 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam component {
+  BackgroundColor #F5E6CC
+  BorderColor #8B7355
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #FAF0E0
+  BorderColor #A08060
+}
+skinparam arrowColor #5C4033
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+component [common/ipc-shm.h] as SRC
+component [ipc-types.h] as H0
+component [ipcf_Ip_Cfg.h] as H1 <<config>>
+SRC ..> H0 : #include
+SRC ..> H1 : #include
+@enduml

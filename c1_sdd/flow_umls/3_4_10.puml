@@ -1,0 +1,22 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsCheckMchanIntegrity
+start
+:err = IPC_SHM_E_OK; uint8 pool_id; struct IPCS_SHM_POOL_TYPE *pool=NULL;
+if (ipcsQueueCheckIntegrity(&mchan->bd_queue) == IPC_SHM_E_OK?) then (yes)
+  :pool_id = 0;
+  while (pool_id < mchan->num_pools?)
+    :pool = &mchan->pools[pool_id];;
+    if (ipcsQueueCheckIntegrity(&pool->bd_queue) != IPC_SHM_E_OK?) then (yes)
+      :err = -IPC_SHM_E_INTEGRITY;
+    endif
+    :pool_id++;;
+  endwhile
+else (no)
+  :err = -IPC_SHM_E_INTEGRITY;
+endif
+:return err;
+stop
+@enduml

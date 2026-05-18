@@ -1,0 +1,25 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam component {
+  BackgroundColor #F5E6CC
+  BorderColor #8B7355
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #FAF0E0
+  BorderColor #A08060
+}
+skinparam arrowColor #5C4033
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+left to right direction
+component [common/ipc-queue.c] as SRC
+component [ipc-shm.h] as H0
+component [ipc-queue.h] as H1
+component [ipc-util.h] as H2
+SRC ..> H0 : #include
+SRC ..> H1 : #include
+SRC ..> H2 : #include
+@enduml

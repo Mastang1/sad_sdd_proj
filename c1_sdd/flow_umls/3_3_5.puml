@@ -1,0 +1,35 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsShmTx
+start
+:struct IPCS_MANAGED_CHANNEL_TYPE *chan; struct IPCS_SHM_POOL_TYPE *pool; struct IPCS_SHM_BD_TYPE bd; sint32 err = -IPC_SHM_E_INVAL;
+if (ipcsInstanceIsFree(instance) == IPC_SHM_INSTANCE_USED?) then (yes)
+  :chan = getManagedChan(instance, chan_id);
+  if ((chan != NULL) && (buf != NULL) && (size != 0u)?) then (yes)
+    :ipcsHwFlushCacheLocal(instance); ipcsHwFlushCacheRemote(instance);
+    :err = ipcsCheckMchanIntegrity(chan);
+    if (err == IPC_SHM_E_OK?) then (yes)
+      :bd.pool_id = findPoolForBuf(chan,(uintptr_t)buf,0);;
+      if (bd.pool_id != -1?) then (yes)
+        :pool = &chan->pools[bd.pool_id];
+        :bd.buf_id = ((uintptr_t)buf - pool->local_pool_addr) / pool->buf_size;
+        :bd.data_size = size;
+        :err = ipcsQueuePush(&chan->bd_queue,&bd);
+        if (err == IPC_SHM_E_OK?) then (yes)
+          :ipcsHwFlushCacheLocal(instance);
+          :ipcsHwIrqNotify(instance);
+        endif
+      else (no)
+        :err = -IPC_SHM_E_INVAL;
+      endif
+    else (no)
+    endif
+  else (no)
+  endif
+else (no)
+endif
+:return err;
+stop
+@enduml

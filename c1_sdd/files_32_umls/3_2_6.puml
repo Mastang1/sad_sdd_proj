@@ -1,0 +1,35 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam component {
+  BackgroundColor #F5E6CC
+  BorderColor #8B7355
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #FAF0E0
+  BorderColor #A08060
+}
+skinparam arrowColor #5C4033
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+component [common/ipc-types.h] as R
+package "NO_STDINT_H == 0" {
+  component [<stdint.h>] as U1 <<system>>
+  component [<stddef.h>] as U2 <<system>>
+  component [<errno.h>] as U3 <<system>>
+}
+package "NO_STDINT_H != 0" {
+  component [uintptr_t etc.\
+(CPU_* definitions)] as CPU <<macros>>
+}
+component [Mcal.h] as M <<external>>
+component [ipcf_Ip_Cfg_Defines.h] as D <<config>>
+R ..> M : #include
+R ..> D : #include
+R ..> U1 : if
+R ..> U2 : if
+R ..> U3 : if
+R ..> CPU : else
+@enduml

@@ -1,0 +1,18 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsShmHardirqInstance FreeRTOS
+start
+:taskENTER_CRITICAL_FROM_ISR;;
+if (state!=DISABLED?) then (yes)
+  :HwDisable; HwClear;;
+  if (msg_received == MSG_NOT_RECEIVED?) then (yes)
+    :msg_received=MSG_IS_RECEIVED;;
+  endif
+  :vTaskNotifyGiveFromISR(..);;
+endif
+:taskEXIT_CRITICAL_FROM_ISR;;
+:portYIELD_FROM_ISR(..);;
+stop
+@enduml

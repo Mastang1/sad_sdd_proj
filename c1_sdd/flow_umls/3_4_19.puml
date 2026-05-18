@@ -1,0 +1,19 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title getChanMemmapSize
+start
+if (chan->type == IPC_SHM_UNMANAGED?) then (yes)
+  :mapped_mem_size = (uint32)(sizeof(struct IPCS_CHANNEL_UMEM_TYPE)+chan->ch.umng.size);
+else (no)
+  :mchan = &chan->ch.mng; mapped_mem_size = ipcsQueueMemSize(&mchan->bd_queue);;
+  :uint8 idx = 0;
+  while (idx < mchan->num_pools?)
+    :mapped_mem_size += mchan->pools[idx].shm_size;;
+    :idx++;;
+  endwhile
+endif
+:return mapped_mem_size;
+stop
+@enduml

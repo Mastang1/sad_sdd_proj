@@ -1,0 +1,21 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsQueuePush
+start
+:write = queue->push_ring->write; read = queue->pop_ring->read; err = -IPC_SHM_E_INVAL;
+if ((queue != NULL) && (buf != NULL)?) then (yes)
+  if (((write + 1u) %% queue->elem_num) == read?) then (yes)
+    :err = -IPC_SHM_E_NOMEM;
+  else (no)
+    :dst = &queue->push_ring->data[write * elem_size];;
+    :ipcsMemcpy(dst, buf, elem_size);;
+    :queue->push_ring->write = (write + 1u) %% queue->elem_num;;
+    :err = IPC_SHM_E_OK;
+  endif
+else (no)
+endif
+:return err;
+stop
+@enduml
