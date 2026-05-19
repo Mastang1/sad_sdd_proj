@@ -1,0 +1,29 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsHwSetRemoteCore
+start
+:sint8 err=-IPC_SHM_E_INVAL; sint8 core_idx=0;;
+if (remote_core.type==IPC_CORE_A53?) then (yes)
+  if ((remote index 0..7)?) then (yes)
+    :core_idx=ipcsHwGetCoreIndexA53((uint8)cfg->remote_core.index);;
+    if (core_idx>=(sint8)IPC_A53_0?) then (yes)
+      :ipc_hw_priv[instance].remote_core=(uint8)core_idx;;
+      :err=IPC_SHM_E_OK;
+    endif
+  endif
+elseif (remote_core.type==IPC_CORE_M7?) then (yes)
+  if ((remote index 0..3)?) then (yes)
+    :core_idx=ipcsHwGetCoreIndexM7((uint8)cfg->remote_core.index);;
+    if (core_idx>=(sint8)IPC_M7_0?) then (yes)
+      :ipc_hw_priv[instance].remote_core=(uint8)core_idx;;
+      :err=IPC_SHM_E_OK;
+    endif
+  endif
+else (no)
+  :err=-IPC_SHM_E_INVAL;
+endif
+:return err;
+stop
+@enduml

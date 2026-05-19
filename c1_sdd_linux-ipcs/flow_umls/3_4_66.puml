@@ -1,0 +1,16 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsShmHardirqInstance Zephyr
+start
+if (state!=DISABLED?) then (yes)
+  :irq_disable if rx_irq configured;;
+  :HwDisable; HwClear;;
+  if (msg_received == MSG_NOT_RECEIVED?) then (yes)
+    :msg_received = MSG_IS_RECEIVED;;
+  endif
+  :k_sem_give(&ipc_os_priv.rx_sem);;
+endif
+stop
+@enduml

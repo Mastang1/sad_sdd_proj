@@ -1,0 +1,20 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsHwGetCoreIndexM7
+start
+if (index==IPC_CORE_INDEX_0?) then (yes)
+  :core_index=(sint8)IPC_M7_0;
+elseif (index==IPC_CORE_INDEX_1?) then (yes)
+  :core_index=(sint8)IPC_M7_1;
+elseif (index==IPC_CORE_INDEX_2?) then (yes)
+  :core_index=(sint8)IPC_M7_2;
+elseif (index==IPC_CORE_INDEX_3?) then (yes)
+  :core_index=(sint8)IPC_M7_3;
+else (no)
+  :core_index=-IPC_SHM_E_INVAL;
+endif
+:return core_index;
+stop
+@enduml

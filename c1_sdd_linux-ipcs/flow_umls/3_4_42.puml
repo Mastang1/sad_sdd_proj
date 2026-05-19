@@ -1,0 +1,17 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsOsFree autosar
+start
+:ipcsHwIrqDisable(instance);;
+:rx_cb=NULL; id[inst].state=DISABLED;;
+if (rx_irq != IPC_IRQ_NONE?) then (yes)
+  :DisableInterruptSource(isr_id_handler);;
+  if (task_is_initialized!=0?) then (yes)
+    :SetEvent(ipcsShmSoftirq,IPC_EVENT_OS_FREE);;
+    :task_is_initialized=0;;
+  endif
+endif
+stop
+@enduml

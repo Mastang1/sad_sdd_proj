@@ -1,0 +1,14 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsOsInit baremetal
+start
+:err=-IPC_SHM_E_INVAL;;
+if (rx_cb != NULL?) then (yes)
+  :store cfg addresses state rx_cb irq num;;
+  :err = IPC_SHM_E_OK;;
+endif
+:return err;
+stop
+@enduml

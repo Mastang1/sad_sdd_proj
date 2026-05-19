@@ -1,0 +1,30 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsOsInit autosar
+start
+:StatusType os_status=E_OK; TaskStateType task_state=SUSPENDED; err=-IPC_SHM_E_INVAL;;
+if (rx_cb != NULL?) then (yes)
+  :copy cfg fields into ipc_os_priv.id[instance] + rx_cb + irq + msg_received + isr;;
+  if ((rx_irq==IPC_IRQ_NONE)||(task_is_initialized!=0)?) then (yes)
+    :err = IPC_SHM_E_OK;
+  else (no)
+    :GetTaskState(ipcsShmSoftirq,&task_state);;
+    if (task_state != SUSPENDED?) then (yes)
+      :err=-IPC_SHM_E_NOTSUP;
+    else (no)
+      :os_status=ActivateTask(ipcsShmSoftirq);;
+      if (os_status != E_OK?) then (yes)
+        :err=-IPC_SHM_E_NOTSUP;
+      else (no)
+        :task_is_initialized=1;;
+        :err=IPC_SHM_E_OK;
+      endif
+    endif
+  endif
+else (no)
+endif
+:return err;
+stop
+@enduml

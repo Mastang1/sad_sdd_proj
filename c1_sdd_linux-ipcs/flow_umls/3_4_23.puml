@@ -1,0 +1,15 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsMemcpy
+start
+:tmp_dst/tmp_src iterators; uint32 i=0;
+if ((dst!=NULL)&&(src!=NULL)?) then (yes)
+  while (i < data_size?)
+    :tmp_dst[i]=tmp_src[i];;
+    :i++;;
+  endwhile
+endif
+stop
+@enduml

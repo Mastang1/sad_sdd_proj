@@ -1,0 +1,20 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsQueueInit
+start
+:err = -IPC_SHM_E_INVAL;
+if ((queue!=NULL)&&(push_ring_addr!=NULL)&&(pop_ring_addr!=NULL)&&(elem_num!=0)&&(elem_size!=0)&&((elem_size%%8)==0)?) then (yes)
+  :queue->elem_num = elem_num + 1u;
+  :queue->elem_size = elem_size;
+  :queue->push_ring = (struct IPCS_RING_TYPE *)push_ring_addr;
+  :queue->push_ring->sentinel = IPC_QUEUE_SENTINEL;
+  :queue->push_ring->write = 0; queue->push_ring->read = 0;
+  :queue->pop_ring = (struct IPCS_RING_TYPE *)pop_ring_addr;
+  :err = IPC_SHM_E_OK;
+else (no)
+endif
+:return err;
+stop
+@enduml

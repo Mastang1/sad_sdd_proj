@@ -1,0 +1,19 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:taskCriticalStatus = tx_interrupt_control(TX_INT_DISABLE);
+:i = 0;
+while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+  if (id[i].state != IPC_SHM_INSTANCE_DISABLED?) then (yes)
+    :ipcsHwIrqDisable(i);
+    :ipcsHwIrqClear(i);
+  else (no)
+  endif
+  :i++;
+endwhile (no)
+:tx_event_flags_set(DATA_EVENT_FLAG, TX_OR);
+:tx_interrupt_control(taskCriticalStatus);
+stop
+@enduml

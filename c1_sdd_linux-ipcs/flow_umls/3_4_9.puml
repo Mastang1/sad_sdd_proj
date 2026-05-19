@@ -1,0 +1,14 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsCheckUchanIntegrity
+start
+:err = -IPC_SHM_E_INTEGRITY;
+if ((local sentinel == IPC_UCHAN_SENTINEL)&&(remote sentinel == IPC_UCHAN_SENTINEL)?) then (yes)
+  :err = IPC_SHM_E_OK;
+else (no)
+endif
+:return err;
+stop
+@enduml

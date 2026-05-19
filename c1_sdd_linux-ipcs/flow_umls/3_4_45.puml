@@ -1,0 +1,15 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsShmHardirqInstance autosar
+start
+if ((state ENABLED)&&(rx_irq != NONE)?) then (yes)
+  :DisableInterruptSource(..);;
+  if (msg_received == MSG_NOT_RECEIVED?) then (yes)
+    :msg_received=MSG_IS_RECEIVED;;
+  endif
+  :SetEvent(ipcsShmSoftirq,IPC_EVENT_RX_IRQ);;
+endif
+stop
+@enduml

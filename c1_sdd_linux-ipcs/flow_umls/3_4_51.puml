@@ -1,0 +1,11 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsShmHardirq baremetal
+start
+:Pass1 — disable and clear each active instance (ipc-os-baremetal.c);
+:Pass2 — rx_cb spin per instance when IRQ not IPC_IRQ_NONE;
+:Pass3 — re-enable notifications for active instances;
+stop
+@enduml

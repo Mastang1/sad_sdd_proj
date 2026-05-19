@@ -1,0 +1,13 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsOsMemMap Zephyr
+start
+if (CONFIG_MMU defined?) then (yes)
+  :z_phys_map local + remote;;
+else (no)
+  :virtual = physical;;
+endif
+stop
+@enduml

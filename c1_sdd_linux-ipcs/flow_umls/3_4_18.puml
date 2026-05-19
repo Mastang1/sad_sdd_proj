@@ -1,0 +1,29 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsShmInitChannel
+start
+:chan struct; sint32 err = -IPC_SHM_E_INVAL;
+if (cfg != NULL?) then (yes)
+  :chan->id = chan_id; chan->type = cfg->type;;
+  if (cfg->type == IPC_SHM_MANAGED?) then (yes)
+    if ((cfg->ch.managed.rx_cb==NULL)||(cfg->ch.managed.pools==NULL)?) then (yes)
+      :err = -IPC_SHM_E_INVAL;
+    else (no)
+      :err = managedChannelInit(...,&cfg->ch.managed);;
+    endif
+  elseif (cfg->type == IPC_SHM_UNMANAGED?) then (yes)
+    if (cfg->ch.unmanaged.rx_cb==NULL?) then (yes)
+      :err = -IPC_SHM_E_INVAL;
+    else (no)
+      :err = unmanagedChannelInit(...,&cfg->ch.unmanaged);;
+    endif
+  else (IPC_SHM other type?)
+    :err = -IPC_SHM_E_INVAL;
+  endif
+else (no)
+endif
+:return err;
+stop
+@enduml

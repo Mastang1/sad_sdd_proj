@@ -1,0 +1,21 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsHwSetCore
+start
+:err=IPC_SHM_E_OK; uint8 local_core_idx=(uint8)(IP_MSCM->CPXNUM & MSCM_CPXNUM_CPN_MASK);;
+:err = ipcsHwSetRemoteCore(instance,cfg);;
+if (err == IPC_SHM_E_OK?) then (yes)
+  :err = ipcsHwSetLocalCore(instance,cfg);;
+endif
+if (err == IPC_SHM_E_OK?) then (yes)
+  if ((remote!=local)&&(local==local_core_idx)?) then (yes)
+    :err=IPC_SHM_E_OK;
+  else (no)
+    :err=-IPC_SHM_E_INVAL;
+  endif
+endif
+:return err;
+stop
+@enduml

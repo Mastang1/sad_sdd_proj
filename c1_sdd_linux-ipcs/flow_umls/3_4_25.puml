@@ -1,0 +1,28 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsHwGetCoreIndexA53
+start
+if (index==IPC_CORE_INDEX_0?) then (yes)
+  :core_index=(sint8)IPC_A53_0;
+elseif (index==IPC_CORE_INDEX_1?) then (yes)
+  :core_index=(sint8)IPC_A53_1;
+elseif (index==IPC_CORE_INDEX_2?) then (yes)
+  :core_index=(sint8)IPC_A53_2;
+elseif (index==IPC_CORE_INDEX_3?) then (yes)
+  :core_index=(sint8)IPC_A53_3;
+elseif (index==IPC_CORE_INDEX_4?) then (yes)
+  :core_index=(sint8)IPC_A53_4;
+elseif (index==IPC_CORE_INDEX_5?) then (yes)
+  :core_index=(sint8)IPC_A53_5;
+elseif (index==IPC_CORE_INDEX_6?) then (yes)
+  :core_index=(sint8)IPC_A53_6;
+elseif (index==IPC_CORE_INDEX_7?) then (yes)
+  :core_index=(sint8)IPC_A53_7;
+else (no)
+  :core_index=-IPC_SHM_E_INVAL;
+endif
+:return core_index;
+stop
+@enduml

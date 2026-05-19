@@ -1,0 +1,9 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsOsGetLocalShm FreeRTOS
+start
+:return ipc_os_priv.id[instance].local_shm;;
+stop
+@enduml

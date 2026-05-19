@@ -1,0 +1,14 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsQueueCheckIntegrity
+start
+:err = -IPC_SHM_E_INTEGRITY;
+if ((IPC_QUEUE_SENTINEL == queue->pop_ring->sentinel) && (IPC_QUEUE_SENTINEL == queue->push_ring->sentinel)?) then (yes)
+  :err = IPC_SHM_E_OK;
+else (no)
+endif
+:return err;
+stop
+@enduml

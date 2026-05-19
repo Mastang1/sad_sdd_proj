@@ -1,0 +1,25 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsShmInit
+start
+:uint8 i = 0; sint32 err = -IPC_SHM_E_INVAL;
+if (cfg != NULL?) then (yes)
+  if ((cfg->num_instances > IPC_SHM_MAX_INSTANCES) || (cfg->num_instances == 0u)?) then (yes)
+    :err = -IPC_SHM_E_INVAL;
+  else (no)
+    while (i < cfg->num_instances?)
+      :err = ipcsShmInitInstance(i, &cfg->shm_cfg[i]);;
+      if (err != IPC_SHM_E_OK?) then (yes)
+        break
+      else (no)
+        :i++;;
+      endif
+    endwhile
+  endif
+else (no)
+endif
+:return err;
+stop
+@enduml

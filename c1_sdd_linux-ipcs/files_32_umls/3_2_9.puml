@@ -1,0 +1,25 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam component {
+  BackgroundColor #F5E6CC
+  BorderColor #8B7355
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #FAF0E0
+  BorderColor #A08060
+}
+skinparam arrowColor #5C4033
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+component [hw/ipc-hw-platform.h] as P
+component [S32G399A_M7_COMMON.h] as S1 <<S32G3XX>>
+component [S32G399A_SCB.h] as S2 <<S32G3XX>>
+component [S32G399A_MSCM.h] as S3 <<S32G3XX>>
+P ..> S1 : ifdef S32G3XX
+P ..> S2 : ifdef S32G3XX
+P ..> S3 : ifdef S32G3XX
+note bottom of P : Without S32G3XX: omit the platform register headers above.
+@enduml

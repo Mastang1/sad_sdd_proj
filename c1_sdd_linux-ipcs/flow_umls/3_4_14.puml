@@ -1,0 +1,35 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsBufPoolInit
+start
+:pool from channel; sint32 err = -IPC_SHM_E_INVAL; uint16 i = 0; struct IPCS_SHM_BD_TYPE bd;
+if (cfg->num_bufs <= IPC_SHM_MAX_BUFS_PER_POOL?) then (yes)
+  :pool->num_bufs = cfg->num_bufs; pool->buf_size = cfg->buf_size;;
+  :err = ipcsQueueInit(&pool->bd_queue,...);;
+  if (err == IPC_SHM_E_OK?) then (yes)
+    :queue_mem_size = ipcsQueueMemSize(&pool->bd_queue);;
+    :pool->local_pool_addr = local_shm + queue_mem_size;
+    :pool->remote_pool_addr = remote_shm + queue_mem_size;
+    :pool->shm_size = queue_mem_size + cfg->buf_size * cfg->num_bufs;;
+    if ((local_shm + pool->shm_size) > (local_shm_base + shm_size)?) then (yes)
+      :err = -IPC_SHM_E_NOMEM;
+    else (no)
+      :i = 0;
+      while (i < pool->num_bufs?)
+        :fill bd pool_id buf_id;;
+        :err = ipcsQueuePush(&pool->bd_queue,&bd);;
+        if (err != IPC_SHM_E_OK?) then (yes)
+          break
+        else (no)
+          :i++;;
+        endif
+      endwhile
+    endif
+  endif
+else (no)
+endif
+:return err;
+stop
+@enduml

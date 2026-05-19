@@ -1,0 +1,15 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title getChannel
+start
+:struct IPCS_SHM_CHANNEL_TYPE *channel = NULL;
+if ((chan_id < 0) || (chan_id >= ipc_shm_priv_data[instance].num_channels)?) then (yes)
+  :channel = NULL;
+else (no)
+  :channel = &ipc_shm_priv_data[instance].channels[chan_id];;
+endif
+:return channel;
+stop
+@enduml

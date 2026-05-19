@@ -1,0 +1,16 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title ipcsHwIrqClear
+start
+if (mscm_rx_irq != IPC_IRQ_NONE?) then (yes)
+  :locals remote_core/msi_rx_index;;
+  if ((IPC_M7_0 <= remote_core <= IPC_M7_3)?) then (yes)
+    :IPC_ISR = (1<<remote_core);;
+  else (no)
+    :IPC_ISR = IPC_MSCM_IRCPnISRx_CLEAR_A53;;
+  endif
+endif
+stop
+@enduml

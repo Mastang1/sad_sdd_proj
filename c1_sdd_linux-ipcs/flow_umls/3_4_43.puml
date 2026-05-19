@@ -1,0 +1,12 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+title TASK ipcsShmSoftirq autosar
+start
+:Endless Os task per TASK(ipcsShmSoftirq) in ipc-os-autosar.c;
+:WaitEvent then GetEvent; OS_FREE path yields ClearEvent+TerminateTask;
+:Per-instance guarded path calls rx_cb with Schedule until work below budget; msg_received reset;
+:ClearEvent RX and re-arm IRQ via ipcsHwIrqClear and EnableInterruptSource per instance;
+stop
+@enduml
