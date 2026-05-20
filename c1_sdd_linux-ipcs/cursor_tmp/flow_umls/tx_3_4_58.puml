@@ -2,38 +2,24 @@
 !pragma layout smetana
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
+title ipcsShmSoftIrq ThreadX
 start
-while (forever?) is (yes)
-  :status = tx_event_flags_get(DATA_EVENT_FLAG | QUIT_REQ_EVENT_FLAG, TX_OR_CLEAR, TX_WAIT_FOREVER);
-  if (status == TX_SUCCESS?) then (yes)
-    if ((u32ActualFlags & DATA_EVENT_FLAG) == DATA_EVENT_FLAG?) then (yes)
-      :i = 0;
-      while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
-        if ((id[i].state != DISABLED) and (id[i].rxIrqNum != IPC_IRQ_NONE)?) then (yes)
-          repeat
-            :work = id[i].rxCallback(i, IPC_SOFTIRQ_BUDGET);
-            :tx_thread_relinquish();
-          repeat while (work >= IPC_SOFTIRQ_BUDGET?) is (yes)
-        else (no)
-        endif
-        :i++;
-      endwhile (no)
-      :i = 0;
-      while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
-        if (id[i].state != IPC_SHM_INSTANCE_DISABLED?) then (yes)
-          :ipcsHwIrqEnable(i);
-        else (no)
-        endif
-        :i++;
-      endwhile (no)
-    else (no)
-    endif
-    if ((u32ActualFlags & QUIT_REQ_EVENT_FLAG) == QUIT_REQ_EVENT_FLAG?) then (yes)
-      :tx_event_flags_set(QUIT_ACK_EVENT_FLAG, TX_OR);
-      break
-    else (no)
-    endif
-  else (no)
+while (1?)
+  :tx_event_flags_get(DATA | QUIT_REQ);;
+  if (DATA flag?) then (yes)
+    while (i < IPC_SHM_MAX_INSTANCES?)
+      if (instance enabled and rxIrqNum != IPC_IRQ_NONE?) then (yes)
+        repeat
+          :work = rxCallback(i, IPC_SOFTIRQ_BUDGET);;
+          :tx_thread_relinquish;;
+        repeat while (work >= IPC_SOFTIRQ_BUDGET?) is (yes)
+      endif
+      :i++;
+    endwhile (no)
+    :ipcsHwIrqEnable all enabled instances;;
+  endif
+  if (QUIT_REQ?) then (yes)
+    :tx_event_flags_set(QUIT_ACK); break;
   endif
 endwhile (no)
 stop

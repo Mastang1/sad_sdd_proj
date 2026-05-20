@@ -4,44 +4,52 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
 if (rx_cb == NULL?) then (yes)
-  :return -EINVAL; stop
-else (no)
+  :return -EINVAL;
+  stop
 endif
-:save shm_size rx_cb instance;
+:save shm_size, rx_cb, instance;
 if (ipc_files_opened == CLEAR?) then (yes)
-  :open module; finit_module;
+  :open ipc-shm-uio module; finit_module;
+  if (module open/load failed?) then (yes)
+    :return -ENODEV;
+    stop
+  endif
   :open ipc-cdev-uio; open /dev/mem;
+  if (cdev or mem open failed?) then (yes)
+    :close module fd; return -ENODEV;
+    stop
+  endif
   :ipc_files_opened = SET;
-else (no)
 endif
-:mmap local shm via /dev/mem page aligned;
+:mmap local shm (/dev/mem, page aligned);
 if (local MAP_FAILED?) then (yes)
-  :err; goto cleanup; stop
-else (no)
+  :close mem fd; return -ENOMEM;
+  stop
 endif
 :mmap remote shm;
 if (remote MAP_FAILED?) then (yes)
-  :munmap local; err; stop
-else (no)
+  :munmap local; return -ENOMEM;
+  stop
 endif
 :write IPCS_UIO_CDEV_DATA_TYPE to cdev;
 if (write failed?) then (yes)
-  :munmap remote/local; err; stop
-else (no)
+  :munmap remote and local; return -EINVAL;
+  stop
 endif
 if (inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
-  :state = ENABLED; return 0; stop
-else (no)
+  :state = ENABLED; return 0;
+  stop
 endif
 :get_uio_dev_name; open /dev/uioX;
 if (open UIO failed?) then (yes)
-  :munmap; err; stop
-else (no)
+  :munmap remote and local; return -ENODEV;
+  stop
 endif
-:pthread_create(ipcsShmSoftirq, SCHED_FIFO max priority);
+:pthread_attr_init/setschedpolicy/setschedparam;
+:pthread_create(ipcsShmSoftirq);
 if (pthread_create failed?) then (yes)
-  :close uio; munmap; err; stop
-else (no)
+  :close uio; munmap remote and local; return err;
+  stop
 endif
 :state = ENABLED; return 0;
 stop

@@ -4,27 +4,51 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
 if (rx_cb == NULL?) then (yes)
-  :return -EINVAL; stop
-else (no)
+  :return -EINVAL;
+  stop
 endif
-:save cfg; open/load ipc-shm-cdev module if first use;
-:open /dev/mem and /dev/ipc-shm-cdev;
-:mmap local and remote shm page aligned;
-if (mmap failed?) then (yes)
-  :cleanup; return err; stop
-else (no)
+:save shm_size, rx_cb;
+if (ipc_files_opened == CLEAR?) then (yes)
+  :open/load ipc-shm-cdev module;
+  if (module failed?) then (yes)
+    :return -ENODEV;
+    stop
+  endif
+  :open /dev/mem and /dev/ipc-shm-cdev;
+  if (open failed?) then (yes)
+    :close module; return -ENODEV;
+    stop
+  endif
+  :ipc_files_opened = SET;
+endif
+:mmap local shm (page aligned);
+if (local MAP_FAILED?) then (yes)
+  :return -ENOMEM;
+  stop
+endif
+:mmap remote shm;
+if (remote MAP_FAILED?) then (yes)
+  :munmap local; return -ENOMEM;
+  stop
 endif
 if (ipc_soft_created == CLEAR?) then (yes)
-  :pthread_create global ipcsShmSoftirq thread;;
+  :pthread_create global ipcsShmSoftirq;
+  if (pthread_create failed?) then (yes)
+    :munmap remote and local; return err;
+    stop
+  endif
   :ipc_soft_created = SET;
-else (no)
 endif
-:ioctl SET_INSTANCE; ioctl INIT_INSTANCE with cfg;
+:ioctl(SET_INSTANCE, instance);
 if (ioctl failed?) then (yes)
-  :munmap; return err; stop
-else (no)
+  :munmap remote and local; return err;
+  stop
 endif
-:irq_num = cfg->inter_core_rx_irq; state = ENABLED;
-:return 0;
+:ioctl(INIT_INSTANCE, cfg);
+if (ioctl failed?) then (yes)
+  :munmap remote and local; return err;
+  stop
+endif
+:irq_num per cfg; state = ENABLED; return 0;
 stop
 @enduml

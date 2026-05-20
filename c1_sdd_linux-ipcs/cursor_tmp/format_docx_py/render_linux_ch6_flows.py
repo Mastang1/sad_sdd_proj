@@ -12,6 +12,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+import sys
+
+_CT = Path(__file__).resolve().parents[1]
+if str(_CT) not in sys.path:
+    sys.path.insert(0, str(_CT))
+from workspace_paths import plantuml_jar_candidates
+
 from linux_ch6_flows import FLOWS, HEADER
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -2,21 +2,16 @@
 !pragma layout smetana
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
+title ipcsOsFree ThreadX
 start
-:tx_event_flags_set(QUIT_REQ_EVENT_FLAG, TX_OR);
-:tx_event_flags_get(QUIT_ACK_EVENT_FLAG, TX_OR_CLEAR, timeout=100);
-:ipcsHwIrqDisable(instance);
-:id[instance].rxCallback = NULL;
-:id[instance].state = IPC_SHM_INSTANCE_DISABLED;
-if (id[instance].rxIrqNum != IPC_IRQ_NONE?) then (yes)
+:tx_event_flags_set(QUIT_REQ); tx_event_flags_get(QUIT_ACK);;
+:ipcsHwIrqDisable(instance);;
+:rxCallback = NULL; state = DISABLED;;
+if (rxIrqNum != IPC_IRQ_NONE?) then (yes)
   if (taskIsInitialized != 0?) then (yes)
-    :taskIsInitialized = 0;
-    :tx_thread_terminate(&softIrqHandle);
-    :tx_thread_delete(&softIrqHandle);
-    :tx_event_flags_delete(&softIrqEvents);
-  else (no)
+    :taskIsInitialized = 0;;
+    :tx_thread_terminate; tx_thread_delete; tx_event_flags_delete;;
   endif
-else (no)
 endif
 stop
 @enduml

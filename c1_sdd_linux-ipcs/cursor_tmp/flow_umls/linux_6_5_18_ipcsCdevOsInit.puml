@@ -3,23 +3,35 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:ipcsHwInit(instance, cfg);
-if (failed?) then (yes)
-  :return err; stop
-else (no)
+:err = ipcsHwInit(instance, cfg);
+if (err != 0?) then (yes)
+  :return err;
+  stop
 endif
-if (rx_irq == IPC_IRQ_NONE?) then (yes)
+if (inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
   :irq_num = IPC_IRQ_NONE;
 else (no)
-  :of_irq_get from MSCM DT;
+  :of_find_compatible_node MSCM; of_irq_get;
+  if (mscm missing?) then (yes)
+    :return -ENXIO;
+    stop
+  endif
+  :of_node_put(mscm);
 endif
-if (duplicate irq?) then (yes)
-  :state = ENABLED; return 0; stop
-else (no)
-endif
+while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+  if (irq_num == irq_num_init[i]?) then (yes)
+    :state = ENABLED; return 0;
+    stop
+  endif
+  :i++;
+endwhile (no)
+:irq_num_init[instance] = irq_num;
 if (irq_num != IPC_IRQ_NONE?) then (yes)
   :request_irq(ipcsShmHardirq);
-else (no)
+  if (request_irq failed?) then (yes)
+    :return -ENXIO;
+    stop
+  endif
 endif
 :state = ENABLED; return 0;
 stop

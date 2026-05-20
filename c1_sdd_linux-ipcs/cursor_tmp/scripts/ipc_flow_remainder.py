@@ -1351,3 +1351,131 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         stop
         """,
     )
+
+    # --- ThreadX (md_sdd_0519 §4.4 refs tx_3_4_*.svg) ---
+    W(
+        "tx_3_4_56",
+        "ipcsOsInit ThreadX",
+        """
+        start
+        :err = -IPC_SHM_E_INVAL;
+        if ((rx_cb != NULL) && (cfg != NULL)?) then (yes)
+          :save localShm remoteShm state rxCallback rxIrqNum;;
+          if ((taskIsInitialized != 0) || (rxIrqNum == IPC_IRQ_NONE)?) then (yes)
+            :err = IPC_SHM_E_OK;;
+          else (no)
+            :osStatus = tx_event_flags_create(&softIrqEvents);;
+            if (osStatus != TX_SUCCESS?) then (yes)
+              :err = -IPC_SHM_E_NOMEM;;
+            else (no)
+              :osStatus = tx_thread_create(softIrqHandle, ipcsShmSoftIrq);;
+              if (osStatus != TX_SUCCESS?) then (yes)
+                :err = -IPC_SHM_E_NOMEM;;
+              else (no)
+                :taskIsInitialized = 1;;
+                :err = IPC_SHM_E_OK;;
+              endif
+            endif
+          endif
+        else (no)
+        endif
+        :return err;
+        stop
+        """,
+    )
+    W(
+        "tx_3_4_57",
+        "ipcsOsFree ThreadX",
+        """
+        start
+        :tx_event_flags_set(QUIT_REQ); tx_event_flags_get(QUIT_ACK);;
+        :ipcsHwIrqDisable(instance);;
+        :rxCallback = NULL; state = DISABLED;;
+        if (rxIrqNum != IPC_IRQ_NONE?) then (yes)
+          if (taskIsInitialized != 0?) then (yes)
+            :taskIsInitialized = 0;;
+            :tx_thread_terminate; tx_thread_delete; tx_event_flags_delete;;
+          endif
+        endif
+        stop
+        """,
+    )
+    W(
+        "tx_3_4_58",
+        "ipcsShmSoftIrq ThreadX",
+        """
+        start
+        while (1?)
+          :tx_event_flags_get(DATA | QUIT_REQ);;
+          if (DATA flag?) then (yes)
+            while (i < IPC_SHM_MAX_INSTANCES?)
+              if (instance enabled and rxIrqNum != IPC_IRQ_NONE?) then (yes)
+                repeat
+                  :work = rxCallback(i, IPC_SOFTIRQ_BUDGET);;
+                  :tx_thread_relinquish;;
+                repeat while (work >= IPC_SOFTIRQ_BUDGET?) is (yes)
+              endif
+              :i++;
+            endwhile (no)
+            :ipcsHwIrqEnable all enabled instances;;
+          endif
+          if (QUIT_REQ?) then (yes)
+            :tx_event_flags_set(QUIT_ACK); break;
+          endif
+        endwhile (no)
+        stop
+        """,
+    )
+    W(
+        "tx_3_4_59",
+        "ipcsShmHardIrq ThreadX",
+        """
+        start
+        :taskCriticalStatus = tx_interrupt_control(TX_INT_DISABLE);;
+        while (i < IPC_SHM_MAX_INSTANCES?)
+          if (state != DISABLED?) then (yes)
+            :ipcsHwIrqDisable(i); ipcsHwIrqClear(i);;
+          endif
+          :i++;
+        endwhile (no)
+        :tx_event_flags_set(DATA_EVENT_FLAG);;
+        :tx_interrupt_control(restore);;
+        stop
+        """,
+    )
+    W(
+        "tx_3_4_61",
+        "ipcsOsGetLocalShm ThreadX",
+        """
+        start
+        :return ipc_os_priv.id[instance].localShm;
+        stop
+        """,
+    )
+    W(
+        "tx_3_4_62",
+        "ipcsOsGetRemoteShm ThreadX",
+        """
+        start
+        :return ipc_os_priv.id[instance].remoteShm;
+        stop
+        """,
+    )
+    W(
+        "tx_3_4_63",
+        "ipcsOsPollChannels ThreadX",
+        """
+        start
+        :err = IPC_SHM_E_OK;
+        if (rxIrqNum == IPC_IRQ_NONE?) then (yes)
+          if (rxCallback != NULL?) then (yes)
+            :err = rxCallback(instance, IPC_SOFTIRQ_BUDGET);;
+          else (no)
+          endif
+        else (no)
+          :err = -IPC_SHM_E_INVAL;
+        endif
+        :return err;
+        stop
+        """,
+    )

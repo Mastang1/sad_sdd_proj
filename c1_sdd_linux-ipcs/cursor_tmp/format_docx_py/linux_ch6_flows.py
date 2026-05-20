@@ -52,45 +52,45 @@ start
 if (rx_cb == NULL?) then (yes)
   :return -EINVAL;
   stop
-else (no)
 endif
 if ((instance invalid)?) then (yes)
   :return -EINVAL;
   stop
-else (no)
 endif
-:request_mem_region local; ioremap local_virt_shm;
+:request_mem_region(local); ioremap(local_virt_shm);
 if (local map failed?) then (yes)
-  :return err; stop
-else (no)
+  :release local region; return -ENOMEM;
+  stop
 endif
-:request_mem_region remote; ioremap remote_virt_shm;
+:request_mem_region(remote); ioremap(remote_virt_shm);
 if (remote map failed?) then (yes)
-  :unmap local; return err; stop
-else (no)
+  :iounmap local; release local; return -ENOMEM;
+  stop
 endif
-:save shm_size phys addrs; priv.rx_cb = rx_cb;
+:save shm_size, phys addrs; priv.rx_cb = rx_cb;
 if (inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
   :irq_num = IPC_IRQ_NONE;
 else (no)
   :of_find_compatible_node MSCM; of_irq_get;
   if (mscm missing?) then (yes)
-    :err; goto unmap; stop
-  else (no)
+    :iounmap remote/local; release regions; return -ENXIO;
+    stop
   endif
 endif
-if (duplicate irq already registered?) then (yes)
-  :state = ENABLED; return 0; stop
-else (no)
-endif
+while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+  if (irq_num == irq_num_init[i]?) then (yes)
+    :state = ENABLED; return 0;
+    stop
+  endif
+  :i++;
+endwhile (no)
 :irq_num_init[instance] = irq_num;
 if (irq_num != IPC_IRQ_NONE?) then (yes)
   :request_irq(ipcsShmHardirq);
   if (request_irq failed?) then (yes)
-    :goto unmap; stop
-  else (no)
+    :iounmap remote/local; release regions; return err;
+    stop
   endif
-else (no)
 endif
 :state = ENABLED; return 0;
 stop
@@ -246,44 +246,52 @@ stop
     "linux_6_4_5_ipcsOsInit": """
 start
 if (rx_cb == NULL?) then (yes)
-  :return -EINVAL; stop
-else (no)
+  :return -EINVAL;
+  stop
 endif
-:save shm_size rx_cb instance;
+:save shm_size, rx_cb, instance;
 if (ipc_files_opened == CLEAR?) then (yes)
-  :open module; finit_module;
+  :open ipc-shm-uio module; finit_module;
+  if (module open/load failed?) then (yes)
+    :return -ENODEV;
+    stop
+  endif
   :open ipc-cdev-uio; open /dev/mem;
+  if (cdev or mem open failed?) then (yes)
+    :close module fd; return -ENODEV;
+    stop
+  endif
   :ipc_files_opened = SET;
-else (no)
 endif
-:mmap local shm via /dev/mem page aligned;
+:mmap local shm (/dev/mem, page aligned);
 if (local MAP_FAILED?) then (yes)
-  :err; goto cleanup; stop
-else (no)
+  :close mem fd; return -ENOMEM;
+  stop
 endif
 :mmap remote shm;
 if (remote MAP_FAILED?) then (yes)
-  :munmap local; err; stop
-else (no)
+  :munmap local; return -ENOMEM;
+  stop
 endif
 :write IPCS_UIO_CDEV_DATA_TYPE to cdev;
 if (write failed?) then (yes)
-  :munmap remote/local; err; stop
-else (no)
+  :munmap remote and local; return -EINVAL;
+  stop
 endif
 if (inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
-  :state = ENABLED; return 0; stop
-else (no)
+  :state = ENABLED; return 0;
+  stop
 endif
 :get_uio_dev_name; open /dev/uioX;
 if (open UIO failed?) then (yes)
-  :munmap; err; stop
-else (no)
+  :munmap remote and local; return -ENODEV;
+  stop
 endif
-:pthread_create(ipcsShmSoftirq, SCHED_FIFO max priority);
+:pthread_attr_init/setschedpolicy/setschedparam;
+:pthread_create(ipcsShmSoftirq);
 if (pthread_create failed?) then (yes)
-  :close uio; munmap; err; stop
-else (no)
+  :close uio; munmap remote and local; return err;
+  stop
 endif
 :state = ENABLED; return 0;
 stop
@@ -402,30 +410,33 @@ stop
 """,
     "linux_6_4_21_ipcsUioInit": """
 start
-:sprintf uio_name instance_N;
+:sprintf(uio_name, instance_N);
 :err = ipcsHwInit(instance, cfg);
-if (err?) then (yes)
-  :return err; stop
-else (no)
+if (err != 0?) then (yes)
+  :return err;
+  stop
 endif
 if (inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
-  :return 0; stop
-else (no)
+  :return 0;
+  stop
 endif
-:irq = platform_get_irq(pdev, inter_core_rx_irq);
+:irq = platform_get_irq(ipc_pdev, inter_core_rx_irq);
 if (irq < 0?) then (yes)
-  :return irq; stop
-else (no)
+  :return irq;
+  stop
 endif
-if (duplicate irq?) then (yes)
-  :return -EFAULT; stop
-else (no)
-endif
-:fill uio_info handler irqcontrol open release;
+while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+  if (irq == irq_num_init[i]?) then (yes)
+    :return -EFAULT;
+    stop
+  endif
+  :i++;
+endwhile (no)
+:irq_num_init[instance] = irq; fill uio_info;
 :uio_register_device;
-if (failed?) then (yes)
-  :return err; stop
-else (no)
+if (uio_register failed?) then (yes)
+  :return err;
+  stop
 endif
 :state = ENABLED; return 0;
 stop
@@ -495,28 +506,52 @@ stop
     "linux_6_5_1_ipcsOsInit": """
 start
 if (rx_cb == NULL?) then (yes)
-  :return -EINVAL; stop
-else (no)
+  :return -EINVAL;
+  stop
 endif
-:save cfg; open/load ipc-shm-cdev module if first use;
-:open /dev/mem and /dev/ipc-shm-cdev;
-:mmap local and remote shm page aligned;
-if (mmap failed?) then (yes)
-  :cleanup; return err; stop
-else (no)
+:save shm_size, rx_cb;
+if (ipc_files_opened == CLEAR?) then (yes)
+  :open/load ipc-shm-cdev module;
+  if (module failed?) then (yes)
+    :return -ENODEV;
+    stop
+  endif
+  :open /dev/mem and /dev/ipc-shm-cdev;
+  if (open failed?) then (yes)
+    :close module; return -ENODEV;
+    stop
+  endif
+  :ipc_files_opened = SET;
+endif
+:mmap local shm (page aligned);
+if (local MAP_FAILED?) then (yes)
+  :return -ENOMEM;
+  stop
+endif
+:mmap remote shm;
+if (remote MAP_FAILED?) then (yes)
+  :munmap local; return -ENOMEM;
+  stop
 endif
 if (ipc_soft_created == CLEAR?) then (yes)
-  :pthread_create global ipcsShmSoftirq thread;;
+  :pthread_create global ipcsShmSoftirq;
+  if (pthread_create failed?) then (yes)
+    :munmap remote and local; return err;
+    stop
+  endif
   :ipc_soft_created = SET;
-else (no)
 endif
-:ioctl SET_INSTANCE; ioctl INIT_INSTANCE with cfg;
+:ioctl(SET_INSTANCE, instance);
 if (ioctl failed?) then (yes)
-  :munmap; return err; stop
-else (no)
+  :munmap remote and local; return err;
+  stop
 endif
-:irq_num = cfg->inter_core_rx_irq; state = ENABLED;
-:return 0;
+:ioctl(INIT_INSTANCE, cfg);
+if (ioctl failed?) then (yes)
+  :munmap remote and local; return err;
+  stop
+endif
+:irq_num per cfg; state = ENABLED; return 0;
 stop
 """,
     "linux_6_5_2_ipcsOsFree": """
@@ -632,23 +667,35 @@ stop
 """,
     "linux_6_5_18_ipcsCdevOsInit": """
 start
-:ipcsHwInit(instance, cfg);
-if (failed?) then (yes)
-  :return err; stop
-else (no)
+:err = ipcsHwInit(instance, cfg);
+if (err != 0?) then (yes)
+  :return err;
+  stop
 endif
-if (rx_irq == IPC_IRQ_NONE?) then (yes)
+if (inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
   :irq_num = IPC_IRQ_NONE;
 else (no)
-  :of_irq_get from MSCM DT;
+  :of_find_compatible_node MSCM; of_irq_get;
+  if (mscm missing?) then (yes)
+    :return -ENXIO;
+    stop
+  endif
+  :of_node_put(mscm);
 endif
-if (duplicate irq?) then (yes)
-  :state = ENABLED; return 0; stop
-else (no)
-endif
+while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+  if (irq_num == irq_num_init[i]?) then (yes)
+    :state = ENABLED; return 0;
+    stop
+  endif
+  :i++;
+endwhile (no)
+:irq_num_init[instance] = irq_num;
 if (irq_num != IPC_IRQ_NONE?) then (yes)
   :request_irq(ipcsShmHardirq);
-else (no)
+  if (request_irq failed?) then (yes)
+    :return -ENXIO;
+    stop
+  endif
 endif
 :state = ENABLED; return 0;
 stop
@@ -673,9 +720,16 @@ stop
 """,
     "linux_6_5_20_ipcsCdevInit": """
 start
-:alloc_chrdev_region; class_create; cdev_init/add;
-:device_create /dev/ipc-shm-cdev;
-:init_waitqueue_head; return 0;
+:err = alloc_chrdev_region;
+if (err != 0?) then (yes)
+  :return err;
+  stop
+endif
+:class_create; cdev_init; cdev_add;
+:device_create(/dev/ipc-shm-cdev);
+:dev_is_opened = 0; wait_queue_flag = SLEEP;
+:init_waitqueue_head(&wait_queue);
+:return 0;
 stop
 """,
     "linux_6_5_21_ipcsCdevClean": """

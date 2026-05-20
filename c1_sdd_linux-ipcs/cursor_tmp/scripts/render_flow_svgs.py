@@ -29,20 +29,31 @@ def main() -> None:
     )
     if not umls:
         sys.exit("no .puml in flow_umls/")
-    subprocess.check_call(
-        [
-            "java",
-            "-jar",
-            str(jar),
-            "-charset",
-            "UTF-8",
-            "-tsvg",
-            "-o",
-            str(svg_dir),
-            *[str(p) for p in umls],
-        ]
-    )
-    print(f"{len(umls)} diagram(s) -> {svg_dir}/")
+    failed: list[str] = []
+    for puml in umls:
+        r = subprocess.run(
+            [
+                "java",
+                "-jar",
+                str(jar),
+                "-charset",
+                "UTF-8",
+                "-tsvg",
+                "-o",
+                str(svg_dir),
+                str(puml),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if r.returncode != 0:
+            failed.append(puml.stem)
+    print(f"{len(umls) - len(failed)} diagram(s) -> {svg_dir}/")
+    if failed:
+        print(f"PlantUML failed ({len(failed)}): {', '.join(failed[:12])}")
+        if len(failed) > 12:
+            print(f"  ... +{len(failed) - 12} more")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
