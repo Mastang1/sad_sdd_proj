@@ -14,6 +14,7 @@ skinparam note {
   BackgroundColor #FFF8E8
   BorderColor #B89968
 }
+title common/ipc-types.h — 条件与配置头依赖
 component [common/ipc-types.h] as R
 package "NO_STDINT_H == 0" {
   component [<stdint.h>] as U1 <<system>>
@@ -21,15 +22,15 @@ package "NO_STDINT_H == 0" {
   component [<errno.h>] as U3 <<system>>
 }
 package "NO_STDINT_H != 0" {
-  component [uintptr_t etc.\
-(CPU_* definitions)] as CPU <<macros>>
+  component [uintptr_t 等\
+(CPU_* 定义)] as CPU <<macros>>
 }
 component [Mcal.h] as M <<external>>
 component [ipcf_Ip_Cfg_Defines.h] as D <<config>>
 R ..> M : #include
 R ..> D : #include
-R ..> U1 : if
-R ..> U2 : if
-R ..> U3 : if
+R ..> U1 : 条件
+R ..> U2 : 条件
+R ..> U3 : 条件
 R ..> CPU : else
 @enduml

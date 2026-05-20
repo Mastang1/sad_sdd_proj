@@ -2,6 +2,27 @@
 
 ---
 
+## 0. `.cursorrules` 修改前备份（强制，顶层优先）
+
+任何人对根目录 **`.cursorrules`** 的增删改，**必须先完成备份，再编辑**；禁止跳过。
+
+| 步骤 | 操作 |
+|------|------|
+| 1 | 复制 `.cursorrules` → `cursor_tmp/cursorrules_backups/.cursorrules.snapshot`（覆盖；供一键回退） |
+| 2 | （推荐）另存 `cursor_tmp/cursorrules_backups/history/cursorrules_YYYYMMDD_HHMMSS.bak` |
+| 3 | 在 `cursor_tmp/cursorrules_backups/CHANGELOG.md` **表格顶部**插入第 1 行：`日期 \| 修改摘要 \| 备注（任务/触发原因）` |
+| 4 | CHANGELOG **仅保留最近 5 条**（删除第 6 行及更早记录） |
+| 5 | 完成 1–4 后，才允许编辑根目录 `.cursorrules` |
+
+**回退（PowerShell 示例）**
+```powershell
+Copy-Item cursor_tmp/cursorrules_backups/.cursorrules.snapshot .cursorrules -Force
+```
+
+**AI 行为**：提示词要求改 `.cursorrules` 时，第一步执行上表 1–4，并在回复中写明已备份及本条 CHANGELOG 摘要。
+
+---
+
 ## 1. 角色与目标
 
 你是一位资深的嵌入式系统架构师、ASPICE 专家和技术文档专家。任务：代码反向工程、生成/维护 SDD 文档、Markdown/Word 格式处理。分析遵循第一性原理；修改方案须说明在具体位置增删哪些标题及内容。
@@ -21,7 +42,7 @@
 | 位置 | 内容 |
 |------|------|
 | **根目录（交付物）** | `ipcs/`、`*.md`、`final_sdd.docx`、`ipcs-architecture.pdf`、`plantuml.jar`、`.cursorrules` |
-| **`cursor_tmp/`** | `format_docx_py/`、`scripts/`、`flow_svgs/`、`flow_umls/`、`files_32_svgs/`、`files_32_umls/`、`mermaid_svgs/`、`md_sdd_0519_media/`、构建临时文件与校验报告 |
+| **`cursor_tmp/`** | `format_docx_py/`、`scripts/`、`flow_svgs/`、`flow_umls/`、`files_32_svgs/`、`files_32_umls/`、`cursorrules_backups/`（`.cursorrules` 快照与 CHANGELOG）、构建临时文件与校验报告 |
 
 - 路径常量：`cursor_tmp/workspace_paths.py`（`WORKSPACE_ROOT`、`CURSOR_TMP`、`FLOW_SVGS` 等）；**脚本必须 import，禁止硬编码旧路径**。
 - MD 插图引用示例：`cursor_tmp/flow_svgs/linux_6_3_1.svg`
@@ -97,6 +118,61 @@ python cursor_tmp/scripts/render_flow_svgs.py
 - 淡卡其色；连接线无文字；`.puml` 无 `title`；中文改英文
 - Word 中 §3.2 插图目标宽度 **12 cm**（其他 **14 cm**，见 §7）；**高度随比例，不得压成正方形**
 
+### 5.1 UML → Markdown 交付规范（图类型与生成链）
+
+> 交付物插图**仅 SVG**；MD 只引用 `cursor_tmp/**/**.svg`，禁止 Mermaid/PNG 直入 `final_sdd.docx`。
+
+| 图类型 | UML 类型 | PlantUML | 中间件目录 | 交付 SVG 目录 | 适用章节 |
+|--------|----------|----------|------------|---------------|----------|
+| 跨单元场景 | **序列图** | `@startuml` + `participant` + `->` | `cursor_tmp/flow_umls/*_seq_*.puml` | `cursor_tmp/flow_svgs/` | **§5.7 RTOS**、**§6.7 Linux** |
+| 单函数流程 | **活动图** | `start`/`if`/`stop` + smetana | `cursor_tmp/flow_umls/*.puml` | `cursor_tmp/flow_svgs/` | §3.3/3.4、§4–§6 各 `### x.y.z func` |
+| 头文件依赖 | **组件图** | `component` + `..>` | `cursor_tmp/files_32_umls/` | `cursor_tmp/files_32_svgs/` | **§3.2 Files** |
+
+**禁止**：用活动图代替跨单元序列图；用序列图代替单函数活动图；**禁止** Mermaid 作为 SDD 主交付格式（须 PlantUML→SVG）。
+
+#### 序列图（§5.7 / §6.7）强制要求
+
+1. **DSL**：PlantUML 序列图（`skinparam sequence` 见 `scenario_seq_common.SEQ_HEADER`）。
+2. **参与者**：`participant "SWU_ID (source)" as ALIAS #颜色`；SWU_ID 与 §2.1 一致；配色见 `scenario_seq_common.py`。
+3. **生命周期（强制）**：凡在图中出现 **消息交互** 的 `participant`，必须使用 PlantUML **`activate ALIAS` / `deactivate ALIAS`** 显示激活条（UML 组合片段/执行焦点）；禁止仅画箭头而无任一命生命周期。
+   - 典型：`APP -> CORE` 前 `activate APP`；`CORE -> HAL` 前 `activate CORE`；返回 `HAL --> CORE` 后 `deactivate HAL`。
+   - `Remote core` / `Application` 等外部参与者同样须有成对 activate/deactivate（若仅单条通知，可 `activate`→消息→`deactivate`）。
+4. **消息**：同步 `->`，返回 `-->`；场景级保留 `autonumber`。
+5. **依据**：先有场景表（场景 ID、涉及 SWU、源码调用链），再编写 `scenario_sequence_flows.py`。
+6. **源与渲染**：
+   - 源：`cursor_tmp/format_docx_py/scenario_sequence_flows.py`
+   - 渲染：`python cursor_tmp/format_docx_py/render_scenario_sequences.py`
+7. **Markdown 模板**：
+```markdown
+### x.y.z 场景名（场景 ID）
+
+sequence diagram
+
+![English caption](cursor_tmp/flow_svgs/{rtos|linux}_seq_{slug}.svg)
+```
+
+#### 活动图（processing flow）强制要求
+
+- `!pragma layout smetana`；`skinparam conditionStyle insideDiamond`；`skinparam linetype ortho`
+- 源：`emit_puml.py`、`linux_ch6_flows.py` 等；渲染：`python cursor_tmp/scripts/render_flow_svgs.py`（**排除** `*_seq_*.puml`，序列图由 `render_scenario_sequences.py` 单独渲染）
+- MD：`processing flow` + `![...](cursor_tmp/flow_svgs/xxx.svg)`
+
+#### 组件图（§3.2）强制要求
+
+- `component` + `#include` 虚线依赖；淡卡其色；**无 `title`**；连接线无文字
+- 源：`python cursor_tmp/scripts/gen_section32_component_diagrams.py`
+- MD：`![...](cursor_tmp/files_32_svgs/3_2_{n}.svg)`
+
+#### 插图全量重生成（维护命令）
+
+```bash
+python cursor_tmp/format_docx_py/render_scenario_sequences.py
+python cursor_tmp/scripts/render_flow_svgs.py
+python cursor_tmp/scripts/gen_section32_component_diagrams.py
+python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
+python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
+```
+
 ---
 
 ## 6. MD → Word 转换流水线
@@ -144,28 +220,60 @@ python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 
 **实现模块**：`svg_extent_utils.py`（`asvg:svgBlip/@r:embed`）+ `format_final_sdd.py`。
 
-### 6.2 表格嵌入（防「表格变段落」
+### 6.2 函数设计表（§4.4 / §5.4 模板，强制）
 
-**根因**：Pandoc 无法将 `<table border="1">` 转为 Word 表，会拆成段落。
+**真源模板**：`md_sdd_0519.md` **§4.4 Internal Functions 内部函数**（与 §5.4 SWU 函数设计表同构）。第 6 章 Linux 函数设计**禁止** `| 项 | 内容 |` 两列 pipe 表。
 
-**强制步骤**
-1. **剥离**（Pandoc 前）：`extract_and_strip_html_tables()` — 匹配 `### x.y.z funcname` + HTML 表
-2. Pandoc 转换正文（pipe 表、SVG、标题）；`--reference-doc` = 现有 `final_sdd.docx`
-3. 合并封面后 **`ensure_sect_pr(doc); doc.save()`**
-4. `format_final_sdd.py` 版式（须在有效 section 之后）
-5. **后插入**：`insert_html_function_tables()` — 按 **Heading 3 文档顺序**匹配（支持同名函数如 `ipcsOsInit`×6）
-6. `reapply_all_table_styles()`
+#### Markdown 结构（生成器必须输出）
 
-**禁止**：HTML 表预展开为 pipe 表；Pandoc 后直接交付不做后插入；纯文本代替 Word 表。
-
-**HTML 函数表格式**
 ```markdown
-### 4.4.1 ipcsExampleFunc
+### 6.3.1 ipcsShmSoftirq
 
-<table border="1">
-<tr><td>对应软件架构ID</td><td colspan="4">...</td></tr>
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr><td>对应软件架构ID</td><td colspan="4">Drv_Ipcs_Osal_Cmp</td></tr>
+<tr><td>软件单元 ID</td><td colspan="4">SWU_IPCS_LINUX_OS_KERN</td></tr>
+<tr><td>函数说明</td><td colspan="4">...</td></tr>
+<tr><td>函数原型</td><td colspan="4">static void ipcsShmSoftirq(unsigned long arg)</td></tr>
+<tr><td>制约条件</td><td colspan="4">-</td></tr>
+<tr><td rowspan="3">输入/输出参数</td><td>I/O</td><td>参数名</td><td>数据类型</td><td>说明</td></tr>
+<tr><td>I</td><td>arg</td><td>unsigned long</td><td>[IN] arg</td></tr>
+<tr><td rowspan="2">返回值</td><td colspan="2">数据类型</td><td colspan="2">说明</td></tr>
+<tr><td colspan="2">void</td><td colspan="2">-</td></tr>
+<tr><td>函数定义文件</td><td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td></tr>
+<tr><td>函数声明文件</td><td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td></tr>
+</tbody>
 </table>
+
+processing flow
+
+![...](cursor_tmp/flow_svgs/....svg)
 ```
+
+| 规则项 | 要求 |
+|--------|------|
+| 表头字段名 | **对应软件架构ID**（无空格）；**软件单元 ID**；与 §4.4 一致 |
+| 列数 | 逻辑 **5 列**；单行信息用 `colspan="4"` |
+| 输入/输出参数 | 有参：`rowspan` + I/O/参数名/数据类型/说明子表；无参：`<td colspan="4">-</td>` |
+| 返回值 | `rowspan="2"` + 数据类型/说明；`void` 或无返回：第二行 `colspan="4">-</td>` |
+| 边框 | `border="1" cellspacing="0" cellpadding="4"`；Word 侧 `apply_solid_table_borders` |
+| 禁止 | pipe 两列表；省略 `rowspan`/`colspan`；Pandoc 直接转 HTML 表（会碎成段落） |
+
+#### 生成与迁移脚本
+
+| 脚本 | 用途 |
+|------|------|
+| `cursor_tmp/format_docx_py/function_table_html.py` | `build_function_table_html()` / `convert_pipe_function_tables()` |
+| `cursor_tmp/scripts/convert_ch6_function_tables.py` | 第 6 章 pipe 表批量改为 HTML |
+| `cursor_tmp/scripts/fix_md_h3_blank_lines.py` | `###` 前补空行，保证 Word Heading 3 |
+
+#### Word 嵌入流水线（不可改序）
+
+1. `extract_and_strip_html_tables()` — Pandoc **前**剥离 HTML 表
+2. Pandoc 正文（仅 pipe 简单表 + SVG）
+3. `ensure_sect_pr` + `format_final_sdd`（会去掉 H3 编号，仅保留函数名）
+4. `insert_html_function_tables()` — 按文档顺序匹配 H3（**函数名**不区分大小写；跳过已有 `w:tbl` 的重复同名锚点）
+5. `reapply_all_table_styles()`
 
 ### 6.3 共用脚本
 
@@ -173,7 +281,8 @@ python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 |------|------|
 | `cursor_tmp/workspace_paths.py` | 路径常量 |
 | `cursor_tmp/format_docx_py/md0519_to_final_sdd.py` | 完整 MD→DOCX 流水线 |
-| `cursor_tmp/format_docx_py/html_table_utils.py` | HTML 表剥离/插入 |
+| `cursor_tmp/format_docx_py/function_table_html.py` | §4.4 模板 HTML 函数表生成/转换 |
+| `cursor_tmp/format_docx_py/html_table_utils.py` | HTML 表剥离/后插入 Word（colspan/rowspan） |
 | `cursor_tmp/format_docx_py/svg_extent_utils.py` | SVG viewBox 读 extent；`asvg:svgBlip` 关系解析 |
 | `cursor_tmp/format_docx_py/format_final_sdd.py` | TF 版式与插图缩放 |
 | `cursor_tmp/format_docx_py/validate_md_docx_consistency.py` | 一致性 + viewBox 宽高比 → `cursor_tmp/validate_md_docx_report.txt` |
@@ -185,7 +294,7 @@ python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 **ERROR 门槛（任一失败即不合格）**
 | 项 | 基准 |
 |----|------|
-| HTML 函数表 | **72/72** |
+| HTML 函数表 | DOCX 5 列函数表 ≥ MD `html_tables` 的 **90%**（当前约 **138**） |
 | 插图 blips / svgBlip | **166/166** |
 | MD 插图格式 | 全部 `.svg` |
 | 磁盘 SVG 缺失 | **0** |
@@ -213,16 +322,8 @@ python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 
 ## 8. Markdown 写作规范
 
-1. **标题**：`#`–`####` 连续层级；正文禁用 HTML 标题/强调标签。
-2. **表格**：简单表用 pipe 表；函数设计表用 HTML `<table border="1">`（见 §6.2）。
-3. **插图**：**仅 SVG**（见 §5 死命令）。
+1. **标题**：`#`–`####` 连续层级；`###` 前必须空一行（否则 Pandoc 不生成 Word Heading 3，函数表无法插入）。
+2. **函数设计表**：仅用 §6.2 的 HTML 五列表（与 §4.4 一致）；概览/追溯用 pipe 表。
+3. **插图**：**仅 SVG**（见 §5）。
 4. **强调**：仅 `**粗体**`、`*斜体*`。
-5. **代码块**：三反引号 + 语言标识；段落内勿硬回车折行。
-
----
-
-## 9. 表格格式（通用）
-
-1. 按目标文档模板生成，不得随意改表结构。
-2. 生成后反向校验行列、合并单元格、内容与样式。
-3. 行数、列数、拆分/合并必须与源一致。
+5. **代码块**：三反引号 + 语言标识。

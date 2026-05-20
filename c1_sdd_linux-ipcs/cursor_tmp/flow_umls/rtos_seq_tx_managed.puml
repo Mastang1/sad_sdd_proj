@@ -22,19 +22,27 @@ participant "SWU_IPCS_HAL_MCU (ipc-hw.c)" as HAL #F5E6CC
 participant "Remote core (peer)" as REMOTE #E8DAEF
 
 autonumber
+activate APP
 APP -> CORE : ipcsShmAcquireBuf(instance, chan)
+activate CORE
 CORE --> APP : local buffer pointer
 APP -> APP : fill payload
 APP -> CORE : ipcsShmTx(instance, chan, buf, size)
-activate CORE
 CORE -> CORE : validate channel / push BD ring
 CORE -> QUEUE : ipcsQueuePush(remote ring, BD)
+activate QUEUE
 QUEUE --> CORE : IPC_SHM_E_OK
+deactivate QUEUE
 CORE -> HAL : ipcsHwIrqNotify(instance)
+activate HAL
 note right of HAL
   writel MSCM IRCPnIGRn to remote core
 end note
 HAL -> REMOTE : inter-core interrupt
-deactivate CORE
+activate REMOTE
+deactivate REMOTE
+deactivate HAL
 CORE --> APP : IPC_SHM_E_OK
+deactivate CORE
+deactivate APP
 @enduml

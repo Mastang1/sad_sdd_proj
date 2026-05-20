@@ -22,9 +22,19 @@ participant "SWU_IPCS_HAL_LINUX (ipc-hw.c)" as HAL #F5E6CC
 participant "Remote core (peer)" as REMOTE #E8DAEF
 
 autonumber
+activate CORE
 CORE -> UIO_USR : ipcsHwIrqNotify(instance) from ipcsShmTx
+activate UIO_USR
 UIO_USR -> UIO_USR : ipcsSendUioCmd(uio_fd, TRIGGER)
 UIO_USR -> UIO_KO : write / UIO irqcontrol
+activate UIO_KO
 UIO_KO -> HAL : ipcsHwIrqNotify(instance)
+activate HAL
 HAL -> REMOTE : MSCM directed interrupt
+activate REMOTE
+deactivate REMOTE
+deactivate HAL
+deactivate UIO_KO
+deactivate UIO_USR
+deactivate CORE
 @enduml

@@ -15,6 +15,7 @@ skinparam note {
   BorderColor #B89968
 }
 left to right direction
+title common/ipc-queue.c — #include 依赖（组件视图）
 component [common/ipc-queue.c] as SRC
 component [ipc-shm.h] as H0
 component [ipc-queue.h] as H1

@@ -22,7 +22,9 @@ participant "SWU_IPCS_LINUX_CDEV_KO (ipc-cdev.c)" as CDEV_KO #FDEBD0
 participant "SWU_IPCS_HAL_LINUX (ipc-hw.c)" as HAL #F5E6CC
 
 autonumber
+activate APP
 APP -> CORE : ipcsShmInit(cfg)
+activate CORE
 CORE -> CDEV_USR : ipcsOsInit(instance, cfg, ipcsShmRx)
 activate CDEV_USR
 CDEV_USR -> CDEV_USR : finit_module; open /dev/ipc-shm-cdev
@@ -33,10 +35,14 @@ CDEV_USR -> CDEV_KO : ioctl(INIT_INSTANCE, cfg)
 activate CDEV_KO
 CDEV_KO -> CDEV_KO : ipcsCdevOsInit(instance, cfg)
 CDEV_KO -> HAL : ipcsHwInit(instance, cfg)
+activate HAL
 HAL --> CDEV_KO : 0
+deactivate HAL
 CDEV_KO -> CDEV_KO : request_irq(ipcsShmHardirq)
 deactivate CDEV_KO
 deactivate CDEV_USR
 CDEV_USR --> CORE : 0
 CORE --> APP : success
+deactivate CORE
+deactivate APP
 @enduml

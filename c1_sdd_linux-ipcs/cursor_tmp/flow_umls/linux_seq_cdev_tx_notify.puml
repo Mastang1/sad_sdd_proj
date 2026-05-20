@@ -22,8 +22,18 @@ participant "SWU_IPCS_HAL_LINUX (ipc-hw.c)" as HAL #F5E6CC
 participant "Remote core (peer)" as REMOTE #E8DAEF
 
 autonumber
+activate CORE
 CORE -> CDEV_USR : ipcsHwIrqNotify(instance)
+activate CDEV_USR
 CDEV_USR -> CDEV_KO : ioctl(TRIGGER_TX_IRQ, instance)
+activate CDEV_KO
 CDEV_KO -> HAL : ipcsHwIrqNotify(instance)
+activate HAL
 HAL -> REMOTE : MSCM directed interrupt
+activate REMOTE
+deactivate REMOTE
+deactivate HAL
+deactivate CDEV_KO
+deactivate CDEV_USR
+deactivate CORE
 @enduml

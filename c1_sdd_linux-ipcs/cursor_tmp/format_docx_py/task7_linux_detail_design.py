@@ -372,6 +372,8 @@ def write_puml_and_svg(name: str, title: str, steps: list[str]) -> str:
 
 
 def function_table(unit: Unit, func: str, index: str, sig: str) -> str:
+    from function_table_html import build_function_table_html
+
     desc = DESCRIPTIONS.get(func, f"实现 {unit.role} 中的 {func} 处理逻辑。")
     ret = return_type(sig, func)
     param_lines = params(sig)
@@ -384,19 +386,20 @@ def function_table(unit: Unit, func: str, index: str, sig: str) -> str:
         f"{index} {func}",
         flow_steps(func, unit),
     )
+    table = build_function_table_html(
+        arch_id=unit.arch_id,
+        unit_id=unit.unit_id,
+        description=desc,
+        prototype=sig,
+        constraints=f"按 `{unit.source}` 中的入参检查、实例状态和内核资源状态执行",
+        params_text=param_text,
+        return_type=ret,
+        def_file=unit.source,
+        decl_file=unit.header,
+    )
     return f"""### {index} {func}
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | {unit.arch_id} |
-| 软件单元 ID | {unit.unit_id} |
-| 函数说明 | {desc} |
-| 函数原型 | `{sig}` |
-| 制约条件 | 按 `{unit.source}` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | {param_text} |
-| 返回值 | `{ret}` |
-| 函数定义文件 | `{unit.source}` |
-| 函数声明文件 | `{unit.header}` |
+{table}
 
 processing flow
 

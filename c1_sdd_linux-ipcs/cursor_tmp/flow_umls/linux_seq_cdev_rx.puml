@@ -22,13 +22,23 @@ participant "SWU_IPCS_LINUX_OS_CDEV (os_cdev/ipc-os.c)" as CDEV_USR #FCF3CF
 participant "SWU_IPCS_CORE_SHM (user lib)" as CORE #D4E6F1
 
 autonumber
+activate REMOTE
 REMOTE -> HAL : Rx IRQ
+activate HAL
 HAL -> CDEV_KO : ipcsShmHardirq
 activate CDEV_KO
 CDEV_KO -> HAL : ipcsHwIrqDisable / ipcsHwIrqClear
+deactivate HAL
 CDEV_KO -> CDEV_KO : wake_up_interruptible(wait_queue)
 deactivate CDEV_KO
+activate CDEV_USR
 CDEV_USR -> CDEV_KO : read(/dev/ipc-shm-cdev) returns
+activate CDEV_KO
+deactivate CDEV_KO
 CDEV_USR -> CORE : rx_cb(i, budget) per instance
+activate CORE
+deactivate CORE
 CDEV_USR -> CDEV_USR : ipcsHwIrqEnable via ioctl
+deactivate CDEV_USR
+deactivate REMOTE
 @enduml

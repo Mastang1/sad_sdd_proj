@@ -22,27 +22,38 @@ participant "SWU_IPCS_OSAL_THREADX (ipc-os-threadx.c)" as OSAL #D5F5E3
 participant "SWU_IPCS_CORE_QUEUE (ipc-queue.c)" as QUEUE #D4E6F1
 
 autonumber
+activate APP
 APP -> CORE : ipcsShmInit(cfg)
 activate CORE
 CORE -> CORE : ipcsShmInitInstance(instance, cfg)
 CORE -> HAL : ipcsHwInit(instance, cfg)
+activate HAL
 note right of HAL
   Map MSCM, validate core/IRQ indices,
   ipcsHwIrqDisable until channels ready
 end note
 HAL --> CORE : IPC_SHM_E_OK
+deactivate HAL
 CORE -> OSAL : ipcsOsInit(instance, cfg, ipcsShmRx)
+activate OSAL
 note right of OSAL
   Save shm addresses; create event flags
   and softirq thread (if Rx IRQ enabled)
 end note
 OSAL --> CORE : IPC_SHM_E_OK
+deactivate OSAL
 CORE -> CORE : ipcsShmInitChannels(instance, cfg)
 CORE -> QUEUE : ipcsQueueInit per channel
+activate QUEUE
 QUEUE --> CORE : ok
+deactivate QUEUE
 CORE -> HAL : ipcsHwIrqClear(instance)
+activate HAL
 CORE -> HAL : ipcsHwIrqEnable(instance)
+HAL --> CORE : ok
+deactivate HAL
 CORE -> CORE : state = READY; flush cache
 CORE --> APP : IPC_SHM_E_OK
 deactivate CORE
+deactivate APP
 @enduml

@@ -14,6 +14,7 @@ skinparam note {
   BackgroundColor #FFF8E8
   BorderColor #B89968
 }
+title hw/ipc-hw.c — #include 依赖
 component [hw/ipc-hw.c] as SRC
 component [ipc-shm.h] as H0
 component [ipc-os.h] as H1

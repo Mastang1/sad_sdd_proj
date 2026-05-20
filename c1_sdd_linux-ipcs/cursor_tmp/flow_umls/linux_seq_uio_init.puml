@@ -22,7 +22,9 @@ participant "SWU_IPCS_LINUX_UIO_KO (ipc-uio.c)" as UIO_KO #FDEBD0
 participant "SWU_IPCS_HAL_LINUX (ipc-hw.c)" as HAL #F5E6CC
 
 autonumber
+activate APP
 APP -> CORE : ipcsShmInit(cfg)
+activate CORE
 CORE -> UIO_USR : ipcsOsInit(instance, cfg, ipcsShmRx)
 activate UIO_USR
 UIO_USR -> UIO_USR : finit_module(ipc-shm-uio.ko)
@@ -32,7 +34,9 @@ UIO_USR -> UIO_KO : write(IPC_UIO_CDEV_DATA_TYPE)
 activate UIO_KO
 UIO_KO -> UIO_KO : ipcsUioInit(data)
 UIO_KO -> HAL : ipcsHwInit(instance, cfg)
+activate HAL
 HAL --> UIO_KO : 0
+deactivate HAL
 UIO_KO -> UIO_KO : uio_register_device / request IRQ
 deactivate UIO_KO
 UIO_USR -> UIO_USR : get_uio_dev_name; open /dev/uioX
@@ -41,4 +45,6 @@ deactivate UIO_USR
 UIO_USR --> CORE : 0
 CORE -> CORE : ipcsShmInitChannels ...
 CORE --> APP : success
+deactivate CORE
+deactivate APP
 @enduml

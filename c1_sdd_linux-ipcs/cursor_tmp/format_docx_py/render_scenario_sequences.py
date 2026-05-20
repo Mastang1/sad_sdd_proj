@@ -12,11 +12,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from scenario_sequence_flows import ALL_DIAGRAMS
+_CURSOR_TMP = Path(__file__).resolve().parents[1]
+if str(_CURSOR_TMP) not in sys.path:
+    sys.path.insert(0, str(_CURSOR_TMP))
+from workspace_paths import FLOW_SVGS, FLOW_UMLS, plantuml_jar_candidates
 
-ROOT = Path(__file__).resolve().parents[1]
-FLOW_UMLS = ROOT / "flow_umls"
-FLOW_SVGS = ROOT / "flow_svgs"
+from scenario_sequence_flows import ALL_DIAGRAMS
 
 
 def find_plantuml_jar() -> Path:

@@ -15,6 +15,7 @@ skinparam note {
   BorderColor #B89968
 }
 left to right direction
+title os/freertos/ipc-os-freertos.c — #include 依赖
 component [os/freertos/ipc-os-freertos.c] as SRC
 component [ipc-shm.h] as H0
 component [ipc-os.h] as H1

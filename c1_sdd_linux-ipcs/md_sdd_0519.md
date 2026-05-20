@@ -51,20 +51,22 @@ IPCS Driver软件详细设计规范
 - 5 RTOS 部署变体详细设计
   - 5.1 总述
   - 5.2 Files 与依赖
-  - 5.3 AUTOSAR OS 实现
-  - 5.4 FreeRTOS 实现
-  - 5.5 ThreadX 实现
-  - 5.6 HAL 单元设计（MCU 共用）
+  - 5.3 SWU_IPCS_OSAL_AUTOSAR 软件单元设计
+  - 5.4 SWU_IPCS_OSAL_FREERTOS 软件单元设计
+  - 5.5 SWU_IPCS_OSAL_THREADX 软件单元设计
+  - 5.6 SWU_IPCS_HAL_MCU 软件单元设计
   - 5.7 RTOS 动态详细设计
 - 6 Linux 部署变体详细设计
   - 6.1 总述
   - 6.2 源码与构建结构
-  - 6.3 全内核实现函数设计
-  - 6.4 UIO 实现函数设计
-  - 6.5 CDEV 实现函数设计
-  - 6.6 Linux HAL 函数设计
-  - 6.7 Linux 关键场景流程
-  - 6.8 Linux 全局变量与私有类型
+  - 6.3 SWU_IPCS_LINUX_OS_KERN 软件单元设计
+  - 6.4 SWU_IPCS_LINUX_OS_UIO 软件单元设计
+  - 6.5 SWU_IPCS_LINUX_UIO_KO 软件单元设计
+  - 6.6 SWU_IPCS_LINUX_OS_CDEV 软件单元设计
+  - 6.7 SWU_IPCS_LINUX_CDEV_KO 软件单元设计
+  - 6.8 Linux HAL 函数设计
+  - 6.9 Linux 关键场景流程
+  - 6.10 Linux 全局变量与私有类型
 - 7 Traceability and Consistency Evidence 追溯与一致性证据
   - 7.1 SWE.3 覆盖说明
   - 7.2 架构—设计—源码追溯矩阵
@@ -3008,7 +3010,7 @@ ipc-shm.h, ipc-os.h, ipc-hw.h, <threadx/sys/mem_manage.h>, <threadx/kernel.h>, <
 
 ![image47.png](cursor_tmp/files_32_svgs/3_2_16.svg)
 
-## 5.6 HAL 单元设计（MCU 共用）
+## 5.6 SWU_IPCS_HAL_MCU 软件单元设计
 
 本节严格按照 reference.md 的内部函数表格格式描述内部函数。除 3.3 中列出的 9 个对外接口之外，其余源码函数、跨组件调用接口和 OS task 单元均作为内部接口。
 
@@ -4107,7 +4109,7 @@ processing flow
 | IPC_A53_6 |  |
 | IPC_A53_7 |  |
 
-## 5.3 AUTOSAR OS 实现
+## 5.3 SWU_IPCS_OSAL_AUTOSAR 软件单元设计
 
 ### 4.4.41 ipcsOsInit
 
@@ -4631,7 +4633,7 @@ processing flow
 | struct IPCS_OS_PRIV_INSTANCE_TYPE | id[IPC_SHM_MAX_INSTANCES] | 源码未提供描述 |
 | sint32 | task_is_initialized | flag to know if the softirq task is initialized |
 
-## 5.4 FreeRTOS 实现
+## 5.4 SWU_IPCS_OSAL_FREERTOS 软件单元设计
 
 ### 4.4.49 ipcsOsInit
 
@@ -5156,7 +5158,7 @@ processing flow
 | TaskHandle_t | softirq_handle | rx task handle used by the ISR to notify the rx task |
 | sint32 | task_is_initialized | flag to know if the softirq task is initialized |
 
-## 5.5 ThreadX 实现
+## 5.5 SWU_IPCS_OSAL_THREADX 软件单元设计
 
 ### 4.4.56 ipcsOsInit
 
@@ -5678,25 +5680,66 @@ sequence diagram
 | 全内核 OSAL | `ipcs/mpu/os_kernel/ipc-os.c` | 全内核实现的 OSAL |
 | Linux HAL | `ipcs/mpu/hw/c1/ipc-hw.c` | MSCM/IRQ 硬件操作 |
 
-## 6.3 全内核实现函数设计
+## 6.3 SWU_IPCS_LINUX_OS_KERN 软件单元设计
 
-全内核实现由 `ipcs/mpu/os_kernel/ipc-os.c` 与 `ipcs/mpu/hw/c1/ipc-hw.c` 构成，无用户侧代理。
-
-### 6.3.0 全内核 OSAL 单元函数
+源码：`ipcs/mpu/os_kernel/ipc-os.c`。全内核部署变体**无用户侧代理**，OSAL 仅内核侧实现；HAL 见 §6.8。
 
 ### 6.3.1 ipcsShmSoftirq
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_KERN |
-| 函数说明 | 延迟收包处理，遍历实例并调用上层 rx_cb，完成后重新使能 IRQ。 |
-| 函数原型 | `static void ipcsShmSoftirq(unsigned long arg)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `arg`: `unsigned long arg` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_KERN</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">延迟收包处理，遍历实例并调用上层 rx_cb，完成后重新使能 IRQ。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static void ipcsShmSoftirq(unsigned long arg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>arg</td>
+<td>unsigned long arg</td>
+<td>[IN] arg</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5705,17 +5748,67 @@ processing flow
 
 ### 6.3.2 ipcsShmHardirq
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_KERN |
-| 函数说明 | 硬中断处理，禁止并清除远端通知，中断后续处理交给 tasklet 或等待队列。 |
-| 函数原型 | `static irqreturn_t ipcsShmHardirq(int irq, void *dev)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `irq`: `int irq`<br>`dev`: `void *dev` |
-| 返回值 | `irqreturn_t` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_KERN</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">硬中断处理，禁止并清除远端通知，中断后续处理交给 tasklet 或等待队列。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static irqreturn_t ipcsShmHardirq(int irq, void *dev)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>irq</td>
+<td>int irq</td>
+<td>[IN] irq</td>
+</tr>
+<tr>
+<td>I</td>
+<td>dev</td>
+<td>void *dev</td>
+<td>[IN] dev</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">irqreturn_t</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5724,17 +5817,73 @@ processing flow
 
 ### 6.3.3 ipcsOsInit
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_KERN |
-| 函数说明 | 初始化指定实例的 Linux OSAL 资源，建立共享内存映射、记录回调并配置接收中断。 |
-| 函数原型 | `int ipcsOsInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg, int (*rx_cb)(const uint8_t, int))` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance`<br>`cfg`: `const struct IPCS_SHM_CFG_TYPE *cfg`<br>`rx_cb`: `int (*rx_cb)(const uint8_t, int)` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_KERN</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">初始化指定实例的 Linux OSAL 资源，建立共享内存映射、记录回调并配置接收中断。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">int ipcsOsInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg, int (*rx_cb)(const uint8_t, int))</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="4">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *cfg</td>
+<td>[IN] cfg</td>
+</tr>
+<tr>
+<td>I</td>
+<td>rx_cb</td>
+<td>int (*rx_cb)(const uint8_t, int)</td>
+<td>[IN] rx_cb</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5743,17 +5892,60 @@ processing flow
 
 ### 6.3.4 ipcsOsFree
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_KERN |
-| 函数说明 | 释放指定实例 OSAL 资源，关闭线程/设备、解除映射并清理状态。 |
-| 函数原型 | `void ipcsOsFree(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_KERN</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">释放指定实例 OSAL 资源，关闭线程/设备、解除映射并清理状态。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsOsFree(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5762,17 +5954,61 @@ processing flow
 
 ### 6.3.5 ipcsOsGetLocalShm
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_KERN |
-| 函数说明 | 返回本地共享内存虚拟地址。 |
-| 函数原型 | `uintptr_t ipcsOsGetLocalShm(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `uintptr_t` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_KERN</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">返回本地共享内存虚拟地址。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">uintptr_t ipcsOsGetLocalShm(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">uintptr_t</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5781,17 +6017,61 @@ processing flow
 
 ### 6.3.6 ipcsOsGetRemoteShm
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_KERN |
-| 函数说明 | 返回远端共享内存虚拟地址。 |
-| 函数原型 | `uintptr_t ipcsOsGetRemoteShm(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `uintptr_t` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_KERN</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">返回远端共享内存虚拟地址。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">uintptr_t ipcsOsGetRemoteShm(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">uintptr_t</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5800,17 +6080,52 @@ processing flow
 
 ### 6.3.7 ipcsOsMapIntc
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_KERN |
-| 函数说明 | 映射或返回中断控制器寄存器空间。 |
-| 函数原型 | `void *ipcsOsMapIntc(void)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | - |
-| 返回值 | `void *` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_KERN</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">映射或返回中断控制器寄存器空间。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void *ipcsOsMapIntc(void)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td>输入/输出参数</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">void *</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5819,17 +6134,60 @@ processing flow
 
 ### 6.3.8 ipcsOsUnmapIntc
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_KERN |
-| 函数说明 | 释放中断控制器寄存器映射或提供对应空实现。 |
-| 函数原型 | `void ipcsOsUnmapIntc(void *addr)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `addr`: `void *addr` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_KERN</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">释放中断控制器寄存器映射或提供对应空实现。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsOsUnmapIntc(void *addr)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>addr</td>
+<td>void *addr</td>
+<td>[IN] addr</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5838,17 +6196,61 @@ processing flow
 
 ### 6.3.9 ipcsOsPollChannels
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_KERN |
-| 函数说明 | 在轮询模式下触发 rx_cb 处理接收通道。 |
-| 函数原型 | `int ipcsOsPollChannels(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_KERN</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">在轮询模式下触发 rx_cb 处理接收通道。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">int ipcsOsPollChannels(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5857,17 +6259,52 @@ processing flow
 
 ### 6.3.10 shm_mod_init
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_KERN |
-| 函数说明 | Linux 全内核模块初始化入口。 |
-| 函数原型 | `static int __init shm_mod_init(void)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | - |
-| 返回值 | `int __init` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_KERN</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">Linux 全内核模块初始化入口。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int __init shm_mod_init(void)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td>输入/输出参数</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int __init</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5876,40 +6313,125 @@ processing flow
 
 ### 6.3.11 shm_mod_exit
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_KERN |
-| 函数说明 | Linux 全内核模块退出入口。 |
-| 函数原型 | `static void __exit shm_mod_exit(void)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | - |
-| 返回值 | `void __exit` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Osal_Cmp / Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_KERN</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">Linux 全内核模块退出入口。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static void __exit shm_mod_exit(void)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td>输入/输出参数</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">void __exit</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
 ![6.3.11 shm_mod_exit processing flow](cursor_tmp/flow_svgs/linux_6_3_11_shm_mod_exit.svg)
 
 
-## 6.4 UIO 实现函数设计
+## 6.4 SWU_IPCS_LINUX_OS_UIO 软件单元设计
 
-UIO 用户库代理，向 SHM Core 提供同名 OSAL/HAL 契约符号，并通过 UIO fd、/dev/mem、pthread 转发到内核。
+源码：`ipcs/mpu/os_uio/ipc-os.c`。用户侧 OSAL/HAL **契约代理**（`ipcsOs*`、`ipcsHw*` 同名符号），通过 UIO fd、`/dev/mem`、pthread 转发至 §6.5 内核 Backend；**不**直接操作 MSCM 硬件。
 
 ### 6.4.1 line_from_file
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 读取 sysfs 文件中的一行内容。 |
-| 函数原型 | `static int line_from_file(char *filename, char *buf)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `filename`: `char *filename`<br>`buf`: `char *buf` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">读取 sysfs 文件中的一行内容。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int line_from_file(char *filename, char *buf)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>filename</td>
+<td>char *filename</td>
+<td>[IN] filename</td>
+</tr>
+<tr>
+<td>I</td>
+<td>buf</td>
+<td>char *buf</td>
+<td>[IN] buf</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5918,17 +6440,67 @@ processing flow
 
 ### 6.4.2 line_match
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 比较 sysfs 文件内容与目标过滤字符串。 |
-| 函数原型 | `static int line_match(char *filename, char *filter)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `filename`: `char *filename`<br>`filter`: `char *filter` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">比较 sysfs 文件内容与目标过滤字符串。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int line_match(char *filename, char *filter)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>filename</td>
+<td>char *filename</td>
+<td>[IN] filename</td>
+</tr>
+<tr>
+<td>I</td>
+<td>filter</td>
+<td>char *filter</td>
+<td>[IN] filter</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5937,17 +6509,67 @@ processing flow
 
 ### 6.4.3 get_uio_dev_name
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 在 sysfs 中查找匹配实例的 UIO 设备名。 |
-| 函数原型 | `static int get_uio_dev_name(char *dev_name, const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `dev_name`: `char *dev_name`<br>`instance`: `const uint8_t instance` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">在 sysfs 中查找匹配实例的 UIO 设备名。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int get_uio_dev_name(char *dev_name, const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>dev_name</td>
+<td>char *dev_name</td>
+<td>[IN] dev_name</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5956,17 +6578,61 @@ processing flow
 
 ### 6.4.4 ipcsShmSoftirq
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 延迟收包处理，遍历实例并调用上层 rx_cb，完成后重新使能 IRQ。 |
-| 函数原型 | `static void *ipcsShmSoftirq(void *arg)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `arg`: `void *arg` |
-| 返回值 | `void *` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">延迟收包处理，遍历实例并调用上层 rx_cb，完成后重新使能 IRQ。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static void *ipcsShmSoftirq(void *arg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>arg</td>
+<td>void *arg</td>
+<td>[IN] arg</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">void *</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5975,17 +6641,73 @@ processing flow
 
 ### 6.4.5 ipcsOsInit
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 初始化指定实例的 Linux OSAL 资源，建立共享内存映射、记录回调并配置接收中断。 |
-| 函数原型 | `int ipcsOsInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg, int (*rx_cb)(const uint8_t, int))` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance`<br>`cfg`: `const struct IPCS_SHM_CFG_TYPE *cfg`<br>`rx_cb`: `int (*rx_cb)(const uint8_t, int)` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">初始化指定实例的 Linux OSAL 资源，建立共享内存映射、记录回调并配置接收中断。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">int ipcsOsInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg, int (*rx_cb)(const uint8_t, int))</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="4">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *cfg</td>
+<td>[IN] cfg</td>
+</tr>
+<tr>
+<td>I</td>
+<td>rx_cb</td>
+<td>int (*rx_cb)(const uint8_t, int)</td>
+<td>[IN] rx_cb</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -5994,17 +6716,60 @@ processing flow
 
 ### 6.4.6 ipcsOsFree
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 释放指定实例 OSAL 资源，关闭线程/设备、解除映射并清理状态。 |
-| 函数原型 | `void ipcsOsFree(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">释放指定实例 OSAL 资源，关闭线程/设备、解除映射并清理状态。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsOsFree(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -6013,17 +6778,61 @@ processing flow
 
 ### 6.4.7 ipcsOsGetLocalShm
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 返回本地共享内存虚拟地址。 |
-| 函数原型 | `uintptr_t ipcsOsGetLocalShm(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `uintptr_t` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">返回本地共享内存虚拟地址。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">uintptr_t ipcsOsGetLocalShm(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">uintptr_t</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -6032,17 +6841,61 @@ processing flow
 
 ### 6.4.8 ipcsOsGetRemoteShm
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 返回远端共享内存虚拟地址。 |
-| 函数原型 | `uintptr_t ipcsOsGetRemoteShm(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `uintptr_t` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">返回远端共享内存虚拟地址。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">uintptr_t ipcsOsGetRemoteShm(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">uintptr_t</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -6051,17 +6904,61 @@ processing flow
 
 ### 6.4.9 ipcsOsPollChannels
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 在轮询模式下触发 rx_cb 处理接收通道。 |
-| 函数原型 | `int ipcsOsPollChannels(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">在轮询模式下触发 rx_cb 处理接收通道。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">int ipcsOsPollChannels(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -6070,17 +6967,66 @@ processing flow
 
 ### 6.4.10 ipcsSendUioCmd
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 向 UIO fd 写入命令，代理 IRQ 使能、禁止或通知。 |
-| 函数原型 | `static void ipcsSendUioCmd(uint32_t uio_fd, int32_t cmd)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `uio_fd`: `uint32_t uio_fd`<br>`cmd`: `int32_t cmd` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">向 UIO fd 写入命令，代理 IRQ 使能、禁止或通知。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static void ipcsSendUioCmd(uint32_t uio_fd, int32_t cmd)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>uio_fd</td>
+<td>uint32_t uio_fd</td>
+<td>[IN] uio_fd</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cmd</td>
+<td>int32_t cmd</td>
+<td>[IN] cmd</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -6089,17 +7035,60 @@ processing flow
 
 ### 6.4.11 ipcsHwIrqEnable
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 使能指定实例接收中断；用户侧为转发代理，内核侧访问硬件。 |
-| 函数原型 | `void ipcsHwIrqEnable(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">使能指定实例接收中断；用户侧为转发代理，内核侧访问硬件。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqEnable(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -6108,17 +7097,60 @@ processing flow
 
 ### 6.4.12 ipcsHwIrqDisable
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 禁止指定实例接收中断；用户侧为转发代理，内核侧访问硬件。 |
-| 函数原型 | `void ipcsHwIrqDisable(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">禁止指定实例接收中断；用户侧为转发代理，内核侧访问硬件。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqDisable(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -6127,17 +7159,60 @@ processing flow
 
 ### 6.4.13 ipcsHwIrqNotify
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 通知远端有数据可用；用户侧为转发代理，内核侧触发硬件中断。 |
-| 函数原型 | `void ipcsHwIrqNotify(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">通知远端有数据可用；用户侧为转发代理，内核侧触发硬件中断。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqNotify(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -6146,17 +7221,67 @@ processing flow
 
 ### 6.4.14 ipcsHwInit
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 初始化 HAL 资源；用户侧为空实现，内核侧映射并配置 MSCM/IRQ。 |
-| 函数原型 | `int ipcsHwInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance`<br>`cfg`: `const struct IPCS_SHM_CFG_TYPE *cfg` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">初始化 HAL 资源；用户侧为空实现，内核侧映射并配置 MSCM/IRQ。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">int ipcsHwInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *cfg</td>
+<td>[IN] cfg</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
@@ -6165,798 +7290,2718 @@ processing flow
 
 ### 6.4.15 ipcsHwFree
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_UIO |
-| 函数说明 | 释放 HAL 资源；用户侧为空实现，内核侧释放映射状态。 |
-| 函数原型 | `void ipcsHwFree(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_uio/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_uio/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_UIO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">释放 HAL 资源；用户侧为空实现，内核侧释放映射状态。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwFree(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_uio/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
 ![6.4.15 ipcsHwFree processing flow](cursor_tmp/flow_svgs/linux_6_4_15_ipcsHwFree.svg)
 
 
-### 6.4.16 UIO 内核 Backend 函数
+## 6.5 SWU_IPCS_LINUX_UIO_KO 软件单元设计
 
-### 6.4.17 ipcsShmUioOpen
+源码：`ipcs/mpu/os_kernel/ipc-uio.c`。UIO 内核 Backend：UIO 设备注册、中断处理、向用户态传递事件；与 §6.8 HAL 协同完成硬件 IRQ。
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_UIO_KO |
-| 函数说明 | 处理 UIO 设备打开请求并维护引用计数。 |
-| 函数原型 | `static int ipcsShmUioOpen(struct uio_info *info, struct inode *inode)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `info`: `struct uio_info *info`<br>`inode`: `struct inode *inode` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-uio.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-uio.h` |
+### 6.5.17 ipcsShmUioOpen
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_UIO_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">处理 UIO 设备打开请求并维护引用计数。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int ipcsShmUioOpen(struct uio_info *info, struct inode *inode)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>info</td>
+<td>struct uio_info *info</td>
+<td>[IN] info</td>
+</tr>
+<tr>
+<td>I</td>
+<td>inode</td>
+<td>struct inode *inode</td>
+<td>[IN] inode</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.4.17 ipcsShmUioOpen processing flow](cursor_tmp/flow_svgs/linux_6_4_17_ipcsShmUioOpen.svg)
+![6.5.17 ipcsShmUioOpen processing flow](cursor_tmp/flow_svgs/linux_6_4_17_ipcsShmUioOpen.svg)
 
 
-### 6.4.18 ipcsShmUioRelease
+### 6.5.18 ipcsShmUioRelease
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_UIO_KO |
-| 函数说明 | 处理 UIO 设备关闭请求并恢复引用计数。 |
-| 函数原型 | `static int ipcsShmUioRelease(struct uio_info *info, struct inode *inode)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `info`: `struct uio_info *info`<br>`inode`: `struct inode *inode` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-uio.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-uio.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_UIO_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">处理 UIO 设备关闭请求并恢复引用计数。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int ipcsShmUioRelease(struct uio_info *info, struct inode *inode)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>info</td>
+<td>struct uio_info *info</td>
+<td>[IN] info</td>
+</tr>
+<tr>
+<td>I</td>
+<td>inode</td>
+<td>struct inode *inode</td>
+<td>[IN] inode</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.4.18 ipcsShmUioRelease processing flow](cursor_tmp/flow_svgs/linux_6_4_18_ipcsShmUioRelease.svg)
+![6.5.18 ipcsShmUioRelease processing flow](cursor_tmp/flow_svgs/linux_6_4_18_ipcsShmUioRelease.svg)
 
 
-### 6.4.19 ipcsShmUioIrqcontrol
+### 6.5.19 ipcsShmUioIrqcontrol
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_UIO_KO |
-| 函数说明 | 处理 UIO irqcontrol 命令并调用 HAL IRQ 操作。 |
-| 函数原型 | `static int ipcsShmUioIrqcontrol(struct uio_info *dev_info, int cmd)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `dev_info`: `struct uio_info *dev_info`<br>`cmd`: `int cmd` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-uio.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-uio.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_UIO_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">处理 UIO irqcontrol 命令并调用 HAL IRQ 操作。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int ipcsShmUioIrqcontrol(struct uio_info *dev_info, int cmd)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>dev_info</td>
+<td>struct uio_info *dev_info</td>
+<td>[IN] dev_info</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cmd</td>
+<td>int cmd</td>
+<td>[IN] cmd</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.4.19 ipcsShmUioIrqcontrol processing flow](cursor_tmp/flow_svgs/linux_6_4_19_ipcsShmUioIrqcontrol.svg)
+![6.5.19 ipcsShmUioIrqcontrol processing flow](cursor_tmp/flow_svgs/linux_6_4_19_ipcsShmUioIrqcontrol.svg)
 
 
-### 6.4.20 ipcsShmUioHandler
+### 6.5.20 ipcsShmUioHandler
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_UIO_KO |
-| 函数说明 | UIO 中断处理，禁止并清除 IRQ，返回 IRQ_HANDLED 唤醒用户态。 |
-| 函数原型 | `static irqreturn_t ipcsShmUioHandler(int irq, struct uio_info *dev_info)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `irq`: `int irq`<br>`dev_info`: `struct uio_info *dev_info` |
-| 返回值 | `irqreturn_t` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-uio.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-uio.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_UIO_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">UIO 中断处理，禁止并清除 IRQ，返回 IRQ_HANDLED 唤醒用户态。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static irqreturn_t ipcsShmUioHandler(int irq, struct uio_info *dev_info)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>irq</td>
+<td>int irq</td>
+<td>[IN] irq</td>
+</tr>
+<tr>
+<td>I</td>
+<td>dev_info</td>
+<td>struct uio_info *dev_info</td>
+<td>[IN] dev_info</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">irqreturn_t</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.4.20 ipcsShmUioHandler processing flow](cursor_tmp/flow_svgs/linux_6_4_20_ipcsShmUioHandler.svg)
+![6.5.20 ipcsShmUioHandler processing flow](cursor_tmp/flow_svgs/linux_6_4_20_ipcsShmUioHandler.svg)
 
 
-### 6.4.21 ipcsUioInit
+### 6.5.21 ipcsUioInit
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_UIO_KO |
-| 函数说明 | 根据用户配置初始化 UIO 实例、HAL 与 IRQ，并注册 UIO 设备。 |
-| 函数原型 | `static int ipcsUioInit(struct IPCS_UIO_CDEV_DATA_TYPE *data)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `data`: `struct IPCS_UIO_CDEV_DATA_TYPE *data` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-uio.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-uio.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_UIO_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">根据用户配置初始化 UIO 实例、HAL 与 IRQ，并注册 UIO 设备。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int ipcsUioInit(struct IPCS_UIO_CDEV_DATA_TYPE *data)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>data</td>
+<td>struct IPCS_UIO_CDEV_DATA_TYPE *data</td>
+<td>[IN] data</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.4.21 ipcsUioInit processing flow](cursor_tmp/flow_svgs/linux_6_4_21_ipcsUioInit.svg)
+![6.5.21 ipcsUioInit processing flow](cursor_tmp/flow_svgs/linux_6_4_21_ipcsUioInit.svg)
 
 
-### 6.4.22 ipcsCdevOpen
+### 6.5.22 ipcsCdevOpen
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_UIO_KO |
-| 函数说明 | 处理字符设备打开请求。 |
-| 函数原型 | `static int ipcsCdevOpen(struct inode *inode, struct file *filp)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `inode`: `struct inode *inode`<br>`filp`: `struct file *filp` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-uio.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-uio.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_UIO_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">处理字符设备打开请求。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int ipcsCdevOpen(struct inode *inode, struct file *filp)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>inode</td>
+<td>struct inode *inode</td>
+<td>[IN] inode</td>
+</tr>
+<tr>
+<td>I</td>
+<td>filp</td>
+<td>struct file *filp</td>
+<td>[IN] filp</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.4.22 ipcsCdevOpen processing flow](cursor_tmp/flow_svgs/linux_6_4_22_ipcsCdevOpen.svg)
+![6.5.22 ipcsCdevOpen processing flow](cursor_tmp/flow_svgs/linux_6_4_22_ipcsCdevOpen.svg)
 
 
-### 6.4.23 ipcsCdevRelease
+### 6.5.23 ipcsCdevRelease
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_UIO_KO |
-| 函数说明 | 处理字符设备关闭请求。 |
-| 函数原型 | `static int ipcsCdevRelease(struct inode *inode, struct file *filp)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `inode`: `struct inode *inode`<br>`filp`: `struct file *filp` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-uio.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-uio.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_UIO_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">处理字符设备关闭请求。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int ipcsCdevRelease(struct inode *inode, struct file *filp)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>inode</td>
+<td>struct inode *inode</td>
+<td>[IN] inode</td>
+</tr>
+<tr>
+<td>I</td>
+<td>filp</td>
+<td>struct file *filp</td>
+<td>[IN] filp</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.4.23 ipcsCdevRelease processing flow](cursor_tmp/flow_svgs/linux_6_4_23_ipcsCdevRelease.svg)
+![6.5.23 ipcsCdevRelease processing flow](cursor_tmp/flow_svgs/linux_6_4_23_ipcsCdevRelease.svg)
 
 
-### 6.4.24 ipcsCdevWrite
+### 6.5.24 ipcsCdevWrite
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_UIO_KO |
-| 函数说明 | 接收用户侧 UIO 配置并初始化对应 UIO 设备。 |
-| 函数原型 | `static ssize_t ipcsCdevWrite(struct file *file, const char __user *user_buffer, size_t size, loff_t *offset)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `file`: `struct file *file`<br>`user_buffer`: `const char __user *user_buffer`<br>`size`: `size_t size`<br>`offset`: `loff_t *offset` |
-| 返回值 | `ssize_t` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-uio.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-uio.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_UIO_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">接收用户侧 UIO 配置并初始化对应 UIO 设备。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static ssize_t ipcsCdevWrite(struct file *file, const char __user *user_buffer, size_t size, loff_t *offset)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="5">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>file</td>
+<td>struct file *file</td>
+<td>[IN] file</td>
+</tr>
+<tr>
+<td>I</td>
+<td>user_buffer</td>
+<td>const char __user *user_buffer</td>
+<td>[IN] user_buffer</td>
+</tr>
+<tr>
+<td>I</td>
+<td>size</td>
+<td>size_t size</td>
+<td>[IN] size</td>
+</tr>
+<tr>
+<td>I</td>
+<td>offset</td>
+<td>loff_t *offset</td>
+<td>[IN] offset</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">ssize_t</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.4.24 ipcsCdevWrite processing flow](cursor_tmp/flow_svgs/linux_6_4_24_ipcsCdevWrite.svg)
+![6.5.24 ipcsCdevWrite processing flow](cursor_tmp/flow_svgs/linux_6_4_24_ipcsCdevWrite.svg)
 
 
-### 6.4.25 ipcsShmUioProbe
+### 6.5.25 ipcsShmUioProbe
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_UIO_KO |
-| 函数说明 | 平台驱动 probe，映射 MSCM 资源并创建设备节点。 |
-| 函数原型 | `static int ipcsShmUioProbe(struct platform_device *pdev)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `pdev`: `struct platform_device *pdev` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-uio.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-uio.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_UIO_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">平台驱动 probe，映射 MSCM 资源并创建设备节点。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int ipcsShmUioProbe(struct platform_device *pdev)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>pdev</td>
+<td>struct platform_device *pdev</td>
+<td>[IN] pdev</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.4.25 ipcsShmUioProbe processing flow](cursor_tmp/flow_svgs/linux_6_4_25_ipcsShmUioProbe.svg)
+![6.5.25 ipcsShmUioProbe processing flow](cursor_tmp/flow_svgs/linux_6_4_25_ipcsShmUioProbe.svg)
 
 
-### 6.4.26 ipcsShmUioRemove
+### 6.5.26 ipcsShmUioRemove
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_UIO_KO |
-| 函数说明 | 平台驱动 remove，注销设备并释放 UIO 实例。 |
-| 函数原型 | `static int ipcsShmUioRemove(struct platform_device *pdev)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `pdev`: `struct platform_device *pdev` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-uio.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-uio.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_UIO_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">平台驱动 remove，注销设备并释放 UIO 实例。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int ipcsShmUioRemove(struct platform_device *pdev)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>pdev</td>
+<td>struct platform_device *pdev</td>
+<td>[IN] pdev</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.4.26 ipcsShmUioRemove processing flow](cursor_tmp/flow_svgs/linux_6_4_26_ipcsShmUioRemove.svg)
+![6.5.26 ipcsShmUioRemove processing flow](cursor_tmp/flow_svgs/linux_6_4_26_ipcsShmUioRemove.svg)
 
 
-### 6.4.27 ipcsOsMapIntc
+### 6.5.27 ipcsOsMapIntc
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_UIO_KO |
-| 函数说明 | 映射或返回中断控制器寄存器空间。 |
-| 函数原型 | `void *ipcsOsMapIntc(void)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | - |
-| 返回值 | `void *` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-uio.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-uio.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_UIO_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">映射或返回中断控制器寄存器空间。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void *ipcsOsMapIntc(void)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td>输入/输出参数</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">void *</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.4.27 ipcsOsMapIntc processing flow](cursor_tmp/flow_svgs/linux_6_4_27_ipcsOsMapIntc.svg)
+![6.5.27 ipcsOsMapIntc processing flow](cursor_tmp/flow_svgs/linux_6_4_27_ipcsOsMapIntc.svg)
 
 
-### 6.4.28 ipcsOsUnmapIntc
+### 6.5.28 ipcsOsUnmapIntc
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_UIO_KO |
-| 函数说明 | 释放中断控制器寄存器映射或提供对应空实现。 |
-| 函数原型 | `void ipcsOsUnmapIntc(void *addr)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `addr`: `void *addr` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-uio.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-uio.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_UIO_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">释放中断控制器寄存器映射或提供对应空实现。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsOsUnmapIntc(void *addr)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-uio.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>addr</td>
+<td>void *addr</td>
+<td>[IN] addr</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.4.28 ipcsOsUnmapIntc processing flow](cursor_tmp/flow_svgs/linux_6_4_28_ipcsOsUnmapIntc.svg)
+![6.5.28 ipcsOsUnmapIntc processing flow](cursor_tmp/flow_svgs/linux_6_4_28_ipcsOsUnmapIntc.svg)
 
 
-## 6.5 CDEV 实现函数设计
+## 6.6 SWU_IPCS_LINUX_OS_CDEV 软件单元设计
 
-CDEV 用户库代理，向 SHM Core 提供同名 OSAL/HAL 契约符号，并通过 cdev ioctl/poll/mmap 与内核通信。
+源码：`ipcs/mpu/os_cdev/ipc-os.c`。用户侧 OSAL/HAL **契约代理**，通过字符设备 ioctl/poll/mmap 与 §6.7 内核 Backend 通信；`ipcsHwInit`/`ipcsHwFree` 为空实现（硬件初始化在内核）。
 
-### 6.5.1 ipcsOsInit
+### 6.6.1 ipcsOsInit
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_CDEV |
-| 函数说明 | 初始化指定实例的 Linux OSAL 资源，建立共享内存映射、记录回调并配置接收中断。 |
-| 函数原型 | `int ipcsOsInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg, int (*rx_cb)(const uint8_t, int))` |
-| 制约条件 | 按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance`<br>`cfg`: `const struct IPCS_SHM_CFG_TYPE *cfg`<br>`rx_cb`: `int (*rx_cb)(const uint8_t, int)` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_cdev/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_cdev/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_CDEV</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">初始化指定实例的 Linux OSAL 资源，建立共享内存映射、记录回调并配置接收中断。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">int ipcsOsInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg, int (*rx_cb)(const uint8_t, int))</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="4">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *cfg</td>
+<td>[IN] cfg</td>
+</tr>
+<tr>
+<td>I</td>
+<td>rx_cb</td>
+<td>int (*rx_cb)(const uint8_t, int)</td>
+<td>[IN] rx_cb</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.1 ipcsOsInit processing flow](cursor_tmp/flow_svgs/linux_6_5_1_ipcsOsInit.svg)
+![6.6.1 ipcsOsInit processing flow](cursor_tmp/flow_svgs/linux_6_5_1_ipcsOsInit.svg)
 
 
-### 6.5.2 ipcsOsFree
+### 6.6.2 ipcsOsFree
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_CDEV |
-| 函数说明 | 释放指定实例 OSAL 资源，关闭线程/设备、解除映射并清理状态。 |
-| 函数原型 | `void ipcsOsFree(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_cdev/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_cdev/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_CDEV</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">释放指定实例 OSAL 资源，关闭线程/设备、解除映射并清理状态。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsOsFree(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.2 ipcsOsFree processing flow](cursor_tmp/flow_svgs/linux_6_5_2_ipcsOsFree.svg)
+![6.6.2 ipcsOsFree processing flow](cursor_tmp/flow_svgs/linux_6_5_2_ipcsOsFree.svg)
 
 
-### 6.5.3 ipcsOsGetLocalShm
+### 6.6.3 ipcsOsGetLocalShm
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_CDEV |
-| 函数说明 | 返回本地共享内存虚拟地址。 |
-| 函数原型 | `uintptr_t ipcsOsGetLocalShm(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `uintptr_t` |
-| 函数定义文件 | `ipcs/mpu/os_cdev/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_cdev/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_CDEV</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">返回本地共享内存虚拟地址。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">uintptr_t ipcsOsGetLocalShm(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">uintptr_t</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.3 ipcsOsGetLocalShm processing flow](cursor_tmp/flow_svgs/linux_6_5_3_ipcsOsGetLocalShm.svg)
+![6.6.3 ipcsOsGetLocalShm processing flow](cursor_tmp/flow_svgs/linux_6_5_3_ipcsOsGetLocalShm.svg)
 
 
-### 6.5.4 ipcsOsGetRemoteShm
+### 6.6.4 ipcsOsGetRemoteShm
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_CDEV |
-| 函数说明 | 返回远端共享内存虚拟地址。 |
-| 函数原型 | `uintptr_t ipcsOsGetRemoteShm(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `uintptr_t` |
-| 函数定义文件 | `ipcs/mpu/os_cdev/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_cdev/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_CDEV</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">返回远端共享内存虚拟地址。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">uintptr_t ipcsOsGetRemoteShm(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">uintptr_t</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.4 ipcsOsGetRemoteShm processing flow](cursor_tmp/flow_svgs/linux_6_5_4_ipcsOsGetRemoteShm.svg)
+![6.6.4 ipcsOsGetRemoteShm processing flow](cursor_tmp/flow_svgs/linux_6_5_4_ipcsOsGetRemoteShm.svg)
 
 
-### 6.5.5 ipcsOsPollChannels
+### 6.6.5 ipcsOsPollChannels
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_CDEV |
-| 函数说明 | 在轮询模式下触发 rx_cb 处理接收通道。 |
-| 函数原型 | `int ipcsOsPollChannels(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_cdev/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_cdev/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_CDEV</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">在轮询模式下触发 rx_cb 处理接收通道。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">int ipcsOsPollChannels(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.5 ipcsOsPollChannels processing flow](cursor_tmp/flow_svgs/linux_6_5_5_ipcsOsPollChannels.svg)
+![6.6.5 ipcsOsPollChannels processing flow](cursor_tmp/flow_svgs/linux_6_5_5_ipcsOsPollChannels.svg)
 
 
-### 6.5.6 ipcsHwIrqEnable
+### 6.6.6 ipcsHwIrqEnable
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_CDEV |
-| 函数说明 | 使能指定实例接收中断；用户侧为转发代理，内核侧访问硬件。 |
-| 函数原型 | `void ipcsHwIrqEnable(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_cdev/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_cdev/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_CDEV</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">使能指定实例接收中断；用户侧为转发代理，内核侧访问硬件。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqEnable(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.6 ipcsHwIrqEnable processing flow](cursor_tmp/flow_svgs/linux_6_5_6_ipcsHwIrqEnable.svg)
+![6.6.6 ipcsHwIrqEnable processing flow](cursor_tmp/flow_svgs/linux_6_5_6_ipcsHwIrqEnable.svg)
 
 
-### 6.5.7 ipcsHwIrqDisable
+### 6.6.7 ipcsHwIrqDisable
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_CDEV |
-| 函数说明 | 禁止指定实例接收中断；用户侧为转发代理，内核侧访问硬件。 |
-| 函数原型 | `void ipcsHwIrqDisable(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_cdev/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_cdev/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_CDEV</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">禁止指定实例接收中断；用户侧为转发代理，内核侧访问硬件。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqDisable(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.7 ipcsHwIrqDisable processing flow](cursor_tmp/flow_svgs/linux_6_5_7_ipcsHwIrqDisable.svg)
+![6.6.7 ipcsHwIrqDisable processing flow](cursor_tmp/flow_svgs/linux_6_5_7_ipcsHwIrqDisable.svg)
 
 
-### 6.5.8 ipcsHwIrqNotify
+### 6.6.8 ipcsHwIrqNotify
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_CDEV |
-| 函数说明 | 通知远端有数据可用；用户侧为转发代理，内核侧触发硬件中断。 |
-| 函数原型 | `void ipcsHwIrqNotify(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_cdev/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_cdev/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_CDEV</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">通知远端有数据可用；用户侧为转发代理，内核侧触发硬件中断。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqNotify(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.8 ipcsHwIrqNotify processing flow](cursor_tmp/flow_svgs/linux_6_5_8_ipcsHwIrqNotify.svg)
+![6.6.8 ipcsHwIrqNotify processing flow](cursor_tmp/flow_svgs/linux_6_5_8_ipcsHwIrqNotify.svg)
 
 
-### 6.5.9 ipcsHwInit
+### 6.6.9 ipcsHwInit
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_CDEV |
-| 函数说明 | 初始化 HAL 资源；用户侧为空实现，内核侧映射并配置 MSCM/IRQ。 |
-| 函数原型 | `int ipcsHwInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg)` |
-| 制约条件 | 按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance`<br>`cfg`: `const struct IPCS_SHM_CFG_TYPE *cfg` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_cdev/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_cdev/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_CDEV</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">初始化 HAL 资源；用户侧为空实现，内核侧映射并配置 MSCM/IRQ。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">int ipcsHwInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *cfg</td>
+<td>[IN] cfg</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.9 ipcsHwInit processing flow](cursor_tmp/flow_svgs/linux_6_5_9_ipcsHwInit.svg)
+![6.6.9 ipcsHwInit processing flow](cursor_tmp/flow_svgs/linux_6_5_9_ipcsHwInit.svg)
 
 
-### 6.5.10 ipcsHwFree
+### 6.6.10 ipcsHwFree
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_OS_CDEV |
-| 函数说明 | 释放 HAL 资源；用户侧为空实现，内核侧释放映射状态。 |
-| 函数原型 | `void ipcsHwFree(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_cdev/ipc-os.c` |
-| 函数声明文件 | `ipcs/mpu/os_cdev/ipc-os.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_OS_CDEV</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">释放 HAL 资源；用户侧为空实现，内核侧释放映射状态。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwFree(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_cdev/ipc-os.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.10 ipcsHwFree processing flow](cursor_tmp/flow_svgs/linux_6_5_10_ipcsHwFree.svg)
+![6.6.10 ipcsHwFree processing flow](cursor_tmp/flow_svgs/linux_6_5_10_ipcsHwFree.svg)
 
 
-### 6.5.11 CDEV 内核 Backend 函数
+## 6.7 SWU_IPCS_LINUX_CDEV_KO 软件单元设计
 
-### 6.5.12 ipcsShmHardirq
+源码：`ipcs/mpu/os_kernel/ipc-cdev.c`。CDEV 内核 Backend：字符设备、ioctl、wait queue、ISR 与实例初始化。
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_CDEV_KO |
-| 函数说明 | 硬中断处理，禁止并清除远端通知，中断后续处理交给 tasklet 或等待队列。 |
-| 函数原型 | `static irqreturn_t ipcsShmHardirq(int irq, void *dev)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `irq`: `int irq`<br>`dev`: `void *dev` |
-| 返回值 | `irqreturn_t` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-cdev.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-cdev.h` |
+### 6.7.12 ipcsShmHardirq
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_CDEV_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">硬中断处理，禁止并清除远端通知，中断后续处理交给 tasklet 或等待队列。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static irqreturn_t ipcsShmHardirq(int irq, void *dev)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>irq</td>
+<td>int irq</td>
+<td>[IN] irq</td>
+</tr>
+<tr>
+<td>I</td>
+<td>dev</td>
+<td>void *dev</td>
+<td>[IN] dev</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">irqreturn_t</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.12 ipcsShmHardirq processing flow](cursor_tmp/flow_svgs/linux_6_5_12_ipcsShmHardirq.svg)
+![6.7.12 ipcsShmHardirq processing flow](cursor_tmp/flow_svgs/linux_6_5_12_ipcsShmHardirq.svg)
 
 
-### 6.5.13 ipcsOsMapIntc
+### 6.7.13 ipcsOsMapIntc
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_CDEV_KO |
-| 函数说明 | 映射或返回中断控制器寄存器空间。 |
-| 函数原型 | `void *ipcsOsMapIntc(void)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | - |
-| 返回值 | `void *` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-cdev.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-cdev.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_CDEV_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">映射或返回中断控制器寄存器空间。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void *ipcsOsMapIntc(void)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td>输入/输出参数</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">void *</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.13 ipcsOsMapIntc processing flow](cursor_tmp/flow_svgs/linux_6_5_13_ipcsOsMapIntc.svg)
+![6.7.13 ipcsOsMapIntc processing flow](cursor_tmp/flow_svgs/linux_6_5_13_ipcsOsMapIntc.svg)
 
 
-### 6.5.14 ipcsOsUnmapIntc
+### 6.7.14 ipcsOsUnmapIntc
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_CDEV_KO |
-| 函数说明 | 释放中断控制器寄存器映射或提供对应空实现。 |
-| 函数原型 | `void ipcsOsUnmapIntc(void *addr)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `addr`: `void *addr` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-cdev.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-cdev.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_CDEV_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">释放中断控制器寄存器映射或提供对应空实现。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsOsUnmapIntc(void *addr)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>addr</td>
+<td>void *addr</td>
+<td>[IN] addr</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.14 ipcsOsUnmapIntc processing flow](cursor_tmp/flow_svgs/linux_6_5_14_ipcsOsUnmapIntc.svg)
+![6.7.14 ipcsOsUnmapIntc processing flow](cursor_tmp/flow_svgs/linux_6_5_14_ipcsOsUnmapIntc.svg)
 
 
-### 6.5.15 ipcsCdevOpen
+### 6.7.15 ipcsCdevOpen
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_CDEV_KO |
-| 函数说明 | 处理字符设备打开请求。 |
-| 函数原型 | `static int ipcsCdevOpen(struct inode *inode, struct file *file)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `inode`: `struct inode *inode`<br>`file`: `struct file *file` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-cdev.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-cdev.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_CDEV_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">处理字符设备打开请求。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int ipcsCdevOpen(struct inode *inode, struct file *file)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>inode</td>
+<td>struct inode *inode</td>
+<td>[IN] inode</td>
+</tr>
+<tr>
+<td>I</td>
+<td>file</td>
+<td>struct file *file</td>
+<td>[IN] file</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.15 ipcsCdevOpen processing flow](cursor_tmp/flow_svgs/linux_6_5_15_ipcsCdevOpen.svg)
+![6.7.15 ipcsCdevOpen processing flow](cursor_tmp/flow_svgs/linux_6_5_15_ipcsCdevOpen.svg)
 
 
-### 6.5.16 ipcsCdevRelease
+### 6.7.16 ipcsCdevRelease
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_CDEV_KO |
-| 函数说明 | 处理字符设备关闭请求。 |
-| 函数原型 | `static int ipcsCdevRelease(struct inode *inode, struct file *file)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `inode`: `struct inode *inode`<br>`file`: `struct file *file` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-cdev.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-cdev.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_CDEV_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">处理字符设备关闭请求。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int ipcsCdevRelease(struct inode *inode, struct file *file)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>inode</td>
+<td>struct inode *inode</td>
+<td>[IN] inode</td>
+</tr>
+<tr>
+<td>I</td>
+<td>file</td>
+<td>struct file *file</td>
+<td>[IN] file</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.16 ipcsCdevRelease processing flow](cursor_tmp/flow_svgs/linux_6_5_16_ipcsCdevRelease.svg)
+![6.7.16 ipcsCdevRelease processing flow](cursor_tmp/flow_svgs/linux_6_5_16_ipcsCdevRelease.svg)
 
 
-### 6.5.17 ipcsCdevRead
+### 6.7.17 ipcsCdevRead
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_CDEV_KO |
-| 函数说明 | 阻塞等待内核接收中断唤醒。 |
-| 函数原型 | `static ssize_t ipcsCdevRead(struct file *file, char __user *user_buffer, size_t size, loff_t *offset)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `file`: `struct file *file`<br>`user_buffer`: `char __user *user_buffer`<br>`size`: `size_t size`<br>`offset`: `loff_t *offset` |
-| 返回值 | `ssize_t` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-cdev.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-cdev.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_CDEV_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">阻塞等待内核接收中断唤醒。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static ssize_t ipcsCdevRead(struct file *file, char __user *user_buffer, size_t size, loff_t *offset)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="5">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>file</td>
+<td>struct file *file</td>
+<td>[IN] file</td>
+</tr>
+<tr>
+<td>I</td>
+<td>user_buffer</td>
+<td>char __user *user_buffer</td>
+<td>[IN] user_buffer</td>
+</tr>
+<tr>
+<td>I</td>
+<td>size</td>
+<td>size_t size</td>
+<td>[IN] size</td>
+</tr>
+<tr>
+<td>I</td>
+<td>offset</td>
+<td>loff_t *offset</td>
+<td>[IN] offset</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">ssize_t</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.17 ipcsCdevRead processing flow](cursor_tmp/flow_svgs/linux_6_5_17_ipcsCdevRead.svg)
+![6.7.17 ipcsCdevRead processing flow](cursor_tmp/flow_svgs/linux_6_5_17_ipcsCdevRead.svg)
 
 
-### 6.5.18 ipcsCdevOsInit
+### 6.7.18 ipcsCdevOsInit
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_CDEV_KO |
-| 函数说明 | 初始化 CDEV 后端实例、HAL 和接收 IRQ。 |
-| 函数原型 | `static int ipcsCdevOsInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance`<br>`cfg`: `const struct IPCS_SHM_CFG_TYPE *cfg` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-cdev.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-cdev.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_CDEV_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">初始化 CDEV 后端实例、HAL 和接收 IRQ。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int ipcsCdevOsInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *cfg</td>
+<td>[IN] cfg</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.18 ipcsCdevOsInit processing flow](cursor_tmp/flow_svgs/linux_6_5_18_ipcsCdevOsInit.svg)
+![6.7.18 ipcsCdevOsInit processing flow](cursor_tmp/flow_svgs/linux_6_5_18_ipcsCdevOsInit.svg)
 
 
-### 6.5.19 ipcsCdevIoctl
+### 6.7.19 ipcsCdevIoctl
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_CDEV_KO |
-| 函数说明 | 处理 CDEV 用户侧 ioctl 命令，包括实例初始化和 IRQ 操作代理。 |
-| 函数原型 | `static long ipcsCdevIoctl(struct file *file, unsigned int ioctl_cmd, unsigned long ioctl_arg)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `file`: `struct file *file`<br>`ioctl_cmd`: `unsigned int ioctl_cmd`<br>`ioctl_arg`: `unsigned long ioctl_arg` |
-| 返回值 | `long` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-cdev.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-cdev.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_CDEV_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">处理 CDEV 用户侧 ioctl 命令，包括实例初始化和 IRQ 操作代理。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static long ipcsCdevIoctl(struct file *file, unsigned int ioctl_cmd, unsigned long ioctl_arg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="4">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>file</td>
+<td>struct file *file</td>
+<td>[IN] file</td>
+</tr>
+<tr>
+<td>I</td>
+<td>ioctl_cmd</td>
+<td>unsigned int ioctl_cmd</td>
+<td>[IN] ioctl_cmd</td>
+</tr>
+<tr>
+<td>I</td>
+<td>ioctl_arg</td>
+<td>unsigned long ioctl_arg</td>
+<td>[IN] ioctl_arg</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">long</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.19 ipcsCdevIoctl processing flow](cursor_tmp/flow_svgs/linux_6_5_19_ipcsCdevIoctl.svg)
+![6.7.19 ipcsCdevIoctl processing flow](cursor_tmp/flow_svgs/linux_6_5_19_ipcsCdevIoctl.svg)
 
 
-### 6.5.20 ipcsCdevInit
+### 6.7.20 ipcsCdevInit
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_CDEV_KO |
-| 函数说明 | CDEV 模块初始化，创建字符设备和 wait queue。 |
-| 函数原型 | `static int ipcsCdevInit(void)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | - |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-cdev.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-cdev.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_CDEV_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">CDEV 模块初始化，创建字符设备和 wait queue。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static int ipcsCdevInit(void)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td>输入/输出参数</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.20 ipcsCdevInit processing flow](cursor_tmp/flow_svgs/linux_6_5_20_ipcsCdevInit.svg)
+![6.7.20 ipcsCdevInit processing flow](cursor_tmp/flow_svgs/linux_6_5_20_ipcsCdevInit.svg)
 
 
-### 6.5.21 ipcsCdevClean
+### 6.7.21 ipcsCdevClean
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Linux_Adapt_Cmp |
-| 软件单元 ID | SWU_IPCS_LINUX_CDEV_KO |
-| 函数说明 | CDEV 模块清理，禁止 IRQ、释放中断并销毁字符设备。 |
-| 函数原型 | `static void ipcsCdevClean(void)` |
-| 制约条件 | 按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | - |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/os_kernel/ipc-cdev.c` |
-| 函数声明文件 | `ipcs/mpu/os_kernel/ipc-cdev.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Linux_Adapt_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_LINUX_CDEV_KO</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">CDEV 模块清理，禁止 IRQ、释放中断并销毁字符设备。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static void ipcsCdevClean(void)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/os_kernel/ipc-cdev.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td>输入/输出参数</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.5.21 ipcsCdevClean processing flow](cursor_tmp/flow_svgs/linux_6_5_21_ipcsCdevClean.svg)
+![6.7.21 ipcsCdevClean processing flow](cursor_tmp/flow_svgs/linux_6_5_21_ipcsCdevClean.svg)
 
 
-## 6.6 Linux HAL 函数设计
+## 6.8 Linux HAL 函数设计
 
 Linux 内核侧 HAL，完成 MSCM 映射、核索引解析、IRQ 使能/禁止/通知/清除等硬件操作。
 
-### 6.6.1 ipcsHwGetRxIrq
+### 6.8.1 ipcsHwGetRxIrq
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Hal_Cmp |
-| 软件单元 ID | SWU_IPCS_HAL_LINUX |
-| 函数说明 | 返回指定实例使用的 MSCM 接收中断索引。 |
-| 函数原型 | `int ipcsHwGetRxIrq(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/hw/c1/ipc-hw.c` |
-| 函数声明文件 | `ipcs/mpu/hw/ipc-hw.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_LINUX</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">返回指定实例使用的 MSCM 接收中断索引。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">int ipcsHwGetRxIrq(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.6.1 ipcsHwGetRxIrq processing flow](cursor_tmp/flow_svgs/linux_6_6_1_ipcsHwGetRxIrq.svg)
+![6.8.1 ipcsHwGetRxIrq processing flow](cursor_tmp/flow_svgs/linux_6_6_1_ipcsHwGetRxIrq.svg)
 
 
-### 6.6.2 ipcsHwInit
+### 6.8.2 ipcsHwInit
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Hal_Cmp |
-| 软件单元 ID | SWU_IPCS_HAL_LINUX |
-| 函数说明 | 初始化 HAL 资源；用户侧为空实现，内核侧映射并配置 MSCM/IRQ。 |
-| 函数原型 | `int ipcsHwInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg)` |
-| 制约条件 | 按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance`<br>`cfg`: `const struct IPCS_SHM_CFG_TYPE *cfg` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/hw/c1/ipc-hw.c` |
-| 函数声明文件 | `ipcs/mpu/hw/ipc-hw.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_LINUX</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">初始化 HAL 资源；用户侧为空实现，内核侧映射并配置 MSCM/IRQ。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">int ipcsHwInit(const uint8_t instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *cfg</td>
+<td>[IN] cfg</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.6.2 ipcsHwInit processing flow](cursor_tmp/flow_svgs/linux_6_6_2_ipcsHwInit.svg)
+![6.8.2 ipcsHwInit processing flow](cursor_tmp/flow_svgs/linux_6_6_2_ipcsHwInit.svg)
 
 
-### 6.6.3 _ipcsHwInit
+### 6.8.3 _ipcsHwInit
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Hal_Cmp |
-| 软件单元 ID | SWU_IPCS_HAL_LINUX |
-| 函数说明 | HAL 底层初始化，供 Linux UIO 等内核路径复用。 |
-| 函数原型 | `int _ipcsHwInit(const uint8_t instance, int tx_irq, int rx_irq, const struct IPCS_SHM_REMOTE_CORE_TYPE *remote_core, const struct IPCS_SHM_LOCAL_CORE_TYPE *local_core, void *mscm_addr)` |
-| 制约条件 | 按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance`<br>`tx_irq`: `int tx_irq`<br>`rx_irq`: `int rx_irq`<br>`remote_core`: `const struct IPCS_SHM_REMOTE_CORE_TYPE *remote_core`<br>`local_core`: `const struct IPCS_SHM_LOCAL_CORE_TYPE *local_core`<br>`mscm_addr`: `void *mscm_addr` |
-| 返回值 | `int` |
-| 函数定义文件 | `ipcs/mpu/hw/c1/ipc-hw.c` |
-| 函数声明文件 | `ipcs/mpu/hw/ipc-hw.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_LINUX</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">HAL 底层初始化，供 Linux UIO 等内核路径复用。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">int _ipcsHwInit(const uint8_t instance, int tx_irq, int rx_irq, const struct IPCS_SHM_REMOTE_CORE_TYPE *remote_core, const struct IPCS_SHM_LOCAL_CORE_TYPE *local_core, void *mscm_addr)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="7">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td>I</td>
+<td>tx_irq</td>
+<td>int tx_irq</td>
+<td>[IN] tx_irq</td>
+</tr>
+<tr>
+<td>I</td>
+<td>rx_irq</td>
+<td>int rx_irq</td>
+<td>[IN] rx_irq</td>
+</tr>
+<tr>
+<td>I</td>
+<td>remote_core</td>
+<td>const struct IPCS_SHM_REMOTE_CORE_TYPE *remote_core</td>
+<td>[IN] remote_core</td>
+</tr>
+<tr>
+<td>I</td>
+<td>local_core</td>
+<td>const struct IPCS_SHM_LOCAL_CORE_TYPE *local_core</td>
+<td>[IN] local_core</td>
+</tr>
+<tr>
+<td>I</td>
+<td>mscm_addr</td>
+<td>void *mscm_addr</td>
+<td>[IN] mscm_addr</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">int</td>
+<td colspan="2">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.6.3 _ipcsHwInit processing flow](cursor_tmp/flow_svgs/linux_6_6_3__ipcsHwInit.svg)
+![6.8.3 _ipcsHwInit processing flow](cursor_tmp/flow_svgs/linux_6_6_3__ipcsHwInit.svg)
 
 
-### 6.6.4 ipcsHwFree
+### 6.8.4 ipcsHwFree
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Hal_Cmp |
-| 软件单元 ID | SWU_IPCS_HAL_LINUX |
-| 函数说明 | 释放 HAL 资源；用户侧为空实现，内核侧释放映射状态。 |
-| 函数原型 | `void ipcsHwFree(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/hw/c1/ipc-hw.c` |
-| 函数声明文件 | `ipcs/mpu/hw/ipc-hw.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_LINUX</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">释放 HAL 资源；用户侧为空实现，内核侧释放映射状态。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwFree(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.6.4 ipcsHwFree processing flow](cursor_tmp/flow_svgs/linux_6_6_4_ipcsHwFree.svg)
+![6.8.4 ipcsHwFree processing flow](cursor_tmp/flow_svgs/linux_6_6_4_ipcsHwFree.svg)
 
 
-### 6.6.5 ipcsHwIrqEnable
+### 6.8.5 ipcsHwIrqEnable
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Hal_Cmp |
-| 软件单元 ID | SWU_IPCS_HAL_LINUX |
-| 函数说明 | 使能指定实例接收中断；用户侧为转发代理，内核侧访问硬件。 |
-| 函数原型 | `void ipcsHwIrqEnable(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/hw/c1/ipc-hw.c` |
-| 函数声明文件 | `ipcs/mpu/hw/ipc-hw.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_LINUX</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">使能指定实例接收中断；用户侧为转发代理，内核侧访问硬件。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqEnable(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.6.5 ipcsHwIrqEnable processing flow](cursor_tmp/flow_svgs/linux_6_6_5_ipcsHwIrqEnable.svg)
+![6.8.5 ipcsHwIrqEnable processing flow](cursor_tmp/flow_svgs/linux_6_6_5_ipcsHwIrqEnable.svg)
 
 
-### 6.6.6 ipcsHwIrqDisable
+### 6.8.6 ipcsHwIrqDisable
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Hal_Cmp |
-| 软件单元 ID | SWU_IPCS_HAL_LINUX |
-| 函数说明 | 禁止指定实例接收中断；用户侧为转发代理，内核侧访问硬件。 |
-| 函数原型 | `void ipcsHwIrqDisable(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/hw/c1/ipc-hw.c` |
-| 函数声明文件 | `ipcs/mpu/hw/ipc-hw.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_LINUX</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">禁止指定实例接收中断；用户侧为转发代理，内核侧访问硬件。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqDisable(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.6.6 ipcsHwIrqDisable processing flow](cursor_tmp/flow_svgs/linux_6_6_6_ipcsHwIrqDisable.svg)
+![6.8.6 ipcsHwIrqDisable processing flow](cursor_tmp/flow_svgs/linux_6_6_6_ipcsHwIrqDisable.svg)
 
 
-### 6.6.7 ipcsHwIrqNotify
+### 6.8.7 ipcsHwIrqNotify
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Hal_Cmp |
-| 软件单元 ID | SWU_IPCS_HAL_LINUX |
-| 函数说明 | 通知远端有数据可用；用户侧为转发代理，内核侧触发硬件中断。 |
-| 函数原型 | `void ipcsHwIrqNotify(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/hw/c1/ipc-hw.c` |
-| 函数声明文件 | `ipcs/mpu/hw/ipc-hw.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_LINUX</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">通知远端有数据可用；用户侧为转发代理，内核侧触发硬件中断。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqNotify(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.6.7 ipcsHwIrqNotify processing flow](cursor_tmp/flow_svgs/linux_6_6_7_ipcsHwIrqNotify.svg)
+![6.8.7 ipcsHwIrqNotify processing flow](cursor_tmp/flow_svgs/linux_6_6_7_ipcsHwIrqNotify.svg)
 
 
-### 6.6.8 ipcsHwIrqClear
+### 6.8.8 ipcsHwIrqClear
 
-| 项 | 内容 |
-|---|---|
-| 对应软件架构 ID | Drv_Ipcs_Hal_Cmp |
-| 软件单元 ID | SWU_IPCS_HAL_LINUX |
-| 函数说明 | 清除指定实例接收中断状态。 |
-| 函数原型 | `void ipcsHwIrqClear(const uint8_t instance)` |
-| 制约条件 | 按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行 |
-| 输入/输出参数 | `instance`: `const uint8_t instance` |
-| 返回值 | `void` |
-| 函数定义文件 | `ipcs/mpu/hw/c1/ipc-hw.c` |
-| 函数声明文件 | `ipcs/mpu/hw/ipc-hw.h` |
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_LINUX</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">清除指定实例接收中断状态。</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqClear(const uint8_t instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">按 `ipcs/mpu/hw/c1/ipc-hw.c` 中的入参检查、实例状态和内核资源状态执行</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8_t instance</td>
+<td>[IN] instance</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+</tr>
+</tbody>
+</table>
+
 
 processing flow
 
-![6.6.8 ipcsHwIrqClear processing flow](cursor_tmp/flow_svgs/linux_6_6_8_ipcsHwIrqClear.svg)
+![6.8.8 ipcsHwIrqClear processing flow](cursor_tmp/flow_svgs/linux_6_6_8_ipcsHwIrqClear.svg)
 
 
-## 6.7 Linux 关键场景流程
+## 6.9 Linux 关键场景流程
 
-第 6.3–6.6 节各函数已给出单函数 processing flow（活动图）。本节描述 **跨软件单元** 的动态交互，采用 UML 序列图；纵轴为软件单元 ID（§2.1），用户侧代理、内核 Backend、HAL 使用与 §5.7 相同的配色规则。
+第 6.3–6.8 节各函数已给出单函数 processing flow（活动图）。本节描述 **跨软件单元** 的动态交互，采用 UML 序列图；纵轴为软件单元 ID（§2.1），用户侧代理、内核 Backend、HAL 使用与 §5.7 相同的配色规则。
 
 | 场景 ID | 场景名称 | 涉及软件单元 | 源码依据 |
 |---|---|---|---|
@@ -6969,55 +10014,55 @@ processing flow
 | LIN-S07 | CDEV 接收唤醒 | HAL_LINUX、LINUX_CDEV_KO、LINUX_OS_CDEV、CORE_SHM | `ipcsShmHardirq` + `wait_queue` |
 | LIN-S08 | 全内核接收 | HAL_LINUX、LINUX_OS_KERN、CORE_SHM | `ipcsShmHardirq` + tasklet |
 
-### 6.7.1 UIO 初始化（LIN-S01）
+### 6.9.1 UIO 初始化（LIN-S01）
 
 sequence diagram
 
 ![Linux UIO initialization sequence](cursor_tmp/flow_svgs/linux_seq_uio_init.svg)
 
-### 6.7.2 CDEV 初始化（LIN-S02）
+### 6.9.2 CDEV 初始化（LIN-S02）
 
 sequence diagram
 
 ![Linux CDEV initialization sequence](cursor_tmp/flow_svgs/linux_seq_cdev_init.svg)
 
-### 6.7.3 全内核初始化（LIN-S03）
+### 6.9.3 全内核初始化（LIN-S03）
 
 sequence diagram
 
 ![Linux in-kernel initialization sequence](cursor_tmp/flow_svgs/linux_seq_kernel_init.svg)
 
-### 6.7.4 UIO 发送通知（LIN-S04）
+### 6.9.4 UIO 发送通知（LIN-S04）
 
 sequence diagram
 
 ![Linux UIO transmit notify sequence](cursor_tmp/flow_svgs/linux_seq_uio_tx_notify.svg)
 
-### 6.7.5 CDEV 发送通知（LIN-S05）
+### 6.9.5 CDEV 发送通知（LIN-S05）
 
 sequence diagram
 
 ![Linux CDEV transmit notify sequence](cursor_tmp/flow_svgs/linux_seq_cdev_tx_notify.svg)
 
-### 6.7.6 UIO 接收唤醒（LIN-S06）
+### 6.9.6 UIO 接收唤醒（LIN-S06）
 
 sequence diagram
 
 ![Linux UIO receive wakeup sequence](cursor_tmp/flow_svgs/linux_seq_uio_rx.svg)
 
-### 6.7.7 CDEV 接收唤醒（LIN-S07）
+### 6.9.7 CDEV 接收唤醒（LIN-S07）
 
 sequence diagram
 
 ![Linux CDEV receive wakeup sequence](cursor_tmp/flow_svgs/linux_seq_cdev_rx.svg)
 
-### 6.7.8 全内核接收（LIN-S08）
+### 6.9.8 全内核接收（LIN-S08）
 
 sequence diagram
 
 ![Linux in-kernel receive sequence](cursor_tmp/flow_svgs/linux_seq_kernel_rx.svg)
 
-## 6.8 Linux 全局变量与私有类型
+## 6.10 Linux 全局变量与私有类型
 
 | 源文件 | 关键类型 / 变量 | 用途 |
 |---|---|---|
@@ -7035,8 +10080,8 @@ sequence diagram
 | SWE.3 过程结果 / 实践 | 文档落点 |
 |---|---|
 | 详细设计描述软件单元 | §4–§6 Files 与各函数单元 |
-| 定义软件单元接口 | §4.3 对外 API；§5/§6 OSAL/HAL；§3.4、§6.6 |
-| 定义动态行为 | §4.7、§5.7、§6.7 及各函数 processing flow |
+| 定义软件单元接口 | §4.3 对外 API；§5/§6 OSAL/HAL；§3.4、§6.8 |
+| 定义动态行为 | §4.7、§5.7、§6.9 及各函数 processing flow |
 | 与架构双向追溯 | §7.2；§2；§3 |
 | 与架构设计一致 | §2–§3（三层契约与 Linux 适配形态） |
 | 软件单元可实现 | ipcs/ 源码路径与构建说明 |
@@ -7050,7 +10095,12 @@ sequence diagram
 | SWU_IPCS_CORE_SHM | §5.3、§5.4（Core 内部函数） | ipcs/ipcs_cores/ipc-shm.c |
 | SWU_IPCS_CORE_QUEUE | §5.4.1–4.4.5 | ipcs/ipcs_cores/ipc-queue.c |
 | SWU_IPCS_HAL_MCU | §5.6 HAL、§5.3–4.5 OSAL | ipcs/mcu/hw/ipc-hw.c |
+| SWU_IPCS_LINUX_OS_KERN | §6.3 | ipcs/mpu/os_kernel/ipc-os.c |
 | SWU_IPCS_LINUX_OS_UIO | §6.4 | ipcs/mpu/os_uio/ipc-os.c |
+| SWU_IPCS_LINUX_UIO_KO | §6.5 | ipcs/mpu/os_kernel/ipc-uio.c |
+| SWU_IPCS_LINUX_OS_CDEV | §6.6 | ipcs/mpu/os_cdev/ipc-os.c |
+| SWU_IPCS_LINUX_CDEV_KO | §6.7 | ipcs/mpu/os_kernel/ipc-cdev.c |
+| SWU_IPCS_HAL_LINUX | §6.8 | ipcs/mpu/hw/c1/ipc-hw.c |
 
 | 架构组件 ID | 部署变体 / 实现 | 主要源码 |
 |---|---|---|
@@ -7080,9 +10130,10 @@ sequence diagram
 | ipcs/mcu/os/baremetal/ipc-os-baremetal.c | — | 不在 SDD 范围 |
 | ipcs/mpu/os_kernel/ipc-os.c | §6.3 | 全内核实现 |
 | ipcs/mpu/os_uio/ipc-os.c | §6.4 | UIO 用户侧 P4/P5 代理 |
-| ipcs/mpu/os_cdev/ipc-os.c | §6.5 | CDEV 用户侧 P4/P5 代理 |
-| ipcs/mpu/os_kernel/ipc-uio.c、ipc-cdev.c | §6.4–6.5 | 内核 Backend |
-| ipcs/mpu/hw/c1/ipc-hw.c | §6、§3.4 | Linux 内核 HAL |
+| ipcs/mpu/os_cdev/ipc-os.c | §6.6 | CDEV 用户侧 P4/P5 代理 |
+| ipcs/mpu/os_kernel/ipc-uio.c | §6.5 | UIO 内核 Backend |
+| ipcs/mpu/os_kernel/ipc-cdev.c | §6.7 | CDEV 内核 Backend |
+| ipcs/mpu/hw/c1/ipc-hw.c | §6.8、§3.4 | Linux 内核 HAL |
 
 对外 API（`ipcs-shm.h`）：`ipcsShmInit`、`ipcsShmFree`、`ipcsShmAcquireBuf`、`ipcsShmReleaseBuf`、`ipcsShmTx`、`ipcsShmUnmanagedAcquire`、`ipcsShmUnmanagedTx`、`ipcsShmIsRemoteReady`、`ipcsShmPollChannels` — 与 §3.3 一致。
 
@@ -7092,6 +10143,6 @@ sequence diagram
 | 类型 | 规则 |
 |---|---|
 | 对外（应用） | ipcs/ipcs_cores/ipc-shm.h 中声明且 ipcs-shm.c 中非 static 的 API |
-| OSAL/HAL | 以 ipc-os.h、ipc-hw.h 声明；实现位置见 §3.4、§6.6 |
+| OSAL/HAL | 以 ipc-os.h、ipc-hw.h 声明；实现位置见 §3.4、§6.3–§6.8 |
 | 用户侧代理 | 用户库内 `ipcsOs*`/`ipcsHw*` 满足 P4/P5 契约，实现为转发；属 Linux Adapt（§3.4） |
 | 内部 | static 函数及仅单元内使用的类型 |

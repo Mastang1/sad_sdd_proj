@@ -1,16 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="920" height="358" viewBox="0 0 920 358">
-<style>text{font-family:Arial,"Microsoft YaHei",sans-serif;font-size:15px;fill:#222}.title{font-size:19px;font-weight:bold}.box{fill:#fff8dc;stroke:#555;stroke-width:1.2}.line{stroke:#555;stroke-width:1.2;marker-end:url(#arrow)}</style>
-<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#555"/></marker></defs>
-<text x="460.0" y="28" text-anchor="middle" class="title">6.5.102 ipcsOsUnmapIntc</text>
-<rect class="box" x="110" y="52" width="700" height="44" rx="8"/>
-<text x="460.0" y="80" text-anchor="middle">Start</text>
-<line class="line" x1="460.0" y1="96" x2="460.0" y2="115"/>
-<rect class="box" x="110" y="120" width="700" height="44" rx="8"/>
-<text x="460.0" y="148" text-anchor="middle">Execute source-defined logic</text>
-<line class="line" x1="460.0" y1="164" x2="460.0" y2="183"/>
-<rect class="box" x="110" y="188" width="700" height="44" rx="8"/>
-<text x="460.0" y="216" text-anchor="middle">Update state or return value</text>
-<line class="line" x1="460.0" y1="232" x2="460.0" y2="251"/>
-<rect class="box" x="110" y="256" width="700" height="44" rx="8"/>
-<text x="460.0" y="284" text-anchor="middle">End</text>
-</svg>
+<?plantuml 1.2026.2?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" data-diagram-type="ACTIVITY" height="193px" preserveAspectRatio="none" style="width:196px;height:193px;background:#FFFFFF;" version="1.1" viewBox="0 0 196 193" width="196px" zoomAndPan="magnify"><defs/><g><ellipse cx="98.0449" cy="20" fill="#222222" rx="10" ry="10" style="stroke:#222222;stroke-width:1;"/><rect fill="#F1F1F1" height="35.0938" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;" width="174.0898" x="11" y="50"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="154.0898" x="21" y="72.457">Execute source-defined logic</text><rect fill="#F1F1F1" height="35.0938" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;" width="168.752" x="13.6689" y="105.0938"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="148.752" x="23.6689" y="127.5508">Update state or return value</text><ellipse cx="98.0449" cy="171.1875" fill="none" rx="11" ry="11" style="stroke:#222222;stroke-width:1;"/><ellipse cx="98.0449" cy="171.1875" fill="#222222" rx="6" ry="6" style="stroke:#222222;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="98.0449" x2="98.0449" y1="30" y2="50"/><polygon fill="#181818" points="94.0449,40,98.0449,50,102.0449,40,98.0449,44" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="98.0449" x2="98.0449" y1="85.0938" y2="105.0938"/><polygon fill="#181818" points="94.0449,95.0938,98.0449,105.0938,102.0449,95.0938,98.0449,99.0938" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="98.0449" x2="98.0449" y1="140.1875" y2="160.1875"/><polygon fill="#181818" points="94.0449,150.1875,98.0449,160.1875,102.0449,150.1875,98.0449,154.1875" style="stroke:#181818;stroke-width:1;"/><?plantuml-src JOon3SCm30HxJS4Cu0NiDfaWy024n3X495AWg23QtdANvekxmz-guL4GCWxj3gsGes1e7vQAXWMYIc9dbQUFJC3IED6TiKp-bsKMyb49rFojeJcQX_NnezYTe6ctI4kYrymIP3quRc7TQyBB-hLgOEJT1BwOEstpG-i9?></g></svg>

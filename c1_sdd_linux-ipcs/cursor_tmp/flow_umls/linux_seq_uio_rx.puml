@@ -22,16 +22,24 @@ participant "SWU_IPCS_LINUX_OS_UIO (os_uio/ipc-os.c)" as UIO_USR #FCF3CF
 participant "SWU_IPCS_CORE_SHM (user lib)" as CORE #D4E6F1
 
 autonumber
+activate REMOTE
 REMOTE -> HAL : Rx IRQ
+activate HAL
 HAL -> UIO_KO : ipcsShmUioHandler
 activate UIO_KO
 UIO_KO -> HAL : ipcsHwIrqDisable / ipcsHwIrqClear
+deactivate HAL
 UIO_KO --> UIO_USR : UIO event (read unblocks)
 deactivate UIO_KO
+activate UIO_USR
 UIO_USR -> UIO_USR : pthread: read(uio_fd)
 UIO_USR -> CORE : rx_cb(instance, budget) / ipcsShmRx
+activate CORE
 loop work >= budget
   CORE -> CORE : drain channels
 end
+deactivate CORE
 UIO_USR -> UIO_USR : ipcsHwIrqEnable via UIO write
+deactivate UIO_USR
+deactivate REMOTE
 @enduml

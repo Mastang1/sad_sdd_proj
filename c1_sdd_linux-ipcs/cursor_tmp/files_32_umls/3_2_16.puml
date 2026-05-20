@@ -14,6 +14,7 @@ skinparam note {
   BackgroundColor #FFF8E8
   BorderColor #B89968
 }
+title os/ipc-os.h — OSAL 声明
 component [os/ipc-os.h] as H
-note right of H : No other in-project IPCS .h #include
+note right of H : 工程内无其他 IPCS .h #include
 @enduml

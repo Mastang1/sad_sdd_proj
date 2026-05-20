@@ -37,3 +37,6 @@ skinparam actor {
 def participant(unit_id: str, source: str, alias: str, color: str) -> str:
     label = f"{unit_id} ({source})"
     return f'participant "{label}" as {alias} {color}'
+
+
+# SDD 序列图：每个 participant 须在消息流中使用 activate/deactivate（见 .cursorrules §5.1）

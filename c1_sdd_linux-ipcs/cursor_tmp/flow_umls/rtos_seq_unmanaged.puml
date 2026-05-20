@@ -22,16 +22,24 @@ participant "Remote core (peer)" as REMOTE #E8DAEF
 participant "SWU_IPCS_CORE_SHM (peer instance)" as CORE_R #D4E6F1
 
 autonumber
+activate APP_L
 APP_L -> CORE_L : ipcsShmUnmanagedAcquire(instance, chan)
+activate CORE_L
 CORE_L --> APP_L : local unmanaged memory
 APP_L -> CORE_L : write payload to local mem
 APP_L -> CORE_L : ipcsShmUnmanagedTx(instance, chan)
-activate CORE_L
 CORE_L -> CORE_L : increment tx_count
 CORE_L -> HAL : ipcsHwIrqNotify(instance)
+activate HAL
 HAL -> REMOTE : inter-core interrupt
-deactivate CORE_L
+activate REMOTE
 REMOTE -> CORE_R : ISR / softirq path
+activate CORE_R
 CORE_R -> CORE_R : compare tx_count, invoke rx_cb
 CORE_R --> REMOTE : expose remote mem to app
+deactivate CORE_R
+deactivate REMOTE
+deactivate HAL
+deactivate CORE_L
+deactivate APP_L
 @enduml

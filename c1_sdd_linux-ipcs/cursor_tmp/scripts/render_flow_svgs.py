@@ -6,8 +6,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-
-ROOT = Path(__file__).resolve().parents[1]
+_CURSOR_TMP = Path(__file__).resolve().parents[1]
+if str(_CURSOR_TMP) not in sys.path:
+    sys.path.insert(0, str(_CURSOR_TMP))
+from workspace_paths import FLOW_SVGS, FLOW_UMLS, plantuml_jar_candidates
 
 
 def find_jar() -> Path:
@@ -22,7 +24,9 @@ def main() -> None:
 
     svg_dir = FLOW_SVGS
     svg_dir.mkdir(parents=True, exist_ok=True)
-    umls = sorted(FLOW_UMLS.glob("*.puml"))
+    umls = sorted(
+        p for p in FLOW_UMLS.glob("*.puml") if "_seq_" not in p.stem
+    )
     if not umls:
         sys.exit("no .puml in flow_umls/")
     subprocess.check_call(

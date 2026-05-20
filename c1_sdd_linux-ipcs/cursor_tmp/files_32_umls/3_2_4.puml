@@ -15,7 +15,7 @@ skinparam note {
   BorderColor #B89968
 }
 left to right direction
-
+title common/ipc-shm.c — #include 依赖
 component [common/ipc-shm.c] as SRC
 component [ipc-shm.h] as H0
 component [ipc-os.h] as H1

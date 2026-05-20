@@ -1,13 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="920" height="290" viewBox="0 0 920 290">
-<style>text{font-family:Arial,"Microsoft YaHei",sans-serif;font-size:15px;fill:#222}.title{font-size:19px;font-weight:bold}.box{fill:#fff8dc;stroke:#555;stroke-width:1.2}.line{stroke:#555;stroke-width:1.2;marker-end:url(#arrow)}</style>
-<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#555"/></marker></defs>
-<text x="460.0" y="28" text-anchor="middle" class="title">6.4.110 ipcsOsMapIntc</text>
-<rect class="box" x="110" y="52" width="700" height="44" rx="8"/>
-<text x="460.0" y="80" text-anchor="middle">Start</text>
-<line class="line" x1="460.0" y1="96" x2="460.0" y2="115"/>
-<rect class="box" x="110" y="120" width="700" height="44" rx="8"/>
-<text x="460.0" y="148" text-anchor="middle">Read private data or device tree</text>
-<line class="line" x1="460.0" y1="164" x2="460.0" y2="183"/>
-<rect class="box" x="110" y="188" width="700" height="44" rx="8"/>
-<text x="460.0" y="216" text-anchor="middle">Return address/index</text>
-</svg>
+<?plantuml 1.2026.2?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentStyleType="text/css" data-diagram-type="ACTIVITY" height="138px" preserveAspectRatio="none" style="width:212px;height:138px;background:#FFFFFF;" version="1.1" viewBox="0 0 212 138" width="212px" zoomAndPan="magnify"><defs/><g><ellipse cx="106.3828" cy="20" fill="#222222" rx="10" ry="10" style="stroke:#222222;stroke-width:1;"/><rect fill="#F1F1F1" height="35.0938" rx="12.5" ry="12.5" style="stroke:#181818;stroke-width:0.5;" width="190.7656" x="11" y="50"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="170.7656" x="21" y="72.457">Read private data or device tree</text><ellipse cx="106.3828" cy="116.0938" fill="none" rx="11" ry="11" style="stroke:#222222;stroke-width:1;"/><ellipse cx="106.3828" cy="116.0938" fill="#222222" rx="6" ry="6" style="stroke:#222222;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="106.3828" x2="106.3828" y1="30" y2="50"/><polygon fill="#181818" points="102.3828,40,106.3828,50,110.3828,40,106.3828,44" style="stroke:#181818;stroke-width:1;"/><line style="stroke:#181818;stroke-width:1;" x1="106.3828" x2="106.3828" y1="85.0938" y2="105.0938"/><polygon fill="#181818" points="102.3828,95.0938,106.3828,105.0938,110.3828,95.0938,106.3828,99.0938" style="stroke:#181818;stroke-width:1;"/><?plantuml-src JSh13G8n34JHUwemRS2L2g22qMO45eaTEMQbT4-ENFz_bn5uTKZ3yc_Ax4mOoloe3GIw76vLKzsUkHf5RMhbNT5t_sDDZRa6nIFVNcOYibmVH9KHUY8f5OczfVBKWv91tZRqyGC0?></g></svg>

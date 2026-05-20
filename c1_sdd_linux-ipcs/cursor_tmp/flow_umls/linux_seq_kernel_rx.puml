@@ -21,16 +21,24 @@ participant "SWU_IPCS_LINUX_OS_KERN (ipc-os.c)" as OSAL #D5F5E3
 participant "SWU_IPCS_CORE_SHM (kernel)" as CORE #D4E6F1
 
 autonumber
+activate REMOTE
 REMOTE -> HAL : Rx IRQ
+activate HAL
 HAL -> OSAL : ipcsShmHardirq
 activate OSAL
 OSAL -> HAL : ipcsHwIrqDisable / ipcsHwIrqClear
+deactivate HAL
 OSAL -> OSAL : tasklet_schedule(ipcsShmSoftirq)
-deactivate OSAL
 OSAL -> CORE : priv.rx_cb(i, budget)
+activate CORE
 loop work >= budget
   CORE -> CORE : ipcsShmRx drain
   OSAL -> OSAL : tasklet_schedule (yield)
 end
+deactivate CORE
 OSAL -> HAL : ipcsHwIrqEnable(i)
+activate HAL
+deactivate HAL
+deactivate OSAL
+deactivate REMOTE
 @enduml

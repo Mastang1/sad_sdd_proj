@@ -23,22 +23,30 @@ participant "SWU_IPCS_CORE_QUEUE (ipc-queue.c)" as QUEUE #D4E6F1
 participant "Application (rx_cb)" as APP #FAF0E0
 
 autonumber
+activate REMOTE
 REMOTE -> HAL : Rx IRQ (MSCM)
 activate HAL
 HAL -> OSAL : ipcsShmHardIrq()
 activate OSAL
 OSAL -> HAL : ipcsHwIrqDisable(i) / ipcsHwIrqClear(i)
-OSAL -> OSAL : tx_event_flags_set(DATA_EVENT_FLAG)
 deactivate HAL
+OSAL -> OSAL : tx_event_flags_set(DATA_EVENT_FLAG)
 OSAL -> OSAL : ipcsShmSoftIrq thread wakes
 OSAL -> CORE : rxCallback(instance, budget) / ipcsShmRx
 activate CORE
 loop until work < budget
   CORE -> QUEUE : ipcsQueuePop / channel dispatch
+  activate QUEUE
   CORE -> APP : application rx_cb(chan, buf)
+  activate APP
   APP --> CORE : handled count
+  deactivate APP
+  deactivate QUEUE
 end
 deactivate CORE
 OSAL -> HAL : ipcsHwIrqEnable(i)
+activate HAL
+deactivate HAL
 deactivate OSAL
+deactivate REMOTE
 @enduml

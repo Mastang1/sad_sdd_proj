@@ -14,6 +14,7 @@ skinparam note {
   BackgroundColor #FFF8E8
   BorderColor #B89968
 }
+title common/ipc-shm.h — #include 依赖
 component [common/ipc-shm.h] as SRC
 component [ipc-types.h] as H0
 component [ipcf_Ip_Cfg.h] as H1 <<config>>

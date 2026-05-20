@@ -21,10 +21,16 @@ participant "SWU_IPCS_LINUX_OS_KERN (ipc-os.c)" as OSAL #D5F5E3
 participant "SWU_IPCS_HAL_LINUX (ipc-hw.c)" as HAL #F5E6CC
 
 autonumber
+activate MOD
 MOD -> CORE : ipcsShmInit(cfg)
+activate CORE
 CORE -> OSAL : ipcsOsInit(instance, cfg, ipcsShmRx)
 activate OSAL
 OSAL -> OSAL : request_mem_region + ioremap SHM
+OSAL -> HAL : ipcsHwInit(instance, cfg)
+activate HAL
+HAL --> OSAL : 0
+deactivate HAL
 OSAL -> OSAL : of_irq_get; request_irq(ipcsShmHardirq)
 note right of OSAL
   tasklet ipcsShmSoftirq scheduled from hardirq
@@ -32,4 +38,6 @@ end note
 deactivate OSAL
 OSAL --> CORE : 0
 CORE --> MOD : success
+deactivate CORE
+deactivate MOD
 @enduml

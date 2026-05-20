@@ -14,6 +14,7 @@ skinparam note {
   BackgroundColor #FFF8E8
   BorderColor #B89968
 }
+title os/zephyr/ipc-os-zephyr.c — #include 依赖
 component [os/zephyr/ipc-os-zephyr.c] as SRC
 component [ipc-shm.h] as H0
 component [ipc-os.h] as H1
@@ -30,6 +31,7 @@ SRC ..> Z2 : #include
 SRC ..> Z3 : #include
 SRC ..> MR : #elif defined(S32ZE)
 note bottom of MR
-  SAF85/S32R41/S32K3XX path defines IPC_INT_* macros only; excludes Mru_Ip.h.
+  SAF85/S32R41/S32K3XX 分支仅定义
+  IPC_INT_* 宏，不含 Mru_Ip.h
 end note
 @enduml

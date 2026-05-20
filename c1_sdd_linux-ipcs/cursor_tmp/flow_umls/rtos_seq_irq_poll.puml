@@ -22,16 +22,29 @@ participant "SWU_IPCS_HAL_MCU (ipc-hw.c)" as HAL #F5E6CC
 
 autonumber
 alt inter_core_rx_irq != IPC_IRQ_NONE
+  activate HAL
   HAL -> OSAL : hardware IRQ
+  activate OSAL
   OSAL -> CORE : deferred ipcsShmRx via softirq thread
+  activate CORE
+  CORE --> OSAL : channels serviced
+  deactivate CORE
+  deactivate OSAL
+  deactivate HAL
 else polling (IPC_IRQ_NONE)
+  activate APP
   APP -> CORE : ipcsShmPollChannels(instance)
+  activate CORE
   CORE -> OSAL : ipcsOsPollChannels(instance)
+  activate OSAL
   note right of OSAL
     Directly calls registered rx_cb
     with IPC_SOFTIRQ_BUDGET
   end note
   OSAL -> CORE : ipcsShmRx(instance, budget)
+  deactivate OSAL
+  CORE --> APP : work done / channels serviced
+  deactivate CORE
+  deactivate APP
 end
-CORE --> APP : work done / channels serviced
 @enduml

@@ -65,8 +65,9 @@ def extract_and_strip_html_tables(md_text: str) -> tuple[str, list[tuple[str, st
     def repl(m: re.Match[str]) -> str:
         heading = m.group(1).strip()
         table_html = m.group(2)
-        func = heading.split()[-1]
-        blocks.append((func, heading, table_html))
+        # Match by full H3 text (e.g. "6.3.3 ipcsOsInit"), not bare func name — supports duplicates.
+        h3_key = re.sub(r"^###\s+", "", heading).strip()
+        blocks.append((h3_key, heading, table_html))
         return heading + "\n\n"
 
     new_md = _HTML_FUNC_TABLE.sub(repl, md_text)
@@ -159,17 +160,27 @@ def insert_html_function_tables(
     inserted = 0
     missing: list[str] = []
 
-    for func_name, heading, table_html in blocks:
-        while pos < len(h3_list) and h3_list[pos][1] != func_name:
-            pos += 1
-        if pos >= len(h3_list):
+    def _norm_name(s: str) -> str:
+        return re.sub(r"\s+", "", s).lower()
+
+    for h3_key, heading, table_html in blocks:
+        func_name = h3_key.split()[-1]
+        found = None
+        for i in range(pos, len(h3_list)):
+            t = h3_list[i][1]
+            if _norm_name(t) not in (_norm_name(h3_key), _norm_name(func_name)):
+                continue
+            h_el = h3_list[i][0]
+            nxt = h_el.getnext()
+            if nxt is not None and nxt.tag == qn("w:tbl"):
+                continue
+            found = i
+            break
+        if found is None:
             missing.append(heading)
             continue
-        h_el = h3_list[pos][0]
-        pos += 1
-        nxt = h_el.getnext()
-        if nxt is not None and nxt.tag == qn("w:tbl"):
-            continue
+        h_el = h3_list[found][0]
+        pos = found + 1
         nrows, ncols, placements = parse_html_placements(table_html)
         if nrows == 0:
             missing.append(heading)

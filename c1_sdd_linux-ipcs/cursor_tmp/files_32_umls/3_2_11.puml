@@ -14,6 +14,7 @@ skinparam note {
   BackgroundColor #FFF8E8
   BorderColor #B89968
 }
+title hw/ipc-hw.h — HAL API，无 IPCS .h #include
 component [hw/ipc-hw.h] as H
-note right of H : HAL API declarations only.
+note right of H : 仅 HAL API 声明
 @enduml
