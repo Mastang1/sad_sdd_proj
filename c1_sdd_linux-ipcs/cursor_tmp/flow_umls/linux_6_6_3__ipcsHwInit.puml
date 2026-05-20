@@ -1,0 +1,25 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+if (mscm_addr == NULL?) then (yes)
+  :return -EINVAL; stop
+else (no)
+endif
+:resolve local_core_idx and remote_core_idx from cfg;
+:validate trust mask and irq indices;
+if (invalid tx/rx same or core conflict?) then (yes)
+  :return -EINVAL; stop
+else (no)
+endif
+:map MSI/SPI indices; store mscm tx/rx;
+:ipcsHwIrqDisable(instance);
+:update MSCM IRCPCFG trusted cores;
+if (IRCPCFG locked?) then (yes)
+  :return -EACCES;
+else (no)
+  :return 0;
+endif
+stop
+@enduml

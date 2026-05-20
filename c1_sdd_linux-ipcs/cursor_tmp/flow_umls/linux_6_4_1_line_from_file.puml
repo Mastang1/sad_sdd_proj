@@ -1,0 +1,21 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:file = fopen(filename, "r");
+if (file == NULL?) then (yes)
+  :return -ENONET;
+  stop
+else (no)
+endif
+:s = fgets(buf, IPC_SHM_UIO_BUF_LEN, file);
+if (s == NULL?) then (yes)
+  :return -EIO;
+  stop
+else (no)
+endif
+:strip first line at newline; fclose(file);
+:return 0;
+stop
+@enduml

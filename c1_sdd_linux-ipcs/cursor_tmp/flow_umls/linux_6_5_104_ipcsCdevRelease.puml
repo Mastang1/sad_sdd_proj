@@ -1,0 +1,9 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:Release open/reference state;
+:Clear private data;
+stop
+@enduml

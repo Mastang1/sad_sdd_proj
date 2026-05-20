@@ -1,0 +1,51 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+if (rx_cb == NULL?) then (yes)
+  :return -EINVAL;
+  stop
+else (no)
+endif
+if ((instance invalid)?) then (yes)
+  :return -EINVAL;
+  stop
+else (no)
+endif
+:request_mem_region local; ioremap local_virt_shm;
+if (local map failed?) then (yes)
+  :return err; stop
+else (no)
+endif
+:request_mem_region remote; ioremap remote_virt_shm;
+if (remote map failed?) then (yes)
+  :unmap local; return err; stop
+else (no)
+endif
+:save shm_size phys addrs; priv.rx_cb = rx_cb;
+if (inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
+  :irq_num = IPC_IRQ_NONE;
+else (no)
+  :of_find_compatible_node MSCM; of_irq_get;
+  if (mscm missing?) then (yes)
+    :err; goto unmap; stop
+  else (no)
+  endif
+endif
+if (duplicate irq already registered?) then (yes)
+  :state = ENABLED; return 0; stop
+else (no)
+endif
+:irq_num_init[instance] = irq_num;
+if (irq_num != IPC_IRQ_NONE?) then (yes)
+  :request_irq(ipcsShmHardirq);
+  if (request_irq failed?) then (yes)
+    :goto unmap; stop
+  else (no)
+  endif
+else (no)
+endif
+:state = ENABLED; return 0;
+stop
+@enduml

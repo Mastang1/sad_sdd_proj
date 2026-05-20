@@ -1,0 +1,30 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam sequenceArrowThickness 1.2
+skinparam sequence {
+  ArrowColor #5C4033
+  LifeLineBorderColor #8B7355
+  ParticipantBorderColor #8B7355
+  BoxBorderColor #A08060
+}
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+skinparam actor {
+  BackgroundColor #FAF0E0
+  BorderColor #8B7355
+}
+participant "SWU_IPCS_CORE_SHM (user lib)" as CORE #D4E6F1
+participant "SWU_IPCS_LINUX_OS_UIO (os_uio/ipc-os.c)" as UIO_USR #FCF3CF
+participant "SWU_IPCS_LINUX_UIO_KO (ipc-uio.c)" as UIO_KO #FDEBD0
+participant "SWU_IPCS_HAL_LINUX (ipc-hw.c)" as HAL #F5E6CC
+participant "Remote core (peer)" as REMOTE #E8DAEF
+
+autonumber
+CORE -> UIO_USR : ipcsHwIrqNotify(instance) from ipcsShmTx
+UIO_USR -> UIO_USR : ipcsSendUioCmd(uio_fd, TRIGGER)
+UIO_USR -> UIO_KO : write / UIO irqcontrol
+UIO_KO -> HAL : ipcsHwIrqNotify(instance)
+HAL -> REMOTE : MSCM directed interrupt
+@enduml

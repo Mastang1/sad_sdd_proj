@@ -1,0 +1,48 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam sequenceArrowThickness 1.2
+skinparam sequence {
+  ArrowColor #5C4033
+  LifeLineBorderColor #8B7355
+  ParticipantBorderColor #8B7355
+  BoxBorderColor #A08060
+}
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+skinparam actor {
+  BackgroundColor #FAF0E0
+  BorderColor #8B7355
+}
+participant "Application (caller)" as APP #FAF0E0
+participant "SWU_IPCS_CORE_SHM (ipc-shm.c)" as CORE #D4E6F1
+participant "SWU_IPCS_HAL_MCU (ipc-hw.c)" as HAL #F5E6CC
+participant "SWU_IPCS_OSAL_THREADX (ipc-os-threadx.c)" as OSAL #D5F5E3
+participant "SWU_IPCS_CORE_QUEUE (ipc-queue.c)" as QUEUE #D4E6F1
+
+autonumber
+APP -> CORE : ipcsShmInit(cfg)
+activate CORE
+CORE -> CORE : ipcsShmInitInstance(instance, cfg)
+CORE -> HAL : ipcsHwInit(instance, cfg)
+note right of HAL
+  Map MSCM, validate core/IRQ indices,
+  ipcsHwIrqDisable until channels ready
+end note
+HAL --> CORE : IPC_SHM_E_OK
+CORE -> OSAL : ipcsOsInit(instance, cfg, ipcsShmRx)
+note right of OSAL
+  Save shm addresses; create event flags
+  and softirq thread (if Rx IRQ enabled)
+end note
+OSAL --> CORE : IPC_SHM_E_OK
+CORE -> CORE : ipcsShmInitChannels(instance, cfg)
+CORE -> QUEUE : ipcsQueueInit per channel
+QUEUE --> CORE : ok
+CORE -> HAL : ipcsHwIrqClear(instance)
+CORE -> HAL : ipcsHwIrqEnable(instance)
+CORE -> CORE : state = READY; flush cache
+CORE --> APP : IPC_SHM_E_OK
+deactivate CORE
+@enduml

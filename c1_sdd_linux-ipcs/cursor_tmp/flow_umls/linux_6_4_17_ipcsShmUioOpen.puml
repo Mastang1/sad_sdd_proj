@@ -1,0 +1,12 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+if (!atomic_dec_and_test(&refcnt)?) then (yes)
+  :atomic_inc; return -EBUSY;
+else (no)
+  :return 0;
+endif
+stop
+@enduml

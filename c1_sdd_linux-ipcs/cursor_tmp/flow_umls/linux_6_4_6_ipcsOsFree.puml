@@ -1,0 +1,20 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:state = DISABLED;
+if (irq_num != IPC_IRQ_NONE?) then (yes)
+  :ipcsHwIrqDisable; pthread_cancel/join irq thread;
+  :close uio_fd;
+else (no)
+endif
+:munmap remote and local;
+if (any instance still ENABLED?) then (yes)
+  :return;
+  stop
+else (no)
+endif
+:close cdev and mem; delete_module ipc-shm-uio;
+stop
+@enduml

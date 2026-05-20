@@ -1,0 +1,42 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam sequenceArrowThickness 1.2
+skinparam sequence {
+  ArrowColor #5C4033
+  LifeLineBorderColor #8B7355
+  ParticipantBorderColor #8B7355
+  BoxBorderColor #A08060
+}
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+skinparam actor {
+  BackgroundColor #FAF0E0
+  BorderColor #8B7355
+}
+participant "Application (caller)" as APP #FAF0E0
+participant "SWU_IPCS_CORE_SHM (user lib)" as CORE #D4E6F1
+participant "SWU_IPCS_LINUX_OS_CDEV (os_cdev/ipc-os.c)" as CDEV_USR #FCF3CF
+participant "SWU_IPCS_LINUX_CDEV_KO (ipc-cdev.c)" as CDEV_KO #FDEBD0
+participant "SWU_IPCS_HAL_LINUX (ipc-hw.c)" as HAL #F5E6CC
+
+autonumber
+APP -> CORE : ipcsShmInit(cfg)
+CORE -> CDEV_USR : ipcsOsInit(instance, cfg, ipcsShmRx)
+activate CDEV_USR
+CDEV_USR -> CDEV_USR : finit_module; open /dev/ipc-shm-cdev
+CDEV_USR -> CDEV_USR : mmap local and remote SHM
+CDEV_USR -> CDEV_USR : pthread_create(global ipcsShmSoftirq)
+CDEV_USR -> CDEV_KO : ioctl(SET_INSTANCE)
+CDEV_USR -> CDEV_KO : ioctl(INIT_INSTANCE, cfg)
+activate CDEV_KO
+CDEV_KO -> CDEV_KO : ipcsCdevOsInit(instance, cfg)
+CDEV_KO -> HAL : ipcsHwInit(instance, cfg)
+HAL --> CDEV_KO : 0
+CDEV_KO -> CDEV_KO : request_irq(ipcsShmHardirq)
+deactivate CDEV_KO
+deactivate CDEV_USR
+CDEV_USR --> CORE : 0
+CORE --> APP : success
+@enduml

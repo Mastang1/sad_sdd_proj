@@ -1,0 +1,21 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+if (ioctl_cmd == SET_INSTANCE?) then (yes)
+  :target_instance = arg;
+elseif (ioctl_cmd == INIT_INSTANCE?) then (yes)
+  :copy_from_user cfg; ipcsCdevOsInit(target, cfg);
+elseif (ioctl_cmd == DISABLE_RX_IRQ?) then (yes)
+  :ipcsHwIrqDisable(arg);
+elseif (ioctl_cmd == ENABLE_RX_IRQ?) then (yes)
+  :ipcsHwIrqEnable(arg);
+elseif (ioctl_cmd == TRIGGER_TX_IRQ?) then (yes)
+  :ipcsHwIrqNotify(arg);
+else (no)
+  :return -ENOTTY;
+endif
+:return 0;
+stop
+@enduml

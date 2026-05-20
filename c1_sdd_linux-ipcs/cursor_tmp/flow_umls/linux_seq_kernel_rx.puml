@@ -1,0 +1,36 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam sequenceArrowThickness 1.2
+skinparam sequence {
+  ArrowColor #5C4033
+  LifeLineBorderColor #8B7355
+  ParticipantBorderColor #8B7355
+  BoxBorderColor #A08060
+}
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+skinparam actor {
+  BackgroundColor #FAF0E0
+  BorderColor #8B7355
+}
+participant "Remote core (peer)" as REMOTE #E8DAEF
+participant "SWU_IPCS_HAL_LINUX (ipc-hw.c)" as HAL #F5E6CC
+participant "SWU_IPCS_LINUX_OS_KERN (ipc-os.c)" as OSAL #D5F5E3
+participant "SWU_IPCS_CORE_SHM (kernel)" as CORE #D4E6F1
+
+autonumber
+REMOTE -> HAL : Rx IRQ
+HAL -> OSAL : ipcsShmHardirq
+activate OSAL
+OSAL -> HAL : ipcsHwIrqDisable / ipcsHwIrqClear
+OSAL -> OSAL : tasklet_schedule(ipcsShmSoftirq)
+deactivate OSAL
+OSAL -> CORE : priv.rx_cb(i, budget)
+loop work >= budget
+  CORE -> CORE : ipcsShmRx drain
+  OSAL -> OSAL : tasklet_schedule (yield)
+end
+OSAL -> HAL : ipcsHwIrqEnable(i)
+@enduml

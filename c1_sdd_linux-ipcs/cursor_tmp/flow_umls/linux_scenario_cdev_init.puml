@@ -1,0 +1,12 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:User ipcsOsInit;
+:Load ipc-shm-cdev.ko; open /dev/ipc-shm-cdev;
+:mmap SHM; create Rx pthread;
+:ioctl SET_INSTANCE + INIT_INSTANCE;
+:Kernel ipcsCdevOsInit -> ipcsHwInit; request_irq;
+stop
+@enduml

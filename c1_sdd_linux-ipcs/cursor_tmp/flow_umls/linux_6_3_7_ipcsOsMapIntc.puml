@@ -1,0 +1,20 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:node = of_find_compatible_node(DT_INTC_NODE_COMP);
+if (node == NULL?) then (yes)
+  :return NULL;
+  stop
+else (no)
+endif
+:of_address_to_resource; of_node_put;
+if (err?) then (yes)
+  :return NULL;
+  stop
+else (no)
+endif
+:return ioremap(res.start, resource_size);
+stop
+@enduml

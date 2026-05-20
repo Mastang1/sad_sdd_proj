@@ -1,0 +1,18 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:err = line_from_file(filename, linebuf);
+if (err != 0?) then (yes)
+  :return err;
+  stop
+else (no)
+endif
+if (strncmp(linebuf, filter) != 0?) then (yes)
+  :return EINVAL;
+else (no)
+  :return 0;
+endif
+stop
+@enduml

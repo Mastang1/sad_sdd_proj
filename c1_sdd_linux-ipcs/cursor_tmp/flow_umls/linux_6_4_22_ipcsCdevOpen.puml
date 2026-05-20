@@ -1,0 +1,13 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+if (!mutex_trylock(&mmap_device_mutex)?) then (yes)
+  :return -EBUSY;
+else (no)
+endif
+:filp->private_data = &ipc_pdev_priv;
+:return 0;
+stop
+@enduml

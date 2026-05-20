@@ -1,0 +1,10 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:wait_event_interruptible(wait_queue, flag != SLEEP);
+:wait_queue_flag = SLEEP;
+:return 0;
+stop
+@enduml

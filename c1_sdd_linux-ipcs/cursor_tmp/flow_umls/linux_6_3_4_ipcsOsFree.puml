@@ -1,0 +1,17 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:state = DISABLED;
+:ipcsHwIrqDisable(instance);
+:tasklet_kill(&ipc_shm_rx_tasklet);
+if (irq_num_init[instance] != 0?) then (yes)
+  :free_irq;
+  :irq_num_init[instance] = 0;
+else (no)
+endif
+:iounmap remote; release_mem_region remote;
+:iounmap local; release_mem_region local;
+stop
+@enduml

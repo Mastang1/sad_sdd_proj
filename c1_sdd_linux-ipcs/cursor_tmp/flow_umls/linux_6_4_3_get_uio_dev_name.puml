@@ -1,0 +1,29 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:sprintf uio_name instance_N;
+:nentries = scandir(IPC_SHM_UIO_DIR);
+if (nentries < 0?) then (yes)
+  :return -EIO;
+  stop
+else (no)
+endif
+while (count > 0?) is (yes)
+  :match sysfs name and version via line_match;
+  if (matched?) then (yes)
+    :copy dev_name;
+    break
+  else (no)
+  endif
+  :count--;
+endwhile (no)
+:free name_list entries;
+if (found?) then (yes)
+  :return 0;
+else (no)
+  :return -ENONET;
+endif
+stop
+@enduml

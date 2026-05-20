@@ -1,0 +1,13 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:SHM Core (ipcs_cores);
+:Fixed OSAL/HAL contract;
+:RTOS: direct OSAL/HAL implementation;
+:Linux UIO/CDEV: user-side proxy;
+:Linux UIO/CDEV: kernel backend + Linux HAL;
+:Linux in-kernel: OSAL + HAL in kernel module;
+stop
+@enduml

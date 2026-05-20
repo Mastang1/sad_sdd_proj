@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="426" viewBox="0 0 920 426">
+<style>text{font-family:Arial,"Microsoft YaHei",sans-serif;font-size:15px;fill:#222}.title{font-size:19px;font-weight:bold}.box{fill:#fff8dc;stroke:#555;stroke-width:1.2}.line{stroke:#555;stroke-width:1.2;marker-end:url(#arrow)}</style>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#555"/></marker></defs>
+<text x="460.0" y="28" text-anchor="middle" class="title">6.5.106 ipcsCdevOsInit</text>
+<rect class="box" x="110" y="52" width="700" height="44" rx="8"/>
+<text x="460.0" y="80" text-anchor="middle">Start</text>
+<line class="line" x1="460.0" y1="96" x2="460.0" y2="115"/>
+<rect class="box" x="110" y="120" width="700" height="44" rx="8"/>
+<text x="460.0" y="148" text-anchor="middle">Allocate/register kernel resources</text>
+<line class="line" x1="460.0" y1="164" x2="460.0" y2="183"/>
+<rect class="box" x="110" y="188" width="700" height="44" rx="8"/>
+<text x="460.0" y="216" text-anchor="middle">Initialize private data</text>
+<line class="line" x1="460.0" y1="232" x2="460.0" y2="251"/>
+<rect class="box" x="110" y="256" width="700" height="44" rx="8"/>
+<text x="460.0" y="284" text-anchor="middle">Request or register IRQ/device</text>
+<line class="line" x1="460.0" y1="300" x2="460.0" y2="319"/>
+<rect class="box" x="110" y="324" width="700" height="44" rx="8"/>
+<text x="460.0" y="352" text-anchor="middle">Return status</text>
+</svg>

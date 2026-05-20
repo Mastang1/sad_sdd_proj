@@ -1,0 +1,15 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:User ipcsShmInit -> ipcsOsInit;
+:Load ipc-shm-uio.ko; open cdev-uio and /dev/mem;
+:mmap local/remote SHM;
+:write IPCS_UIO_CDEV_DATA_TYPE to cdev;
+:Kernel ipcsCdevWrite -> ipcsUioInit;
+:Kernel ipcsHwInit and uio_register_device;
+:User get_uio_dev_name; open UIO fd;
+:User pthread ipcsShmSoftirq (read blocks on IRQ);
+stop
+@enduml

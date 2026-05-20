@@ -1,0 +1,44 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam sequenceArrowThickness 1.2
+skinparam sequence {
+  ArrowColor #5C4033
+  LifeLineBorderColor #8B7355
+  ParticipantBorderColor #8B7355
+  BoxBorderColor #A08060
+}
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+skinparam actor {
+  BackgroundColor #FAF0E0
+  BorderColor #8B7355
+}
+participant "Remote core (peer)" as REMOTE #E8DAEF
+participant "SWU_IPCS_HAL_MCU (ipc-hw.c)" as HAL #F5E6CC
+participant "SWU_IPCS_OSAL_THREADX (ipc-os-threadx.c)" as OSAL #D5F5E3
+participant "SWU_IPCS_CORE_SHM (ipc-shm.c)" as CORE #D4E6F1
+participant "SWU_IPCS_CORE_QUEUE (ipc-queue.c)" as QUEUE #D4E6F1
+participant "Application (rx_cb)" as APP #FAF0E0
+
+autonumber
+REMOTE -> HAL : Rx IRQ (MSCM)
+activate HAL
+HAL -> OSAL : ipcsShmHardIrq()
+activate OSAL
+OSAL -> HAL : ipcsHwIrqDisable(i) / ipcsHwIrqClear(i)
+OSAL -> OSAL : tx_event_flags_set(DATA_EVENT_FLAG)
+deactivate HAL
+OSAL -> OSAL : ipcsShmSoftIrq thread wakes
+OSAL -> CORE : rxCallback(instance, budget) / ipcsShmRx
+activate CORE
+loop until work < budget
+  CORE -> QUEUE : ipcsQueuePop / channel dispatch
+  CORE -> APP : application rx_cb(chan, buf)
+  APP --> CORE : handled count
+end
+deactivate CORE
+OSAL -> HAL : ipcsHwIrqEnable(i)
+deactivate OSAL
+@enduml

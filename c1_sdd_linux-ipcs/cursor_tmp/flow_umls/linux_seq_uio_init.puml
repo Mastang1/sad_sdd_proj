@@ -1,0 +1,44 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam sequenceArrowThickness 1.2
+skinparam sequence {
+  ArrowColor #5C4033
+  LifeLineBorderColor #8B7355
+  ParticipantBorderColor #8B7355
+  BoxBorderColor #A08060
+}
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+skinparam actor {
+  BackgroundColor #FAF0E0
+  BorderColor #8B7355
+}
+participant "Application (caller)" as APP #FAF0E0
+participant "SWU_IPCS_CORE_SHM (user lib)" as CORE #D4E6F1
+participant "SWU_IPCS_LINUX_OS_UIO (os_uio/ipc-os.c)" as UIO_USR #FCF3CF
+participant "SWU_IPCS_LINUX_UIO_KO (ipc-uio.c)" as UIO_KO #FDEBD0
+participant "SWU_IPCS_HAL_LINUX (ipc-hw.c)" as HAL #F5E6CC
+
+autonumber
+APP -> CORE : ipcsShmInit(cfg)
+CORE -> UIO_USR : ipcsOsInit(instance, cfg, ipcsShmRx)
+activate UIO_USR
+UIO_USR -> UIO_USR : finit_module(ipc-shm-uio.ko)
+UIO_USR -> UIO_USR : open /dev/ipc-cdev-uio, /dev/mem
+UIO_USR -> UIO_USR : mmap local and remote SHM
+UIO_USR -> UIO_KO : write(IPC_UIO_CDEV_DATA_TYPE)
+activate UIO_KO
+UIO_KO -> UIO_KO : ipcsUioInit(data)
+UIO_KO -> HAL : ipcsHwInit(instance, cfg)
+HAL --> UIO_KO : 0
+UIO_KO -> UIO_KO : uio_register_device / request IRQ
+deactivate UIO_KO
+UIO_USR -> UIO_USR : get_uio_dev_name; open /dev/uioX
+UIO_USR -> UIO_USR : pthread_create(ipcsShmSoftirq)
+deactivate UIO_USR
+UIO_USR --> CORE : 0
+CORE -> CORE : ipcsShmInitChannels ...
+CORE --> APP : success
+@enduml

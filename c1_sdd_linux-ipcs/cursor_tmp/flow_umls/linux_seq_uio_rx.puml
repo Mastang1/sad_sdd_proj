@@ -1,0 +1,37 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam sequenceArrowThickness 1.2
+skinparam sequence {
+  ArrowColor #5C4033
+  LifeLineBorderColor #8B7355
+  ParticipantBorderColor #8B7355
+  BoxBorderColor #A08060
+}
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+skinparam actor {
+  BackgroundColor #FAF0E0
+  BorderColor #8B7355
+}
+participant "Remote core (peer)" as REMOTE #E8DAEF
+participant "SWU_IPCS_HAL_LINUX (ipc-hw.c)" as HAL #F5E6CC
+participant "SWU_IPCS_LINUX_UIO_KO (ipc-uio.c)" as UIO_KO #FDEBD0
+participant "SWU_IPCS_LINUX_OS_UIO (os_uio/ipc-os.c)" as UIO_USR #FCF3CF
+participant "SWU_IPCS_CORE_SHM (user lib)" as CORE #D4E6F1
+
+autonumber
+REMOTE -> HAL : Rx IRQ
+HAL -> UIO_KO : ipcsShmUioHandler
+activate UIO_KO
+UIO_KO -> HAL : ipcsHwIrqDisable / ipcsHwIrqClear
+UIO_KO --> UIO_USR : UIO event (read unblocks)
+deactivate UIO_KO
+UIO_USR -> UIO_USR : pthread: read(uio_fd)
+UIO_USR -> CORE : rx_cb(instance, budget) / ipcsShmRx
+loop work >= budget
+  CORE -> CORE : drain channels
+end
+UIO_USR -> UIO_USR : ipcsHwIrqEnable via UIO write
+@enduml

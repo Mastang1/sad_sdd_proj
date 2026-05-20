@@ -1,0 +1,8 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:return (no-op user proxy);
+stop
+@enduml

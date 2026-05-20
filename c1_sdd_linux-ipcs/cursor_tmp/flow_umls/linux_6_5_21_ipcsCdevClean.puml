@@ -1,0 +1,10 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:foreach instance: ipcsHwIrqDisable; free_irq if needed;
+:cdev_del; device_destroy; class_destroy;
+:unregister_chrdev_region;
+stop
+@enduml

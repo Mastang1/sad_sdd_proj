@@ -1,0 +1,34 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam sequenceArrowThickness 1.2
+skinparam sequence {
+  ArrowColor #5C4033
+  LifeLineBorderColor #8B7355
+  ParticipantBorderColor #8B7355
+  BoxBorderColor #A08060
+}
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+skinparam actor {
+  BackgroundColor #FAF0E0
+  BorderColor #8B7355
+}
+participant "Remote core (peer)" as REMOTE #E8DAEF
+participant "SWU_IPCS_HAL_LINUX (ipc-hw.c)" as HAL #F5E6CC
+participant "SWU_IPCS_LINUX_CDEV_KO (ipc-cdev.c)" as CDEV_KO #FDEBD0
+participant "SWU_IPCS_LINUX_OS_CDEV (os_cdev/ipc-os.c)" as CDEV_USR #FCF3CF
+participant "SWU_IPCS_CORE_SHM (user lib)" as CORE #D4E6F1
+
+autonumber
+REMOTE -> HAL : Rx IRQ
+HAL -> CDEV_KO : ipcsShmHardirq
+activate CDEV_KO
+CDEV_KO -> HAL : ipcsHwIrqDisable / ipcsHwIrqClear
+CDEV_KO -> CDEV_KO : wake_up_interruptible(wait_queue)
+deactivate CDEV_KO
+CDEV_USR -> CDEV_KO : read(/dev/ipc-shm-cdev) returns
+CDEV_USR -> CORE : rx_cb(i, budget) per instance
+CDEV_USR -> CDEV_USR : ipcsHwIrqEnable via ioctl
+@enduml

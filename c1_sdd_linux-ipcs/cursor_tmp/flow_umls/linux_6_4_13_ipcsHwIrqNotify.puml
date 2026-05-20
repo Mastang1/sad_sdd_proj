@@ -1,0 +1,8 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:ipcsSendUioCmd(uio_fd, IPC_UIO_TRIGGER_CMD);
+stop
+@enduml

@@ -1,0 +1,13 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:state = DISABLED; munmap instance shm;
+if (all instances disabled?) then (yes)
+  :pthread_cancel/join softirq; close fds;
+  :delete_module;
+else (no)
+endif
+stop
+@enduml

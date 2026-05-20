@@ -1,0 +1,36 @@
+=== MD / DOCX consistency report ===
+
+Markdown headings (h1-h4): 261
+DOCX Heading 1-4 paragraphs: 261
+
+Markdown pipe tables (blocks): 123
+Markdown HTML function tables: 72
+DOCX HTML-style function tables (5+ cols): 72
+DOCX tables (total): 196
+
+Markdown image refs: 166
+DOCX inline images (blips): 166
+DOCX word/media extensions: {'.svg': 165, '.png': 190}
+DOCX body SVG (svgBlip): 166
+
+SVG aspect ratios (viewBox vs DOCX): 166/166 OK
+
+SWU IDs in MD: 15
+SWU IDs in DOCX: 15
+
+Key phrase spot-check:
+  [MISSING] 5.7 RTOS
+  [MISSING] 6.7 Linux
+  [OK] sequence diagram
+  [OK] SWU_IPCS_LINUX_OS_UIO
+  [OK] ipcsShmInit
+
+Function subsections (### x.y.z name) in MD: 214
+
+--- WARNINGS ---
+  [WARN] Phrase not in DOCX body: 5.7 RTOS
+  [WARN] Phrase not in DOCX body: 6.7 Linux
+
+--- RESULT: PASS (no ERROR) ---
+
+DOCX paragraphs total: 829

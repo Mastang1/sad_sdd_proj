@@ -1,0 +1,11 @@
+@startuml
+!pragma layout smetana
+skinparam conditionStyle insideDiamond
+skinparam linetype ortho
+start
+:platform_get_resource MSCM; devm_ioremap;
+:create class and cdev ipc-cdev-uio;
+:register platform driver;
+:return 0;
+stop
+@enduml
