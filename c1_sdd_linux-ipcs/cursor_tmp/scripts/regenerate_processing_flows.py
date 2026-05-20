@@ -1,6 +1,17 @@
 # -*- coding: utf-8 -*-
 r"""
-Regenerate processing-flow PlantUML/SVG from ipcs/ sources listed in md_sdd_0519.md.
+Regenerate processing-flow PlantUML/SVG from ipcs/ sources (heuristic C→PlantUML).
+
+WARNING — read cursor_tmp/SDD_TOOLCHAIN.md §1 G3 and §5 before running:
+  - Do NOT use for Init/goto-heavy functions unless each .puml passes
+    ``java -jar plantuml.jar -checkonly`` and you accept full diff review.
+  - Prefer pipeline A: edit linux_ch6_flows.FLOWS / emit_puml, then
+    render_linux_ch6_flows.py.
+  - Running this BEFORE emit_puml.py will be overwritten by emit; running
+    AFTER emit is OK only for slugs emit does not own.
+
+Pre-flight (mandatory): complete G1–G4 in SDD_TOOLCHAIN.md; confirm task
+requires bulk regen, not hand-written flows.
 
 Usage (repository root)::
 

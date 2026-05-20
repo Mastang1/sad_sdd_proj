@@ -33,46 +33,6 @@ Copy-Item cursor_tmp/cursorrules_backups/.cursorrules.snapshot .cursorrules -For
 - 复杂逻辑标注源文件路径；分析报告说明不足与修改方案。
 - 临时 MD/PY/DOCX 一律写入 `cursor_tmp/`；任务结束清理一次性脚本与冗余临时文件。
 
-### 1.1 跨会话记忆（`cursor_tmp/mem_info.md`，强制）
-
-**真源**：仅 `cursor_tmp/mem_info.md`（常量 `workspace_paths.MEM_INFO`）。禁止在根目录或其它路径维护副本。
-
-#### 新会话 / 对话开始时（第一步，优先于跑脚本）
-
-1. **读取**：若 `mem_info.md` 存在，**必须先 Read** 全文（新 Session、长上下文重置、用户未提供历史时均适用）。
-2. **导入**：在**首条回复**用 3–5 条要点写出「记忆摘要」，将稳定决策与当前焦点纳入本会话推理（强化当前 LLM 上下文；不代替 Read 文件）。
-3. **冲突**：用户当次指令与记忆冲突时，**以当次指令为准**；将结论一行写入「上轮增量」，必要时改「稳定决策」。
-
-#### 会话进行中与收尾（按情况更新）
-
-在以下时机**必须或应**增量更新 `mem_info.md`（用 Write/StrReplace 写回磁盘）：
-
-| 时机 | 更新内容 |
-|------|----------|
-| 任务阶段完成、管线 C validate PASS/FAIL | meta.validate、上轮增量 |
-| 用户澄清范围/章节/命名（如 §6.7 vs 第 7 章） | 稳定决策或禁踩坑 |
-| 新增/变更工具链、脚本顺序、验收基线 | 稳定决策 + 指针 |
-| 可复用的教训（脚本覆盖、坏图根因） | 禁踩坑 |
-| 当前工作切换 | 「当前焦点」整段替换（仅保留 1–3 条） |
-
-**不写**：长篇推理、完整命令日志、与 `SDD_TOOLCHAIN.md` 重复的脚本大全。
-
-#### 科学组织与瘦身（保持尽量小）
-
-| 区块 | 职责 | 维护 |
-|------|------|------|
-| `meta` | 日期、验收基线一行 | 每次更新改 `updated` |
-| `当前焦点` | 正在做的 1–3 件事 | 切换任务时**替换**，不追加 |
-| `稳定决策` | 长期有效、跨会话约定 | 合并重复；过时删 |
-| `指针` | 细则所在文件路径 | 只链路径，不复制条文 |
-| `上轮增量` | 最近 1–2 次会话的 delta | 新 delta 写入后**删**已并入稳定决策的旧条 |
-| `禁踩坑` | 短教训 | 每条 ≤1 行；>8 条则合并或删最旧 |
-
-- 目标 **≤120 行**，硬上限 **150 行**；超限时先删「上轮增量」与重复「禁踩坑」，再压缩「当前焦点」。
-- 单行一事；用表或 bullet，避免段落堆砌。
-
-**与其它文档分工**：脚本/管线 → `SDD_TOOLCHAIN.md`；格式死命令 → 本 `.cursorrules`；`mem_info` 只存**状态与决策**，不存 SDD 正文。
-
 ---
 
 ## 2. 路径与目录
@@ -82,39 +42,17 @@ Copy-Item cursor_tmp/cursorrules_backups/.cursorrules.snapshot .cursorrules -For
 | 位置 | 内容 |
 |------|------|
 | **根目录（交付物）** | `ipcs/`、`*.md`、`final_sdd.docx`、`ipcs-architecture.pdf`、`plantuml.jar`、`.cursorrules` |
-| **`cursor_tmp/`** | `mem_info.md`（跨会话记忆）、`SDD_TOOLCHAIN.md`、`format_docx_py/`、`scripts/`、`flow_svgs/`、`flow_umls/`、`files_32_svgs/`、`files_32_umls/`、`cursorrules_backups/`、构建临时与校验报告 |
+| **`cursor_tmp/`** | `format_docx_py/`、`scripts/`、`flow_svgs/`、`flow_umls/`、`files_32_svgs/`、`files_32_umls/`、`cursorrules_backups/`（`.cursorrules` 快照与 CHANGELOG）、构建临时文件与校验报告 |
 
 - 路径常量：`cursor_tmp/workspace_paths.py`（`WORKSPACE_ROOT`、`CURSOR_TMP`、`FLOW_SVGS` 等）；**脚本必须 import，禁止硬编码旧路径**。
 - MD 插图引用示例：`cursor_tmp/flow_svgs/linux_6_3_1.svg`
 
-**跨会话记忆（新 Session 第一步）**：`cursor_tmp/mem_info.md`（见 §1.1）  
-**工具链手册（跑脚本前必读）**：`cursor_tmp/SDD_TOOLCHAIN.md`  
-**Project Skill**：`.cursor/skills/ipcs-sdd-toolchain/SKILL.md`（任务匹配时自动加载）
-
-**常用命令（在根目录执行）** — 完整管线见手册 §3；交付闭环见 §2.1。
+**常用命令（在根目录执行）**
 ```bash
 python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
 python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 python cursor_tmp/scripts/render_flow_svgs.py
 ```
-
-### 2.1 SDD 工具链与脚本执行门禁（强制）
-
-> 细则与脚本总表：**`cursor_tmp/SDD_TOOLCHAIN.md`**。AI 在调用任意 `cursor_tmp/**/*.py` 之前必须完成下表。
-
-| 步 | 要求 | 未满足则 |
-|----|------|----------|
-| **G1** | 将任务映射到手册 §3 管线 **A/B/C/D/E** 或标明一次性脚本 | 禁止跑全量流水线 |
-| **G2** | 在手册 §2 选定脚本；确认**覆盖范围**与任务一致（如仅 `linux_6_4_5_*`） | 禁止执行 |
-| **G3** | Init/goto/复杂流程：**禁止**默认 `regenerate_processing_flows.py` 批量生成；须改 `linux_ch6_flows.py` / `emit_puml.py` / `ipc_flow_remainder.py` | 须先改真源再渲染 |
-| **G4** | 若脚本能力不满足任务：须**先**修改脚本或 §4 映射并更新手册，再执行 | 禁止带错参硬跑 |
-| **G5** | 改 `.puml` 后：`java -jar plantuml.jar -checkonly <file>`；交付前：`validate_md_docx_consistency.py` **PASS** | 不得宣称完成 |
-
-**AI 回复须包含**：G1–G4 勾选说明；实际执行的命令；改动真源（非仅“已运行脚本”）。
-
-**管线 A（单函数/Init，推荐）**：`ipcs/` 源码 → `linux_ch6_flows.FLOWS` 或 `emit_puml` → `render_linux_ch6_flows.py` →（可选）管线 C。
-
-**禁止**：未做 G1–G4 即批量 `regenerate_processing_flows.py`；`regenerate` 后再 `emit_puml`（覆盖 hand-written 图）。
 
 ### 临时文件（强制）
 - 临时 MD、一次性 PY、Pandoc 中间件、测试 DOCX、`__pycache__`、校验报告 → **仅** `cursor_tmp/`。

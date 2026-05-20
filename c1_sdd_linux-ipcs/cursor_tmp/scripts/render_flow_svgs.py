@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""SVG export for flow_umls via PlantUML (Java). Outputs to ../flow_svgs/."""
+"""SVG export for flow_umls via PlantUML (Java). Outputs to ../flow_svgs/.
+
+Pre-flight: SDD_TOOLCHAIN.md §3 pipeline B; excludes *_seq_* (use
+render_scenario_sequences.py). After edits, run validate if delivering docx.
+"""
 from __future__ import annotations
 
 import subprocess

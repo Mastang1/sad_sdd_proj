@@ -1,0 +1,267 @@
+﻿=== page 7 len 1476 ===
+7 鍖椾含杈拌嚦鍗婂浣撴湁闄愬叕鍙?
+缁濆瘑
+飦?鏍稿績澶嶇敤锛歀inux 涓?RTOS 鍏变韩鍚屼竴濂楁牳蹇冮€氫俊妯″瀷
+飦?閰嶇疆椹卞姩锛氬疄渚嬨€侀€氶亾銆佺紦鍐插尯涓庝腑鏂叧绯荤敱閰嶇疆瀹氫箟锛涢厤缃粨鏋勫寲鍒嗗眰
+飦?鎺ュ彛绋冲畾锛氫笂灞備娇鐢ㄧ粺涓€椹卞姩鎺ュ彛锛屼笉鎰熺煡搴曞眰 OS/HW 宸紓
+飦?鍙樹綋鍙楁帶锛氬钩鍙板樊寮傚拰 OS 宸紓浠呭湪鏄庣‘鐨勫彉浣撳眰鍐呭睍寮€
+飦?涓€鑷存€у彲鏍℃牳锛氭灦鏋勮璁″簲鑳芥槧灏勫埌鐜版湁瀹炵幇骞舵敮鎸佸悗缁彉鏇村鏌?
+2.4 REQUIREMENTS ALLOCATION 闇€姹傚垎閰?
+鏈?绔犺惤 瀹? ASPICE SWE.2 锛?杞?浠?鏋?鏋?璁?璁?锛?涓?瀵?杞?浠?闇€ 姹?涓?鏋?鏋?鍏冪礌 涔?闂? 鍙?杩?婧?鍒?閰?
+锛坅llocation锛?鐨勮姹傦細灏嗗凡鍩虹嚎鍖栫殑杞欢闇€姹傛槧灏勫埌鏈灦鏋勪腑鐨勭粍浠朵笌宸ョ▼灞炴€э紝浣滀负 SWE.1 鈫?
+SWE.2 杩芥函鐨勪竴鐜紝骞舵敮鎾?SWE.3锛堣蒋浠惰缁嗚璁′笌鍗曞厓瀹炵幇锛夈€丼WE.4锛堣蒋浠堕泦鎴愪笌闆嗘垚娴嬭瘯锛?
+鍙?SWE.5锛堣蒋浠跺悎鏍兼€ф祴璇曪級 鐨勮寖鍥寸晫瀹氥€?
+宸ヤ綔浜у搧鍏崇郴璇存槑锛?
+飦?杈撳叆锛氭灦鏋勮璁＄殑闇€姹備緷鎹紱
+飦?杈撳嚭锛氫笅琛ㄤ负闇€姹傚垎閰嶇煩闃电殑鏋舵瀯瑙嗗浘锛?
+飦?澶氱粍浠堕渶姹傦細鑻ヤ竴鏉￠渶姹傜敱澶氫釜缁勪欢鍗忓悓婊¤冻锛岃〃涓?涓昏矗缁勪欢 涓哄疄鐜颁笌楠岃瘉鐨勯瑕佸綊灞烇紱
+飦?缁勪欢浠ｅ彿锛氫笌鏈枃妗ｇ 4 绔犱竴鑷达紙Drv_Ipcs_Core_Cmp锝濪rv_Ipcs_Linux_Adapt_Cmp锛夛紱
+闇€姹?ID 闇€姹傜畝杩?涓昏矗缁勪欢 / 褰掑睘 鍗忓悓 / 澶囨敞
+IPCS_001鍚屾牳鎴栧紓鏍镐笂搴?
+鐢ㄩ棿鐐瑰鐐瑰弻鍚?
+閫氫俊
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Queue_Cmp锛?
+Drv_Ipcs_Osal_Cmp锛?
+Drv_Ipcs_Hal_Cmp锛?
+Drv_Ipcs_Conf_Cmp
+绔埌绔矾寰勶細Drv_Ipcs_Conf_Cmp 閰嶇疆瀵圭О甯?
+灞€锛汥rv_Ipcs_Core_Cmp 瀹炰緥/閫氶亾锛?
+Drv_Ipcs_Queue_Cmp 闃熷垪涓?BD锛?
+Drv_Ipcs_Osal_Cmp/Drv_Ipcs_Hal_Cmp 鍦板潃涓?
+閫氱煡
+IPCS_002閮ㄧ讲浜?
+AutoSAR OS 鏃?
+婊¤冻 ASIL-D
+杩囩▼绫?+ Drv_Ipcs_Osal_Cmp 瀹夊叏鐩爣鍒嗚В銆佸畨鍏ㄦ満鍒朵笌璇佹嵁鍦ㄧ嫭绔嬪畨鍏ㄥ伐浣?
+涓骇鍝佸寲锛涙灦鏋勪笂 Drv_Ipcs_Osal_Cmp 鎵挎媴 
+AutoSAR 闆嗘垚涓?OS 浜や簰杈圭晫
+IPCS_003鍐呮牳涓庣‖浠跺钩
+鍙般€佸瓧鑺傚簭鏃犲叧
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Queue_Cmp锛?
+Drv_Ipcs_Hal_Cmp
+鍙Щ妞嶉€昏緫鍦?
+Drv_Ipcs_Core_Cmp/Drv_Ipcs_Queue_Cmp锛?
+骞冲彴鐩稿叧闆嗕腑鍦?Drv_Ipcs_Hal_Cmp锛涘瓧鑺傚簭閫?
+杩囧彲绉绘绫诲瀷涓庢樉寮忚浆鎹㈢瓥鐣ュ湪 
+Drv_Ipcs_Core_Cmp/Drv_Ipcs_Queue_Cmp 鏀?
+鏁?
+IPCS_005浣滀负澶嶆潅椹卞姩鍦?
+AutoSAR OS 涓?
+杩愯
+Drv_Ipcs_Osal_Cmp 涓?AutoSAR CDD/OS 鎺ュ彛灏佽銆佽皟搴︿笌閿欒閽?
+瀛愬榻愶紱Drv_Ipcs_Conf_Cmp 閰嶇疆鐢遍泦鎴愭柟鎻愪緵
+IPCS_006浣滀负椹卞姩鍦?
+ThreadX 涓嬭繍琛?
+Drv_Ipcs_Osal_Cmp ThreadX 鍙樹綋 OSAL锛氫换鍔?涓柇/鍚屾鍘熻鏄犲皠
+IPCS_009platform / os / 
+phy / transport 
+杩囩▼绫?+ 鍏ㄧ粍浠惰竟鐣?鐩綍涓庝緷璧栨柟鍚戠害鏉熸灦鏋勫垎灞傦紱鍒犻櫎涓€灞備粎褰撲笂
+灞備笉渚濊禆璇ユ娊璞℃椂鎴愮珛锛岄渶鍦ㄩ泦鎴愰厤缃腑鍏抽棴瀵?
+=== page 8 len 1568 ===
+8 鍖椾含杈拌嚦鍗婂浣撴湁闄愬叕鍙?
+缁濆瘑
+鍚勫眰鐙珛鐩綍锛?
+鍙暣浣撶Щ闄?
+搴旂壒鎬?
+IPCS_010浼犺緭灞傝璁℃敮鎸?
+鍩哄噯涓庡悶鍚愰噺浼?
+璁?
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Queue_Cmp锛岋紙浼犺緭
+灞傚疄鐜帮級
+鍦ㄤ紶杈撹矾寰勪繚鐣欏彲瑙傛祴璁℃暟/鏃堕棿鎴虫垨閽╁瓙锛屼緵鍩?
+鍑嗘祴璇曟瀯寤轰娇鐢紱涓嶄笌鐢熶骇鏈€灏忛泦寮哄埗缁戝畾
+IPCS_011鍙湪 Windows 
+涓绘満涓婃瀯寤?
+杩囩▼绫?鏋勫缓绯荤粺銆佸伐鍏烽摼涓庝富鏈烘々瀹炵幇锛涗笉灞?
+Drv_Ipcs_Core_Cmp锝?
+Drv_Ipcs_Linux_Adapt_Cmp 杩愯鏃惰亴璐?
+IPCS_012涓绘満鍗曞厓娴嬭瘯銆?
+缁勪欢鏄撲簬妯″瀷鏇?
+鎹?
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Queue_Cmp锛?
+Drv_Ipcs_Osal_Cmp锛?
+Drv_Ipcs_Hal_Cmp + 杩囩▼绫?
+閫氳繃 OSAL/HWAL 鎺ュ彛娉ㄥ叆鏇胯韩锛涙祴璇曞伐绋嬩笌 
+mock 灞?SWE.3/SWE.5 鏀寔
+IPCS_013淇℃伅瀹夊叏涓庡姛鑳?
+瀹夊叏楠岃瘉闇€妯＄硦
+娴嬭瘯
+杩囩▼绫?SWE.5 /瀹夊叏楠岃瘉璁″垝涓殑娴嬭瘯鎵嬫锛涙灦鏋勪笂淇濇寔
+鎺ュ彛杈圭晫娓呮櫚浠ヤ究 fuzz 鐩爣鏀舵暃
+IPCS_014SHM 椹卞姩鏀寔
+澶氶€氫俊閫氶亾锛堟暟
+鎹祦锛?
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Queue_Cmp锛?
+Drv_Ipcs_Conf_Cmp
+澶?channel 妯″瀷涓庡叡浜唴瀛樺竷灞€
+IPCS_015閫氶亾/娴佸唴娑堟伅
+椤哄簭淇濇寔
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Queue_Cmp
+鍗曢€氶亾闃熷垪璇箟涓庡彂閫?鎺ユ敹椤哄簭绾﹀畾
+IPCS_016姣忛€氶亾鏀寔澶氫釜
+缂撳啿姹?
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Queue_Cmp锛?
+Drv_Ipcs_Conf_Cmp
+pool 閰嶇疆涓?Drv_Ipcs_Queue_Cmp 澶氶槦鍒楃鐞?
+IPCS_017鍏ㄦ牳澶氫紶杈撳苟
+琛屻€侀珮鏁堟牳鍒╃敤
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Osal_Cmp锛?
+Drv_Ipcs_Conf_Cmp
+澶?instance锛汥rv_Ipcs_Osal_Cmp 姣忔牳鎵ц妯?
+鍨嬩笌涓柇浜插拰
+IPCS_018闆舵嫹璐?API 涓庡疄
+鐜?
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Queue_Cmp
+鎸囬拡/BD 鎻忚堪宸叉湁缂撳啿鍖猴紝閬垮厤椹卞姩鍐呴澶栨嫹璐?
+IPCS_019寮傛锛堝熀浜庨€?
+鐭ワ級鎺ユ敹 API
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Osal_Cmp
+鍥炶皟鐢?Drv_Ipcs_Osal_Cmp 寮傛涓婁笅鏂囪Е鍙戯紱
+Drv_Ipcs_Core_Cmp 鍒嗗彂
+IPCS_020涓ら€氫俊绔棿涓嶅彈
+骞叉壈锛堝唴瀛樹繚
+鎶わ級
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Conf_Cmp + 闆嗘垚鐜?
+澧?
+鍏变韩鍐呭瓨鍒嗗尯涓庤闂潈闄愮敱甯冨眬
+锛圖rv_Ipcs_Conf_Cmp锛変笌 SoC/OS 鍐呭瓨淇濇姢鍏?
+鍚屼繚璇侊紱Drv_Ipcs_Core_Cmp 閬靛畧杈圭晫
+IPCS_021闈炴墭绠￠€氶亾锛屽簲
+鐢ㄧ嫭鍗犻€氶亾鍐呭瓨
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Conf_Cmp
+unmanaged 妯″瀷涓?ipcsShmUnmanaged* 璺?
+寰?
+IPCS_022铏氭嫙涓柇涓嶆姇閫?
+闄堟棫鏁版嵁
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Queue_Cmp锛?
+Drv_Ipcs_Osal_Cmp锛?
+Drv_Ipcs_Hal_Cmp
+搴忓垪鍙?闃熷垪鐘舵€佷笌閫氱煡璺緞鍗忚皟锛岄伩鍏嶅湪鏃犳晥鐘?
+鎬佷笅鍥炶皟
+IPCS_023涓㈠け涓柇涓嶅鑷?
+鏁版嵁涓㈠け
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Queue_Cmp
+渚濊禆鍏变韩鍐呭瓨涓殑鎻愪氦椤哄簭涓庡绔彲瑙佹€э紱鎺ユ敹
+鏂瑰彲閫氳繃杞鎴栬鏁拌ˉ鍋匡紙涓?IPCS_039 鍗忓悓锛?
+=== page 9 len 1306 ===
+9 鍖椾含杈拌嚦鍗婂浣撴湁闄愬叕鍙?
+缁濆瘑
+IPCS_024涓?AUTOSAR 
+4.4 鎴栨洿楂樼増鏈?
+鍏煎
+Drv_Ipcs_Osal_Cmp锛?
+Drv_Ipcs_Conf_Cmp
+鎺ュ彛涓庨厤缃ā鍨嬪榻?R4.4+ 闆嗘垚绾﹀畾
+IPCS_025姹犱腑缂撳啿鍖烘暟閲?
+涓庡ぇ灏忓彲閰嶇疆
+Drv_Ipcs_Conf_Cmp 闆嗘垚閰嶇疆鏁版嵁锛汥rv_Ipcs_Core_Cmp/
+Drv_Ipcs_Queue_Cmp 娑堣垂
+IPCS_028鏀寔  鏍搁棿涓柇
+浣滀负鏀跺彂閫氱煡
+Drv_Ipcs_Hal_Cmp锛?
+Drv_Ipcs_Osal_Cmp
+Drv_Ipcs_Hal_Cmp  骞冲彴瀹炵幇锛?
+Drv_Ipcs_Osal_Cmp 鎸傛帴 Linux/RTOS 涓柇妯″瀷
+IPCS_029杞欢缁勪欢浣跨敤闈?
+鎬佸唴瀛樺垎閰?
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Queue_Cmp锛?
+Drv_Ipcs_Osal_Cmp
+瀹炵幇绾︽潫锛氭棤鍫嗘垨鍙楅檺鍫嗭紱姹犱笌闃熷垪闈欐€佺淮搴︾敱 
+Drv_Ipcs_Conf_Cmp 瀹氫箟
+IPCS_030璁惧绔簮鐮佺鍚?
+缂栫爜瑙勮寖
+杩囩▼绫?缂栫爜鏍囧噯涓庨潤鎬佸垎鏋愰棬绂?
+IPCS_031澶氬鍐呮牳锛堝瀹?
+渚嬶級閫氫俊
+Drv_Ipcs_Core_Cmp锛?
+Drv_Ipcs_Conf_Cmp
+澶?instance 涓庣嫭绔?SHM/IRQ 閰嶇疆
+IPCS_034鏍￠獙搴旂敤浼犲叆鐨?
+鍏叡 API 鍙傛暟
+Drv_Ipcs_Core_Cmp 鍚勫叕鍏?API 鍏ュ彛鍙傛暟涓庤寖鍥存鏌?
+IPCS_035鏍￠獙閫氶亾绫诲瀷涓?
+鎵€璇锋眰鎿嶄綔鏄惁
+鍖归厤
+Drv_Ipcs_Core_Cmp managed/unmanaged API 涓?channel 绫诲瀷涓€
+鑷存€?
+IPCS_036浣庡欢杩熴€佸皬浣?
+绉€佸彲鎸夐渶瑁佸壀 
+HW/OS/浼犺緭
+Drv_Ipcs_Core_Cmp锝?
+Drv_Ipcs_Linux_Adapt_Cmp锛?
+Drv_Ipcs_Conf_Cmp
+鍙€夌紪璇戜笌鐩綍绾х壒鎬у紑鍏筹紱Linux 璺緞 
+Drv_Ipcs_Linux_Adapt_Cmp 鎸夐渶閾炬帴
+IPCS_038鎸夎景鑷虫苯杞﹁川閲?
+娴佺▼寮€鍙戜负鐢熶骇
+绾ц蒋浠?
+杩囩▼绫?椤圭洰绠＄悊銆侀厤缃鐞嗐€侀棶棰樿В鍐充笌鍙戝竷娴佺▼锛涙灦
+鏋勬枃妗ｄ负 SWE.2 宸ヤ綔浜у搧涔嬩竴
+IPCS_039鏀寔杞鏂瑰紡
+锛圛RQ_NONE锛?
+Drv_Ipcs_Osal_Cmp锛?
+Drv_Ipcs_Hal_Cmp
+Drv_Ipcs_Osal_Cmp ipcsShmPollChannels / 杞?
+璇㈡ˉ鎺ワ紱Drv_Ipcs_Hal_Cmp 鍦ㄦ棤纭欢 IRQ 璺緞
+涓嬬殑绌烘搷浣滄垨鏈€灏忔敮鎸?
+3 SOFTWARE ARCHITECTURE OVERVIEW 杞欢鏋舵瀯鎬昏
+3.1 MULTI-OS CONTEXT VIEW 澶?OS 閮ㄧ讲涓婁笅鏂囧浘 
+IPCS 閮ㄧ讲浜庡鏍?SoC锛屼负涓婂眰鎻愪緵鍩轰簬鍏变韩鍐呭瓨鐨勬牳闂存暟鎹紶閫掋€傚悓涓€ SOC 涔嬮棿涓嶅悓鏍稿績鍙牴鎹?
+闇€姹傞儴缃蹭笉鍚岀殑 OS 閫傞厤灞傘€侷PCS Driver 浣嶄簬涓婂眰 Application 鍜屼笅灞傜殑 HAL 涔嬮棿锛涗负涓婂眰鎻愪緵鍚?
+涓€鐨勬湇鍔?API锛涘悓鏃朵緷璧栵細
+飦?閰嶇疆缁欏畾鐨勬湰鍦?瀵圭鍙闂叡浜唴瀛樼獥鍙ｏ紱
+=== page 10 len 302 ===
+10 鍖椾含杈拌嚦鍗婂浣撴湁闄愬叕鍙?
+缁濆瘑
+飦?璺ㄦ牳閫氱煡锛圚AL锛?
+飦?OS 鎻愪緵鐨勬槧灏勩€佷腑鏂垨璋冨害鑳藉姏锛圤SAL锛?
+ 
+3.2 STATIC STRUCTURE 闈欐€佺粨鏋勫浘
+IPCS Driver 杞欢鍒嗗眰鏋舵瀯濡備笅鍥炬墍绀猴紝鍏朵腑锛孡inux Implement 鏄?IPCS-Linux 椹卞姩闈欐€佺粨鏋勫浘锛?
+RTOS Implement 鏄?RTOS-Linux 椹卞姩闈欐€佺粨鏋勫浘锛?涓ょ涓嶅悓 OS 閮ㄧ讲缁撴瀯閲囩敤鐩稿悓鐨勫崗璁牳蹇冿紝
+鎻愪緵鐩稿悓鐨勫澶?API 鏈嶅姟鎺ュ彛锛屼緷璧栫浉鍚岀殑 OS 閫傞厤鎺ュ彛銆丠W 閫傞厤鎺ュ彛锛涚壒娈婇儴鍒嗗湪浜?Linux 骞?
+鍙版牴鎹儴缃查渶姹傚姞鍏ヤ簡鍩轰簬鍐呭瓨鏄犲皠鍙?user-kernel 閫氫俊鏀寔鐨勯€傞厤灞傘€?
+=== page 11 len 828 ===
+11 鍖椾含杈拌嚦鍗婂浣撴湁闄愬叕鍙?
+缁濆瘑
+ 
+ 
+IPCS 椹卞姩澶勪簬鏈湴搴旂敤涓庡簳灞傛牳闂撮€氫俊璧勬簮涔嬮棿锛屽涓婁负搴旂敤鎴栭泦鎴愬眰鎻愪緵缁熶竴閫氫俊鎺ュ彛锛屽涓嬩緷
+璧栧叡浜唴瀛樺拰鏍搁棿涓柇鎺у埗鍣紝骞朵笌瀵圭鏍镐笂鐨勫搴旈€氫俊瀹炰綋閰嶅悎瀹屾垚鏁版嵁浜ゆ崲锛屽悓鏃堕噰鐢ㄥ搴旂殑
+鍒嗗眰鍖栭厤缃俊鎭疄鐜板 IPCS-SHM銆丱SAL銆丠AL 灞傜骇鐨勯厤缃€侫pplication/Hardware Platform
+涓嶄綔涓?Driver 鐨勭粍鎴愰儴鍒嗭紝鐢ㄤ簬琛ㄧず椹卞姩鐨勪笂涓嬫枃鍏崇郴 鍜岃亴璐ｈ竟鐣岋紱Kernel Adaptation Module
+鍙綔涓?Linux 骞冲彴閮ㄧ讲鐨勯€傞厤灞傦紱濡傚浘涓?Driver 閮ㄥ垎鏍囪瘑锛孖CPS Driver 鎬讳綋鍒嗕负涓変釜灞傜骇锛?
+飦?IPCS-SHM: 鍚戜笂灞?IPCS User 鎻愪緵绋冲畾鏈嶅姟鍏ュ彛涓庡弬鏁版牎楠岋紝瀹屾垚 IPCS 鐨勬牳蹇冩湇鍔?
+瀹炵幇鈥斺€斿疄渚?閫氶亾/闃熷垪銆佹墭绠′笌闈炴墭绠¤涔夈€佹帴鏀惰皟搴︼紱
+飦?IPCS-OSAL: 鍏变韩鍐呭瓨鏄犲皠瑙嗗浘銆佷腑鏂垨杞娉ㄥ唽銆佸欢杩熷鐞嗕笂涓嬫枃锛涘 IPCS-SHM
+鎻愪緵绋冲畾鐨勬帴鍙ｅ姛鑳藉疄鐜帮紱瀵?IPCS-HAL 鎻愪緵鐨勫浐瀹氭帴鍙ｈ皟鐢紝涓嶇洿鎺ユ搷浣滅‖浠讹紱渚濊禆鎿嶄綔绯?
+缁熸湇鍔★紱
+飦?IPCS-HAL锛氬疄鐜板搴曞眰纭欢鐨勬娊璞″皝瑁咃紝涓轰笂灞傛彁渚涚ǔ瀹氱殑璋冪敤鎺ュ彛锛涜亴璐ｆ槸璺ㄦ牳
+閫氱煡浣胯兘/瑙﹀彂/娓呴櫎鍙婂疄渚嬬浉鍏崇‖浠剁姸鎬侊紱渚濊禆搴曞眰纭欢锛?
+飦?Kernel Adaptation Module: 鏍规嵁 IPCS-SHM CORE 杩愯涓?kernel-space 鎴栬€?
+user-space 瀹炵幇涓嶅悓鐨勯厤缃紝鍖呮嫭鍐呭瓨鏄犲皠瑙ｅ喅鍏变韩鍐呭瓨璁块棶闂銆乽io 鎴栬€?cdev 瑙ｅ喅 user-
+kernel 閫氫俊闂锛?
+3.3 DYNAMIC SCENARIOS 鍔ㄦ€佽繍琛屽満鏅浘 
+IPCS Driver 鏍搁棿鍏变韩鍐呭瓨閫氫俊鐨勮繍琛屾椂鍦烘櫙濡備笅鍥炬墍绀猴紝璇ユ椂搴忓浘瀹炵幇浜嗗熀浜庡绉伴厤缃殑涓や釜鏍稿績
+婕旂ず鍒濆鍖栥€乺emote 灏辩华绛夊緟銆佸叡浜唴瀛橀€氫俊銆侀€氫俊 crash銆侀€氫俊鎭㈠鐨勫嚑涓祦绋嬶紝鍥句腑鎺ュ彛绗﹀彿
+鍙傝€?4.2 绔犺妭銆?
+=== page 12 len 78 ===
+12 鍖椾含杈拌嚦鍗婂浣撴湁闄愬叕鍙?
+缁濆瘑
+4 SOFTWARE ARCHITECTURAL DESIGN 杞欢鏋舵瀯璁捐
+Component Design 缁勪欢璁捐

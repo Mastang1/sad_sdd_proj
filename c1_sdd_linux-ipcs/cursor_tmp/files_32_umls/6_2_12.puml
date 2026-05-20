@@ -1,0 +1,29 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam component {
+  BackgroundColor #F5E6CC
+  BorderColor #8B7355
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #FAF0E0
+  BorderColor #A08060
+}
+skinparam arrowColor #5C4033
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+left to right direction
+component [ipc-hw.c] as SRC
+component [linux/io.h] as H0 <<linux>>
+component [ipc-shm.h] as H1
+component [ipc-os.h] as H2
+component [ipc-hw.h] as H3
+component [ipc-hw-platform.h] as H4
+SRC ..> H0
+SRC ..> H1
+SRC ..> H2
+SRC ..> H3
+SRC ..> H4
+@enduml

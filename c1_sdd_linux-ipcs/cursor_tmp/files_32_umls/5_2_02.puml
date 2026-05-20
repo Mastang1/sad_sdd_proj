@@ -1,0 +1,25 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam component {
+  BackgroundColor #F5E6CC
+  BorderColor #8B7355
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #FAF0E0
+  BorderColor #A08060
+}
+skinparam arrowColor #5C4033
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+component [ipc-hw-platform.h] as SRC
+component [S32G399A_M7_COMMON.h] as H0 <<S32G3XX>>
+component [S32G399A_SCB.h] as H1 <<S32G3XX>>
+component [S32G399A_MSCM.h] as H2 <<S32G3XX>>
+SRC ..> H0
+SRC ..> H1
+SRC ..> H2
+note bottom of SRC : ifdef S32G3XX 时包含平台寄存器头
+@enduml

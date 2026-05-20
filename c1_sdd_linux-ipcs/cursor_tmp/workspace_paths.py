@@ -41,6 +41,8 @@ DOCX_RASTER = CURSOR_TMP / "_docx_raster"
 FORMAT_DOCX_PY = CURSOR_TMP / "format_docx_py"
 SCRIPTS = CURSOR_TMP / "scripts"
 VALIDATE_REPORT = CURSOR_TMP / "validate_md_docx_report.txt"
+MEM_INFO = CURSOR_TMP / "mem_info.md"
+SDD_TOOLCHAIN = CURSOR_TMP / "SDD_TOOLCHAIN.md"
 
 # 构建临时文件（cursor_tmp）
 PANDOC_REFERENCE = CURSOR_TMP / "_pandoc_reference.docx"

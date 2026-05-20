@@ -1,0 +1,29 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam component {
+  BackgroundColor #F5E6CC
+  BorderColor #8B7355
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #FAF0E0
+  BorderColor #A08060
+}
+skinparam arrowColor #5C4033
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+left to right direction
+component [ipc-os-freertos.c] as SRC
+component [ipc-shm.h] as H0
+component [ipc-os.h] as H1
+component [ipc-hw.h] as H2
+component [FreeRTOS.h] as H3 <<kernel>>
+component [task.h] as H4 <<kernel>>
+SRC ..> H0
+SRC ..> H1
+SRC ..> H2
+SRC ..> H3
+SRC ..> H4
+@enduml

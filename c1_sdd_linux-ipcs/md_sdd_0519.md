@@ -16,6 +16,9 @@ IPCS Driver软件详细设计规范
 | V0.2 | 2026.5.19 | Cursor Agent | Draft | 按 ASPICE SWE.3 重构为第 1–6 章；新增 §2.4–2.6、Linux Refinement、第 5 章与第 6 章追溯 |
 | V0.7 | 2026.5.19 | Cursor Agent | Draft | 完善 Linux 部署变体函数设计、关键场景 SVG 与分层静态图 |
 | V0.8 | 2026.5.19 | Cursor Agent | Draft | §5.7/§6.7 跨单元场景改为 UML 序列图（PlantUML→SVG） |
+| V0.9 | 2026.5.20 | Cursor Agent | Draft | 新增第 7 章双向追溯矩阵（架构 §2.4 × §2 单元 × 源码） |
+| V1.0 | 2026.5.20 | Cursor Agent | Draft | 章节序号连贯（5.x 重排、6.5/6.7 子节）；第 7 章追溯矩阵产品化（剔除过程类伪追溯行） |
+| V1.1 | 2026.5.20 | Cursor Agent | Draft | §5.1/5.2、§6.1/6.2 对齐 §4.1/4.2；头文件组件 UML→SVG；源码文件列表核对 PASS |
 | V0.6 | 2026.5.19 | Cursor Agent | Draft | 基于 ipcs 源码补强第 2、3 章；明确 UIO/CDEV 与全内核实现的用户侧/内核侧职责 |
 | V0.5 | 2026.5.19 | Cursor Agent | Draft | 精简第 2 章为组件—单元映射；重写第 3 章分层与部署变体；清理目录重复项 |
 | V0.4 | 2026.5.19 | Cursor Agent | Draft | 拆分第 2 章；新增第 3 章三层架构与 Linux 适配；勘误 UIO/CDEV 代理与全内核形态 |
@@ -49,16 +52,16 @@ IPCS Driver软件详细设计规范
   - 4.6 Data Structure 类型定义
   - 4.7 Dynamic Detailed Design 动态详细设计
 - 5 RTOS 部署变体详细设计
-  - 5.1 总述
-  - 5.2 Files 与依赖
+  - 5.1 Definition定义
+  - 5.2 Files
   - 5.3 SWU_IPCS_OSAL_AUTOSAR 软件单元设计
   - 5.4 SWU_IPCS_OSAL_FREERTOS 软件单元设计
   - 5.5 SWU_IPCS_OSAL_THREADX 软件单元设计
   - 5.6 SWU_IPCS_HAL_MCU 软件单元设计
   - 5.7 RTOS 动态详细设计
 - 6 Linux 部署变体详细设计
-  - 6.1 总述
-  - 6.2 源码与构建结构
+  - 6.1 Definition定义
+  - 6.2 Files
   - 6.3 SWU_IPCS_LINUX_OS_KERN 软件单元设计
   - 6.4 SWU_IPCS_LINUX_OS_UIO 软件单元设计
   - 6.5 SWU_IPCS_LINUX_UIO_KO 软件单元设计
@@ -67,11 +70,9 @@ IPCS Driver软件详细设计规范
   - 6.8 Linux HAL 函数设计
   - 6.9 Linux 关键场景流程
   - 6.10 Linux 全局变量与私有类型
-- 7 Traceability and Consistency Evidence 追溯与一致性证据
-  - 7.1 SWE.3 覆盖说明
-  - 7.2 架构—设计—源码追溯矩阵
-  - 7.3 源码核对结果
-  - 7.4 接口判定规则
+- 7 双向追溯与一致性 (Bidirectional Traceability and Consistency)
+  - 7.1 追溯性策略与声明
+  - 7.2 需求-架构-设计-代码 双向追溯矩阵
 
 # 1 INTRODUCTION简介
 
@@ -2885,42 +2886,28 @@ OSAL 注册 hardirq/softirq 或 polling（ipcsShmPollChannels）；Core 按预�
 
 # 5 RTOS 部署变体详细设计
 
-## 5.1 总述
+## 5.1 Definition定义
 
-RTOS 部署变体在 **单地址空间** 内完整实现 Drv_Ipcs_Osal_Cmp 与 Drv_Ipcs_Hal_Cmp。OS 实现三选一：FreeRTOS、ThreadX、AUTOSAR OS。HAL 平台代码位于 ipcs/mcu/hw/，由三种实现共用。
+RTOS 部署变体在单地址空间内实现 Drv_Ipcs_Osal_Cmp 与 Drv_Ipcs_Hal_Cmp：OS 实现三选一（FreeRTOS、ThreadX、AUTOSAR OS），HAL 位于 `ipcs/mcu/hw/` 并由三种 OS 实现共用。通信核心仍使用第 4 章 `ipcs/ipcs_cores` 与 `ipc-shm.h` 对外 API。
 
-## 5.2 Files 与依赖
+本章描述 RTOS 侧 OSAL/HAL 源文件与头文件依赖；函数级设计见 §5.3–§5.7。Baremetal 源码存在于 `ipcs/mcu/os/baremetal/`，不纳入本文档范围（见 §1.3）。
 
-### 5.2.1 ipc-hw-platform.h
+## 5.2 Files
 
-描述：RTOS 部署变体 HAL 平台寄存器与 MSCM 定义；与具体 OS 实现（FreeRTOS/ThreadX/AUTOSAR OS）无关，由 ipcs/mcu/hw/ 共用。
-
-#### 文件私有数据（RTOS）
-
-| 全局变量名称 | 全局变量类型 | 全局变量范围 | 全局变量描述 | 全局变量的存储RAM区 |
-|---|---|---|---|---|
-| ipc_shm_priv_data | static struct IPCS_SHM_PRIV_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/ipcs_cores/ipc-shm.c | IPCS shm private data | 源码未显式指定 |
-| ipc_hw_priv | static struct IPCS_HW_PRIV_TYPE_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/mcu/hw/ipc-hw.c | platform specific private data | 源码未显式指定 |
-| ipc_os_priv | static struct IPCS_OS_PRIV_TYPE_TYPE | ipcs/mcu/os/autosar/ipc-os-autosar.c | AutoSAR OS specific private data | 源码未显式指定 |
-| ipc_os_priv | static struct IPCS_OS_PRIV_TYPE_TYPE | ipcs/mcu/os/freertos/ipc-os-freertos.c | FreeRTOS OS specific private data | 源码未显式指定 |
-| ipc_os_priv | static struct IPCS_OS_PRIV_TYPE_TYPE | ipcs/mcu/os/threadx/ipc-os-threadx.c | Threadx OS specific private data | 源码未显式指定 |
-| softirq_stack | K_THREAD_STACK_DEFINE(softirq_stack, IPC_SOFTIRQ_STACK_SIZE) | ipcs/mcu/os/threadx/ipc-os-threadx.c | Threadx deferred interrupt handler stack | 源码未显式指定 |
-
-#### 文件列表（RTOS MCU）
-
-### 5.2.0 RTOS 文件列表
+### 5.2.1 文件列表
 
 | 组件 | 文件 |
 |---|---|
-| Drv_Ipcs_Hal_Cmp / 平台定义 | ipcs/mcu/hw/ipc-hw-platform.h |
-| Drv_Ipcs_Hal_Cmp / IPCS-HAL | ipcs/mcu/hw/ipc-hw.c |
-| Drv_Ipcs_Hal_Cmp / IPCS-HAL | ipcs/mcu/hw/ipc-hw.h |
-| Drv_Ipcs_Osal_Cmp / AUTOSAR OS 实现 | ipcs/mcu/os/autosar/ipc-os-autosar.c |
-| Drv_Ipcs_Osal_Cmp / FreeRTOS 实现 | ipcs/mcu/os/freertos/ipc-os-freertos.c |
-| Drv_Ipcs_Osal_Cmp / IPCS-OSAL | ipcs/mcu/os/ipc-os.h |
-| Drv_Ipcs_Osal_Cmp / ThreadX 实现 | ipcs/mcu/os/threadx/ipc-os-threadx.c |
+| Drv_Ipcs_Hal_Cmp | ipcs/mcu/hw/ipc-hw-platform.h |
+| Drv_Ipcs_Hal_Cmp | ipcs/mcu/hw/ipc-hw.c |
+| Drv_Ipcs_Hal_Cmp | ipcs/mcu/hw/ipc-hw.h |
+| Drv_Ipcs_Osal_Cmp | ipcs/mcu/os/autosar/ipc-os-autosar.c |
+| Drv_Ipcs_Osal_Cmp | ipcs/mcu/os/freertos/ipc-os-freertos.c |
+| Drv_Ipcs_Osal_Cmp | ipcs/mcu/os/ipc-os.h |
+| Drv_Ipcs_Osal_Cmp | ipcs/mcu/os/threadx/ipc-os-threadx.c |
+| （构建） | ipcs/mcu/ipc-shm-rtos.mk |
 
-### 5.2.1 ipc-hw-platform.h（文件依赖详述）
+### 5.2.2 ipc-hw-platform.h
 
 描述：
 
@@ -2928,11 +2915,11 @@ RTOS 部署变体在 **单地址空间** 内完整实现 Drv_Ipcs_Osal_Cmp 与 D
 
 依赖关系：
 
-当定义 S32G3XX 时：S32G399A_M7_COMMON.h, S32G399A_SCB.h, S32G399A_MSCM.h（与 ipcs/mcu/hw/ipc-hw-platform.h 一致）
+当定义 S32G3XX 时：S32G399A_M7_COMMON.h、S32G399A_SCB.h、S32G399A_MSCM.h（与 `ipcs/mcu/hw/ipc-hw-platform.h` 一致）
 
-![image40.png](cursor_tmp/flow_svgs/3_4_23.svg)
+![RTOS ipc-hw-platform.h 头文件依赖](cursor_tmp/files_32_svgs/5_2_02.svg)
 
-### 5.2.2 ipc-hw.c
+### 5.2.3 ipc-hw.c
 
 描述：
 
@@ -2940,11 +2927,11 @@ RTOS 部署变体在 **单地址空间** 内完整实现 Drv_Ipcs_Osal_Cmp 与 D
 
 依赖关系：
 
-ipc-shm.h, ipc-os.h, ipc-hw.h, ipc-hw-platform.h（与 ipcs/mcu/hw/ipc-hw.c 中 #include 一致）
+ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-hw-platform.h（与 `ipcs/mcu/hw/ipc-hw.c` 中 #include 顺序一致）
 
-![image41.png](cursor_tmp/files_32_svgs/3_2_10.svg)
+![RTOS ipc-hw.c 头文件依赖](cursor_tmp/files_32_svgs/5_2_03.svg)
 
-### 5.2.3 ipc-hw.h
+### 5.2.4 ipc-hw.h
 
 描述：
 
@@ -2952,15 +2939,9 @@ ipc-shm.h, ipc-os.h, ipc-hw.h, ipc-hw-platform.h（与 ipcs/mcu/hw/ipc-hw.c 中 
 
 依赖关系：
 
-本头文件未 #include 其他头文件（仅声明 HAL API）。
+本头文件未 #include 工程内其他头文件（仅 HAL API 声明）。
 
-![image42.png](cursor_tmp/files_32_svgs/3_2_11.svg)
-
-### 5.2.4 ipc-shm-rtos.mk
-
-描述：
-
-> ipc-shm-rtos.mk 属于 构建集成。
+![RTOS ipc-hw.h 头文件依赖](cursor_tmp/files_32_svgs/5_2_04.svg)
 
 ### 5.2.5 ipc-os-autosar.c
 
@@ -2970,9 +2951,9 @@ ipc-shm.h, ipc-os.h, ipc-hw.h, ipc-hw-platform.h（与 ipcs/mcu/hw/ipc-hw.c 中 
 
 依赖关系：
 
-<Os.h>, ipc-shm.h, ipc-os.h, ipc-hw.h（与 ipcs/mcu/os/autosar/ipc-os-autosar.c 中 #include 顺序一致）
+Os.h、ipc-shm.h、ipc-os.h、ipc-hw.h（与 `ipcs/mcu/os/autosar/ipc-os-autosar.c` 中 #include 顺序一致）
 
-![image43.png](cursor_tmp/files_32_svgs/3_2_13.svg)
+![RTOS ipc-os-autosar.c 头文件依赖](cursor_tmp/files_32_svgs/5_2_05.svg)
 
 ### 5.2.6 ipc-os-freertos.c
 
@@ -2982,9 +2963,9 @@ ipc-shm.h, ipc-os.h, ipc-hw.h, ipc-hw-platform.h（与 ipcs/mcu/hw/ipc-hw.c 中 
 
 依赖关系：
 
-ipc-shm.h, ipc-os.h, ipc-hw.h, FreeRTOS.h, task.h（与 ipcs/mcu/os/freertos/ipc-os-freertos.c 一致）
+ipc-shm.h、ipc-os.h、ipc-hw.h、FreeRTOS.h、task.h（与 `ipcs/mcu/os/freertos/ipc-os-freertos.c` 一致）
 
-![image45.png](cursor_tmp/files_32_svgs/3_2_14.svg)
+![RTOS ipc-os-freertos.c 头文件依赖](cursor_tmp/files_32_svgs/5_2_06.svg)
 
 ### 5.2.7 ipc-os.h
 
@@ -2994,9 +2975,9 @@ ipc-shm.h, ipc-os.h, ipc-hw.h, FreeRTOS.h, task.h（与 ipcs/mcu/os/freertos/ipc
 
 依赖关系：
 
-本头文件未 #include 其他头文件（仅 OSAL 宏与 API 声明）。
+本头文件未 #include 工程内其他头文件（OSAL 宏与 API 声明）。
 
-![image46.png](cursor_tmp/files_32_svgs/3_2_16.svg)
+![RTOS ipc-os.h 头文件依赖](cursor_tmp/files_32_svgs/5_2_07.svg)
 
 ### 5.2.8 ipc-os-threadx.c
 
@@ -3006,1108 +2987,20 @@ ipc-shm.h, ipc-os.h, ipc-hw.h, FreeRTOS.h, task.h（与 ipcs/mcu/os/freertos/ipc
 
 依赖关系：
 
-ipc-shm.h, ipc-os.h, ipc-hw.h, <threadx/sys/mem_manage.h>, <threadx/kernel.h>, <threadx/device.h>；当定义 S32ZE 时另含 Mru_Ip.h（见 ipcs/mcu/os/threadx/ipc-os-threadx.c 条件编译）
+ipc-shm.h、ipc-os.h、ipc-hw.h、tx_api.h、tx_event_flags.h（与 `ipcs/mcu/os/threadx/ipc-os-threadx.c` 一致）
 
-![image47.png](cursor_tmp/files_32_svgs/3_2_16.svg)
+![RTOS ipc-os-threadx.c 头文件依赖](cursor_tmp/files_32_svgs/5_2_08.svg)
 
-## 5.6 SWU_IPCS_HAL_MCU 软件单元设计
+### 5.2.9 ipc-shm-rtos.mk
 
-本节严格按照 reference.md 的内部函数表格格式描述内部函数。除 3.3 中列出的 9 个对外接口之外，其余源码函数、跨组件调用接口和 OS task 单元均作为内部接口。
+描述：
 
-### 5.6.1 ipcsHwGetCoreIndexM7
+> ipcs/mcu/ipc-shm-rtos.mk 为 RTOS 侧构建集成 Makefile，声明参与编译的 Core/OSAL/HAL 源文件集合。
 
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">Validate and get core index if core type is m7</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">static sint8 ipcsHwGetCoreIndexM7(uint8 index)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="2">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>index</td>
-<td>uint8</td>
-<td>core 或 IRQ 配置索引</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="2">sint8</td>
-<td colspan="2">core_index if core type is m7</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">-</td>
-</tr>
-</tbody>
-</table>
+依赖关系：
 
-processing flow
+构建描述文件，无 C 头文件 #include 依赖图。
 
-![image48.png](cursor_tmp/flow_svgs/3_4_24.svg)
-
-### 5.6.2 ipcsHwGetCoreIndexA53
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">Validate and get core index if core type is a53</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">static sint8 ipcsHwGetCoreIndexA53(uint8 index)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="2">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>index</td>
-<td>uint8</td>
-<td>core 或 IRQ 配置索引</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="2">sint8</td>
-<td colspan="2">core_index if core type is a53</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">-</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image49.png](cursor_tmp/flow_svgs/3_4_25.svg)
-
-### 5.6.3 ipcsHwSetRemoteCore
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">get remote core for platform private data</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">static sint8 ipcsHwSetRemoteCore(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="3">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>configuration parameters</td>
-</tr>
-<tr>
-<td>I</td>
-<td>cfg</td>
-<td>const struct IPCS_SHM_CFG_TYPE *</td>
-<td>:     Local core type from ipcf configuration</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="2">sint8</td>
-<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for invalid core</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">-</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image50.png](cursor_tmp/flow_svgs/3_4_26.svg)
-
-### 5.6.4 ipcsHwSetLocalCore
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">get local core for platform private data</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">static sint8 ipcsHwSetLocalCore(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="3">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>configuration parameters</td>
-</tr>
-<tr>
-<td>I</td>
-<td>cfg</td>
-<td>const struct IPCS_SHM_CFG_TYPE *</td>
-<td>:     Local core type from ipcf configuration</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="2">sint8</td>
-<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for invalid core</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">-</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image51.png](cursor_tmp/flow_svgs/3_4_27.svg)
-
-### 5.6.5 ipcsHwSetCore
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">get local and remote core for platform private data</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">static sint8 ipcsHwSetCore(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="3">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>configuration parameters</td>
-</tr>
-<tr>
-<td>I</td>
-<td>cfg</td>
-<td>const struct IPCS_SHM_CFG_TYPE *</td>
-<td>:     Local core type from ipcf configuration</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="2">sint8</td>
-<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for invalid core</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">-</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image52.png](cursor_tmp/flow_svgs/3_4_28.svg)
-
-### 5.6.6 ipcsHwSetTxIrqIdx
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">get tx irq and msi index for platform private data</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">static sint8 ipcsHwSetTxIrqIdx(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="3">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>configuration parameters</td>
-</tr>
-<tr>
-<td>I</td>
-<td>cfg</td>
-<td>const struct IPCS_SHM_CFG_TYPE *</td>
-<td>:     Local core type from ipcf configuration</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="2">sint8</td>
-<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for invalid interrupt</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">-</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image53.png](cursor_tmp/flow_svgs/3_4_29.svg)
-
-### 5.6.7 ipcsHwSetRxIrqIdx
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">get rx irq and msi index for platform private data</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">static sint8 ipcsHwSetRxIrqIdx(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="3">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>configuration parameters</td>
-</tr>
-<tr>
-<td>I</td>
-<td>cfg</td>
-<td>const struct IPCS_SHM_CFG_TYPE *</td>
-<td>:     Local core type from ipcf configuration</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="2">sint8</td>
-<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for invalid interrupt</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">-</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image54.png](cursor_tmp/flow_svgs/3_4_30.svg)
-
-### 5.6.8 ipcsHwSetIrqIdx
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">get irq and msi index for platform private data</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">static sint8 ipcsHwSetIrqIdx(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="3">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>configuration parameters</td>
-</tr>
-<tr>
-<td>I</td>
-<td>cfg</td>
-<td>const struct IPCS_SHM_CFG_TYPE *</td>
-<td>:     Local core type from ipcf configuration</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="2">sint8</td>
-<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for invalid interrupt</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">-</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image55.png](cursor_tmp/flow_svgs/3_4_31.svg)
-
-### 5.6.9 ipcsHwInit
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">platform specific initialization</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">sint8 ipcsHwInit(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="3">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>IPCS shared memory instance 索引</td>
-</tr>
-<tr>
-<td>I</td>
-<td>cfg</td>
-<td>const struct IPCS_SHM_CFG_TYPE *</td>
-<td>configuration parameters</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="2">sint8</td>
-<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for either inter core</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image56.png](cursor_tmp/flow_svgs/3_4_32.svg)
-
-### 5.6.10 ipcsHwFree
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">free hw resources</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">void ipcsHwFree(const uint8 instance)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="2">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>IPCS shared memory instance 索引</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image57.png](cursor_tmp/flow_svgs/3_4_33.svg)
-
-### 5.6.11 ipcsHwIrqEnable
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">enable notifications from remote</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">void ipcsHwIrqEnable(const uint8 instance)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="2">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>IPCS shared memory instance 索引</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image58.png](cursor_tmp/flow_svgs/3_4_34.svg)
-
-### 5.6.12 ipcsHwIrqDisable
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">disable notifications from remote</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">void ipcsHwIrqDisable(const uint8 instance)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="2">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>IPCS shared memory instance 索引</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image59.png](cursor_tmp/flow_svgs/3_4_35.svg)
-
-### 5.6.13 ipcsHwIrqNotify
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">notify remote that data is available</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">void ipcsHwIrqNotify(const uint8 instance)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="2">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>IPCS shared memory instance 索引</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image60.png](cursor_tmp/flow_svgs/3_4_36.svg)
-
-### 5.6.14 ipcsHwIrqClear
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">clear available data notification</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">void ipcsHwIrqClear(const uint8 instance)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="2">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>IPCS shared memory instance 索引</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image61.png](cursor_tmp/flow_svgs/3_4_37.svg)
-
-### 5.6.15 ipcsHwFlushCache
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">static void ipcsHwFlushCache(uint32 data_addr, uint32 data_size)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="3">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>data_addr</td>
-<td>uint32</td>
-<td>源码参数</td>
-</tr>
-<tr>
-<td>I</td>
-<td>data_size</td>
-<td>uint32</td>
-<td>复制数据大小，单位为 byte</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="2">void</td>
-<td colspan="2">源码返回值</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">-</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image62.png](cursor_tmp/flow_svgs/3_4_38.svg)
-
-### 5.6.16 ipcsHwFlushCacheLocal
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">Clear and invalidate cache content</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">void ipcsHwFlushCacheLocal(const uint8 instance)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="2">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>instance id</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image63.png](cursor_tmp/flow_svgs/3_4_39.svg)
-
-### 5.6.17 ipcsHwFlushCacheRemote
-
-<table border="1" cellspacing="0" cellpadding="4">
-<tbody>
-<tr>
-<td>对应软件架构ID</td>
-<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
-</tr>
-<tr>
-<td>软件单元 ID</td>
-<td colspan="4">SWU_IPCS_HAL_MCU</td>
-</tr>
-<tr>
-<td>函数说明</td>
-<td colspan="4">Clear and invalidate cache content</td>
-</tr>
-<tr>
-<td>函数原型</td>
-<td colspan="4">void ipcsHwFlushCacheRemote(const uint8 instance)</td>
-</tr>
-<tr>
-<td>制约条件</td>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td rowspan="2">输入/输出参数</td>
-<td>I/O</td>
-<td>参数名</td>
-<td>数据类型</td>
-<td>说明</td>
-</tr>
-<tr>
-<td>I</td>
-<td>instance</td>
-<td>const uint8</td>
-<td>instance id</td>
-</tr>
-<tr>
-<td rowspan="2">返回值</td>
-<td colspan="2">数据类型</td>
-<td colspan="2">说明</td>
-</tr>
-<tr>
-<td colspan="4">-</td>
-</tr>
-<tr>
-<td>函数定义文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
-</tr>
-<tr>
-<td>函数声明文件</td>
-<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
-</tr>
-</tbody>
-</table>
-
-processing flow
-
-![image64.png](cursor_tmp/flow_svgs/3_4_40.svg)
-
-### 4.6.24 enum IPCS_PROCESSOR_IDX_E
-
-| Name | Description |
-|---|---|
-| IPC_A53_0 |  |
-| IPC_A53_1 |  |
-| IPC_A53_2 |  |
-| IPC_A53_3 |  |
-| IPC_M7_0 |  |
-| IPC_M7_1 |  |
-| IPC_M7_2 |  |
-| IPC_M7_3 |  |
-| IPC_A53_4 |  |
-| IPC_A53_5 |  |
-| IPC_A53_6 |  |
-| IPC_A53_7 |  |
 
 ## 5.3 SWU_IPCS_OSAL_AUTOSAR 软件单元设计
 
@@ -5617,6 +4510,1105 @@ processing flow
 | TX_THREAD | soft_irq_handle | rx softirq thread handle |
 | sint32 | task_is_initialized | flag to know if the softirq task is initialized |
 
+## 5.6 SWU_IPCS_HAL_MCU 软件单元设计
+
+本节严格按照 reference.md 的内部函数表格格式描述内部函数。除 3.3 中列出的 9 个对外接口之外，其余源码函数、跨组件调用接口和 OS task 单元均作为内部接口。
+
+### 5.6.1 ipcsHwGetCoreIndexM7
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">Validate and get core index if core type is m7</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static sint8 ipcsHwGetCoreIndexM7(uint8 index)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>index</td>
+<td>uint8</td>
+<td>core 或 IRQ 配置索引</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">sint8</td>
+<td colspan="2">core_index if core type is m7</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">-</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image48.png](cursor_tmp/flow_svgs/3_4_24.svg)
+
+### 5.6.2 ipcsHwGetCoreIndexA53
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">Validate and get core index if core type is a53</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static sint8 ipcsHwGetCoreIndexA53(uint8 index)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>index</td>
+<td>uint8</td>
+<td>core 或 IRQ 配置索引</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">sint8</td>
+<td colspan="2">core_index if core type is a53</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">-</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image49.png](cursor_tmp/flow_svgs/3_4_25.svg)
+
+### 5.6.3 ipcsHwSetRemoteCore
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">get remote core for platform private data</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static sint8 ipcsHwSetRemoteCore(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>configuration parameters</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *</td>
+<td>:     Local core type from ipcf configuration</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">sint8</td>
+<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for invalid core</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">-</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image50.png](cursor_tmp/flow_svgs/3_4_26.svg)
+
+### 5.6.4 ipcsHwSetLocalCore
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">get local core for platform private data</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static sint8 ipcsHwSetLocalCore(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>configuration parameters</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *</td>
+<td>:     Local core type from ipcf configuration</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">sint8</td>
+<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for invalid core</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">-</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image51.png](cursor_tmp/flow_svgs/3_4_27.svg)
+
+### 5.6.5 ipcsHwSetCore
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">get local and remote core for platform private data</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static sint8 ipcsHwSetCore(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>configuration parameters</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *</td>
+<td>:     Local core type from ipcf configuration</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">sint8</td>
+<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for invalid core</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">-</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image52.png](cursor_tmp/flow_svgs/3_4_28.svg)
+
+### 5.6.6 ipcsHwSetTxIrqIdx
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">get tx irq and msi index for platform private data</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static sint8 ipcsHwSetTxIrqIdx(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>configuration parameters</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *</td>
+<td>:     Local core type from ipcf configuration</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">sint8</td>
+<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for invalid interrupt</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">-</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image53.png](cursor_tmp/flow_svgs/3_4_29.svg)
+
+### 5.6.7 ipcsHwSetRxIrqIdx
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">get rx irq and msi index for platform private data</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static sint8 ipcsHwSetRxIrqIdx(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>configuration parameters</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *</td>
+<td>:     Local core type from ipcf configuration</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">sint8</td>
+<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for invalid interrupt</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">-</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image54.png](cursor_tmp/flow_svgs/3_4_30.svg)
+
+### 5.6.8 ipcsHwSetIrqIdx
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">get irq and msi index for platform private data</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static sint8 ipcsHwSetIrqIdx(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>configuration parameters</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *</td>
+<td>:     Local core type from ipcf configuration</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">sint8</td>
+<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for invalid interrupt</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">-</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image55.png](cursor_tmp/flow_svgs/3_4_31.svg)
+
+### 5.6.9 ipcsHwInit
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">platform specific initialization</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">sint8 ipcsHwInit(const uint8 instance, const struct IPCS_SHM_CFG_TYPE *cfg)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>IPCS shared memory instance 索引</td>
+</tr>
+<tr>
+<td>I</td>
+<td>cfg</td>
+<td>const struct IPCS_SHM_CFG_TYPE *</td>
+<td>configuration parameters</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">sint8</td>
+<td colspan="2">IPC_SHM_E_OK for success, -IPC_SHM_E_INVAL for either inter core</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image56.png](cursor_tmp/flow_svgs/3_4_32.svg)
+
+### 5.6.10 ipcsHwFree
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">free hw resources</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwFree(const uint8 instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>IPCS shared memory instance 索引</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image57.png](cursor_tmp/flow_svgs/3_4_33.svg)
+
+### 5.6.11 ipcsHwIrqEnable
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">enable notifications from remote</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqEnable(const uint8 instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>IPCS shared memory instance 索引</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image58.png](cursor_tmp/flow_svgs/3_4_34.svg)
+
+### 5.6.12 ipcsHwIrqDisable
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">disable notifications from remote</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqDisable(const uint8 instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>IPCS shared memory instance 索引</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image59.png](cursor_tmp/flow_svgs/3_4_35.svg)
+
+### 5.6.13 ipcsHwIrqNotify
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">notify remote that data is available</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqNotify(const uint8 instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>IPCS shared memory instance 索引</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image60.png](cursor_tmp/flow_svgs/3_4_36.svg)
+
+### 5.6.14 ipcsHwIrqClear
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">clear available data notification</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwIrqClear(const uint8 instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>IPCS shared memory instance 索引</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image61.png](cursor_tmp/flow_svgs/3_4_37.svg)
+
+### 5.6.15 ipcsHwFlushCache
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">static void ipcsHwFlushCache(uint32 data_addr, uint32 data_size)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="3">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>data_addr</td>
+<td>uint32</td>
+<td>源码参数</td>
+</tr>
+<tr>
+<td>I</td>
+<td>data_size</td>
+<td>uint32</td>
+<td>复制数据大小，单位为 byte</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="2">void</td>
+<td colspan="2">源码返回值</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">-</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image62.png](cursor_tmp/flow_svgs/3_4_38.svg)
+
+### 5.6.16 ipcsHwFlushCacheLocal
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">Clear and invalidate cache content</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwFlushCacheLocal(const uint8 instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>instance id</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image63.png](cursor_tmp/flow_svgs/3_4_39.svg)
+
+### 5.6.17 ipcsHwFlushCacheRemote
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr>
+<td>对应软件架构ID</td>
+<td colspan="4">Drv_Ipcs_Hal_Cmp</td>
+</tr>
+<tr>
+<td>软件单元 ID</td>
+<td colspan="4">SWU_IPCS_HAL_MCU</td>
+</tr>
+<tr>
+<td>函数说明</td>
+<td colspan="4">Clear and invalidate cache content</td>
+</tr>
+<tr>
+<td>函数原型</td>
+<td colspan="4">void ipcsHwFlushCacheRemote(const uint8 instance)</td>
+</tr>
+<tr>
+<td>制约条件</td>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td rowspan="2">输入/输出参数</td>
+<td>I/O</td>
+<td>参数名</td>
+<td>数据类型</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>I</td>
+<td>instance</td>
+<td>const uint8</td>
+<td>instance id</td>
+</tr>
+<tr>
+<td rowspan="2">返回值</td>
+<td colspan="2">数据类型</td>
+<td colspan="2">说明</td>
+</tr>
+<tr>
+<td colspan="4">-</td>
+</tr>
+<tr>
+<td>函数定义文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.c</td>
+</tr>
+<tr>
+<td>函数声明文件</td>
+<td colspan="4">ipcs/mcu/hw/ipc-hw.h</td>
+</tr>
+</tbody>
+</table>
+
+processing flow
+
+![image64.png](cursor_tmp/flow_svgs/3_4_40.svg)
+
+### 4.6.24 enum IPCS_PROCESSOR_IDX_E
+
+| Name | Description |
+|---|---|
+| IPC_A53_0 |  |
+| IPC_A53_1 |  |
+| IPC_A53_2 |  |
+| IPC_A53_3 |  |
+| IPC_M7_0 |  |
+| IPC_M7_1 |  |
+| IPC_M7_2 |  |
+| IPC_M7_3 |  |
+| IPC_A53_4 |  |
+| IPC_A53_5 |  |
+| IPC_A53_6 |  |
+| IPC_A53_7 |  |
+
 ## 5.7 RTOS 动态详细设计
 
 第 4 章各函数已给出单函数 processing flow（活动图）。本节描述 **跨软件单元** 的动态交互，采用 UML 序列图；纵轴生命线为软件单元 ID（见 §2.1），颜色与分层一致：Core/Queue 为浅蓝、OSAL 为浅绿、HAL 为淡卡其、远端核为浅紫。
@@ -5664,21 +5656,188 @@ sequence diagram
 
 # 6 Linux 部署变体详细设计
 
-## 6.1 总述
+## 6.1 Definition定义
 
-本章描述 `ipcs/mpu` 中 Linux 部署变体的详细设计。UIO 与 CDEV 采用用户侧代理加内核 Backend 的形态；全内核实现不使用用户侧代理，OSAL 与 HAL 均在内核模块中运行。
+Linux 部署变体通过 `ipcs/mpu` 实现 Drv_Ipcs_Linux_Adapt_Cmp 与 Drv_Ipcs_Hal_Cmp：UIO、CDEV 为用户侧代理加内核 Backend；全内核形态将 OSAL 与 HAL 均置于内核模块（见 §3.3）。通信核心仍使用第 4 章 `ipcs/ipcs_cores`。
 
-## 6.2 源码与构建结构
+本章描述 Linux 侧源文件与头文件依赖；单元函数设计见 §6.3–§6.10。
 
-| 部件 | 路径 | 产物 / 角色 |
-|---|---|---|
-| 通信核心（共享） | `ipcs/ipcs_cores/` | 用户库或内核模块共用 Core |
-| UIO 用户侧代理 | `ipcs/mpu/os_uio/ipc-os.c` | 用户库，满足 OSAL/HAL 契约并转发到 UIO Backend |
-| CDEV 用户侧代理 | `ipcs/mpu/os_cdev/ipc-os.c` | 用户库，满足 OSAL/HAL 契约并转发到 CDEV Backend |
-| UIO 内核 Backend | `ipcs/mpu/os_kernel/ipc-uio.c` | UIO 平台驱动与初始 cdev 通道 |
-| CDEV 内核 Backend | `ipcs/mpu/os_kernel/ipc-cdev.c` | 字符设备、ioctl、wait queue 与 ISR |
-| 全内核 OSAL | `ipcs/mpu/os_kernel/ipc-os.c` | 全内核实现的 OSAL |
-| Linux HAL | `ipcs/mpu/hw/c1/ipc-hw.c` | MSCM/IRQ 硬件操作 |
+## 6.2 Files
+
+### 6.2.1 文件列表
+
+| 组件 | 文件 |
+|---|---|
+| Drv_Ipcs_Linux_Adapt_Cmp | ipcs/mpu/os_uio/ipc-os.c |
+| Drv_Ipcs_Linux_Adapt_Cmp | ipcs/mpu/os_uio/ipc-os.h |
+| Drv_Ipcs_Linux_Adapt_Cmp | ipcs/mpu/os_cdev/ipc-os.c |
+| Drv_Ipcs_Linux_Adapt_Cmp | ipcs/mpu/os_cdev/ipc-os.h |
+| Drv_Ipcs_Linux_Adapt_Cmp | ipcs/mpu/os_kernel/ipc-os.c |
+| Drv_Ipcs_Linux_Adapt_Cmp | ipcs/mpu/os_kernel/ipc-os.h |
+| Drv_Ipcs_Linux_Adapt_Cmp | ipcs/mpu/os_kernel/ipc-uio.c |
+| Drv_Ipcs_Linux_Adapt_Cmp | ipcs/mpu/os_kernel/ipc-uio.h |
+| Drv_Ipcs_Linux_Adapt_Cmp | ipcs/mpu/os_kernel/ipc-cdev.c |
+| Drv_Ipcs_Linux_Adapt_Cmp | ipcs/mpu/os_kernel/ipc-cdev.h |
+| Drv_Ipcs_Hal_Cmp | ipcs/mpu/hw/c1/ipc-hw.c |
+| Drv_Ipcs_Hal_Cmp | ipcs/mpu/hw/c1/ipc-hw-platform.h |
+| Drv_Ipcs_Hal_Cmp | ipcs/mpu/hw/ipc-hw.h |
+
+### 6.2.2 ipc-os.c（UIO 用户侧）
+
+描述：
+
+> ipcs/mpu/os_uio/ipc-os.c 属于 Drv_Ipcs_Linux_Adapt_Cmp / UIO 用户侧代理。
+
+依赖关系：
+
+fcntl.h、unistd.h、stdio.h、sys/mman.h、sys/syscall.h、pthread.h、stdlib.h、dirent.h、ipc-os.h、ipc-hw.h、ipc-shm.h、ipc-uio.h（与 `ipcs/mpu/os_uio/ipc-os.c` 中 #include 顺序一致）
+
+![Linux UIO ipc-os.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_02.svg)
+
+### 6.2.3 ipc-os.h（UIO 用户侧）
+
+描述：
+
+> ipcs/mpu/os_uio/ipc-os.h 属于 Drv_Ipcs_Linux_Adapt_Cmp / UIO 用户侧 OSAL 头。
+
+依赖关系：
+
+errno.h、stdint.h、stdbool.h、string.h、stdio.h；无 ipcs 内其他头文件。
+
+![Linux UIO ipc-os.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_03.svg)
+
+### 6.2.4 ipc-os.c（CDEV 用户侧）
+
+描述：
+
+> ipcs/mpu/os_cdev/ipc-os.c 属于 Drv_Ipcs_Linux_Adapt_Cmp / CDEV 用户侧代理。
+
+依赖关系：
+
+fcntl.h、unistd.h、stdio.h、sys/mman.h、sys/syscall.h、sys/ioctl.h、pthread.h、stdlib.h、dirent.h、ipc-os.h、ipc-hw.h、ipc-shm.h、ipc-cdev.h（与 `ipcs/mpu/os_cdev/ipc-os.c` 一致）
+
+![Linux CDEV ipc-os.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_04.svg)
+
+### 6.2.5 ipc-os.h（CDEV 用户侧）
+
+描述：
+
+> ipcs/mpu/os_cdev/ipc-os.h 属于 Drv_Ipcs_Linux_Adapt_Cmp / CDEV 用户侧 OSAL 头。
+
+依赖关系：
+
+errno.h、stdint.h、stdbool.h、string.h、stdio.h；无 ipcs 内其他头文件。
+
+![Linux CDEV ipc-os.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_05.svg)
+
+### 6.2.6 ipc-os.c（全内核 OSAL）
+
+描述：
+
+> ipcs/mpu/os_kernel/ipc-os.c 属于 Drv_Ipcs_Linux_Adapt_Cmp / 全内核 OSAL 实现。
+
+依赖关系：
+
+linux/ioport.h、linux/io.h、linux/interrupt.h、linux/of_irq.h、linux/of_address.h、linux/version.h、ipc-os.h、ipc-hw.h、ipc-shm.h（与 `ipcs/mpu/os_kernel/ipc-os.c` 一致）
+
+![Linux 全内核 ipc-os.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_06.svg)
+
+### 6.2.7 ipc-os.h（全内核 OSAL）
+
+描述：
+
+> ipcs/mpu/os_kernel/ipc-os.h 属于 Drv_Ipcs_Linux_Adapt_Cmp / 内核 OSAL 头。
+
+依赖关系：
+
+linux/module.h
+
+![Linux 全内核 ipc-os.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_07.svg)
+
+### 6.2.8 ipc-uio.c
+
+描述：
+
+> ipcs/mpu/os_kernel/ipc-uio.c 属于 Drv_Ipcs_Linux_Adapt_Cmp / UIO 内核 Backend。
+
+依赖关系：
+
+linux/module.h、linux/platform_device.h、linux/mod_devicetable.h、linux/uio_driver.h、linux/cdev.h、ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-uio.h（与 `ipcs/mpu/os_kernel/ipc-uio.c` 一致）
+
+![Linux ipc-uio.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_08.svg)
+
+### 6.2.9 ipc-uio.h
+
+描述：
+
+> ipcs/mpu/os_kernel/ipc-uio.h 属于 Drv_Ipcs_Linux_Adapt_Cmp / UIO 命令与宏定义。
+
+依赖关系：
+
+本头文件无 #include（UIO 命令宏）。
+
+![Linux ipc-uio.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_09.svg)
+
+### 6.2.10 ipc-cdev.c
+
+描述：
+
+> ipcs/mpu/os_kernel/ipc-cdev.c 属于 Drv_Ipcs_Linux_Adapt_Cmp / CDEV 内核 Backend。
+
+依赖关系：
+
+linux/module.h、linux/kernel.h、linux/fs.h、linux/cdev.h、linux/interrupt.h、linux/of_irq.h、linux/of_address.h、linux/wait.h、asm/errno.h、ipc-os.h、ipc-hw.h、ipc-shm.h、ipc-cdev.h（与 `ipcs/mpu/os_kernel/ipc-cdev.c` 一致）
+
+![Linux ipc-cdev.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_10.svg)
+
+### 6.2.11 ipc-cdev.h
+
+描述：
+
+> ipcs/mpu/os_kernel/ipc-cdev.h 属于 Drv_Ipcs_Linux_Adapt_Cmp / CDEV ioctl 定义。
+
+依赖关系：
+
+linux/ioctl.h、sys/ioctl.h
+
+![Linux ipc-cdev.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_11.svg)
+
+### 6.2.12 ipc-hw.c
+
+描述：
+
+> ipcs/mpu/hw/c1/ipc-hw.c 属于 Drv_Ipcs_Hal_Cmp / Linux HAL 实现。
+
+依赖关系：
+
+linux/io.h、ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-hw-platform.h（与 `ipcs/mpu/hw/c1/ipc-hw.c` 一致）
+
+![Linux ipc-hw.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_12.svg)
+
+### 6.2.13 ipc-hw-platform.h
+
+描述：
+
+> ipcs/mpu/hw/c1/ipc-hw-platform.h 属于 Drv_Ipcs_Hal_Cmp / Linux 平台定义。
+
+依赖关系：
+
+本头文件无 #include（核索引与 MSCM 寄存器布局宏）。
+
+![Linux ipc-hw-platform.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_13.svg)
+
+### 6.2.14 ipc-hw.h
+
+描述：
+
+> ipcs/mpu/hw/ipc-hw.h 属于 Drv_Ipcs_Hal_Cmp / HAL API 声明（Linux 构建包含路径）。
+
+依赖关系：
+
+本头文件无 #include（HAL API 声明）。
+
+![Linux ipc-hw.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_14.svg)
+
 
 ## 6.3 SWU_IPCS_LINUX_OS_KERN 软件单元设计
 
@@ -7354,7 +7513,7 @@ processing flow
 
 源码：`ipcs/mpu/os_kernel/ipc-uio.c`。UIO 内核 Backend：UIO 设备注册、中断处理、向用户态传递事件；与 §6.8 HAL 协同完成硬件 IRQ。
 
-### 6.5.17 ipcsShmUioOpen
+### 6.5.1 ipcsShmUioOpen
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -7423,7 +7582,7 @@ processing flow
 ![6.5.17 ipcsShmUioOpen processing flow](cursor_tmp/flow_svgs/linux_6_4_17_ipcsShmUioOpen.svg)
 
 
-### 6.5.18 ipcsShmUioRelease
+### 6.5.2 ipcsShmUioRelease
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -7492,7 +7651,7 @@ processing flow
 ![6.5.18 ipcsShmUioRelease processing flow](cursor_tmp/flow_svgs/linux_6_4_18_ipcsShmUioRelease.svg)
 
 
-### 6.5.19 ipcsShmUioIrqcontrol
+### 6.5.3 ipcsShmUioIrqcontrol
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -7561,7 +7720,7 @@ processing flow
 ![6.5.19 ipcsShmUioIrqcontrol processing flow](cursor_tmp/flow_svgs/linux_6_4_19_ipcsShmUioIrqcontrol.svg)
 
 
-### 6.5.20 ipcsShmUioHandler
+### 6.5.4 ipcsShmUioHandler
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -7630,7 +7789,7 @@ processing flow
 ![6.5.20 ipcsShmUioHandler processing flow](cursor_tmp/flow_svgs/linux_6_4_20_ipcsShmUioHandler.svg)
 
 
-### 6.5.21 ipcsUioInit
+### 6.5.5 ipcsUioInit
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -7693,7 +7852,7 @@ processing flow
 ![6.5.21 ipcsUioInit processing flow](cursor_tmp/flow_svgs/linux_6_4_21_ipcsUioInit.svg)
 
 
-### 6.5.22 ipcsCdevOpen
+### 6.5.6 ipcsCdevOpen
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -7762,7 +7921,7 @@ processing flow
 ![6.5.22 ipcsCdevOpen processing flow](cursor_tmp/flow_svgs/linux_6_4_22_ipcsCdevOpen.svg)
 
 
-### 6.5.23 ipcsCdevRelease
+### 6.5.7 ipcsCdevRelease
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -7831,7 +7990,7 @@ processing flow
 ![6.5.23 ipcsCdevRelease processing flow](cursor_tmp/flow_svgs/linux_6_4_23_ipcsCdevRelease.svg)
 
 
-### 6.5.24 ipcsCdevWrite
+### 6.5.8 ipcsCdevWrite
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -7912,7 +8071,7 @@ processing flow
 ![6.5.24 ipcsCdevWrite processing flow](cursor_tmp/flow_svgs/linux_6_4_24_ipcsCdevWrite.svg)
 
 
-### 6.5.25 ipcsShmUioProbe
+### 6.5.9 ipcsShmUioProbe
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -7975,7 +8134,7 @@ processing flow
 ![6.5.25 ipcsShmUioProbe processing flow](cursor_tmp/flow_svgs/linux_6_4_25_ipcsShmUioProbe.svg)
 
 
-### 6.5.26 ipcsShmUioRemove
+### 6.5.10 ipcsShmUioRemove
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -8038,7 +8197,7 @@ processing flow
 ![6.5.26 ipcsShmUioRemove processing flow](cursor_tmp/flow_svgs/linux_6_4_26_ipcsShmUioRemove.svg)
 
 
-### 6.5.27 ipcsOsMapIntc
+### 6.5.11 ipcsOsMapIntc
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -8092,7 +8251,7 @@ processing flow
 ![6.5.27 ipcsOsMapIntc processing flow](cursor_tmp/flow_svgs/linux_6_4_27_ipcsOsMapIntc.svg)
 
 
-### 6.5.28 ipcsOsUnmapIntc
+### 6.5.12 ipcsOsUnmapIntc
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -8805,7 +8964,7 @@ processing flow
 
 源码：`ipcs/mpu/os_kernel/ipc-cdev.c`。CDEV 内核 Backend：字符设备、ioctl、wait queue、ISR 与实例初始化。
 
-### 6.7.12 ipcsShmHardirq
+### 6.7.1 ipcsShmHardirq
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -8874,7 +9033,7 @@ processing flow
 ![6.7.12 ipcsShmHardirq processing flow](cursor_tmp/flow_svgs/linux_6_5_12_ipcsShmHardirq.svg)
 
 
-### 6.7.13 ipcsOsMapIntc
+### 6.7.2 ipcsOsMapIntc
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -8928,7 +9087,7 @@ processing flow
 ![6.7.13 ipcsOsMapIntc processing flow](cursor_tmp/flow_svgs/linux_6_5_13_ipcsOsMapIntc.svg)
 
 
-### 6.7.14 ipcsOsUnmapIntc
+### 6.7.3 ipcsOsUnmapIntc
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -8990,7 +9149,7 @@ processing flow
 ![6.7.14 ipcsOsUnmapIntc processing flow](cursor_tmp/flow_svgs/linux_6_5_14_ipcsOsUnmapIntc.svg)
 
 
-### 6.7.15 ipcsCdevOpen
+### 6.7.4 ipcsCdevOpen
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -9059,7 +9218,7 @@ processing flow
 ![6.7.15 ipcsCdevOpen processing flow](cursor_tmp/flow_svgs/linux_6_5_15_ipcsCdevOpen.svg)
 
 
-### 6.7.16 ipcsCdevRelease
+### 6.7.5 ipcsCdevRelease
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -9128,7 +9287,7 @@ processing flow
 ![6.7.16 ipcsCdevRelease processing flow](cursor_tmp/flow_svgs/linux_6_5_16_ipcsCdevRelease.svg)
 
 
-### 6.7.17 ipcsCdevRead
+### 6.7.6 ipcsCdevRead
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -9209,7 +9368,7 @@ processing flow
 ![6.7.17 ipcsCdevRead processing flow](cursor_tmp/flow_svgs/linux_6_5_17_ipcsCdevRead.svg)
 
 
-### 6.7.18 ipcsCdevOsInit
+### 6.7.7 ipcsCdevOsInit
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -9278,7 +9437,7 @@ processing flow
 ![6.7.18 ipcsCdevOsInit processing flow](cursor_tmp/flow_svgs/linux_6_5_18_ipcsCdevOsInit.svg)
 
 
-### 6.7.19 ipcsCdevIoctl
+### 6.7.8 ipcsCdevIoctl
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -9353,7 +9512,7 @@ processing flow
 ![6.7.19 ipcsCdevIoctl processing flow](cursor_tmp/flow_svgs/linux_6_5_19_ipcsCdevIoctl.svg)
 
 
-### 6.7.20 ipcsCdevInit
+### 6.7.9 ipcsCdevInit
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -9407,7 +9566,7 @@ processing flow
 ![6.7.20 ipcsCdevInit processing flow](cursor_tmp/flow_svgs/linux_6_5_20_ipcsCdevInit.svg)
 
 
-### 6.7.21 ipcsCdevClean
+### 6.7.10 ipcsCdevClean
 
 <table border="1" cellspacing="0" cellpadding="4">
 <tbody>
@@ -10073,76 +10232,43 @@ sequence diagram
 | `ipcs/mpu/os_kernel/ipc-cdev.c` | `ipc_cdev_priv` | 字符设备、wait queue、目标实例和 IRQ 状态 |
 | `ipcs/mpu/hw/c1/ipc-hw.c` | `ipc_hw_priv[]` | MSCM、IRQ、核索引和平台私有状态 |
 
-# 7 Traceability and Consistency Evidence 追溯与一致性证据
+# 7 双向追溯与一致性 (Bidirectional Traceability and Consistency)
 
-## 7.1 SWE.3 覆盖说明
+## 7.1 追溯性策略与声明 (Traceability Statement)
 
-| SWE.3 过程结果 / 实践 | 文档落点 |
-|---|---|
-| 详细设计描述软件单元 | §4–§6 Files 与各函数单元 |
-| 定义软件单元接口 | §4.3 对外 API；§5/§6 OSAL/HAL；§3.4、§6.8 |
-| 定义动态行为 | §4.7、§5.7、§6.9 及各函数 processing flow |
-| 与架构双向追溯 | §7.2；§2；§3 |
-| 与架构设计一致 | §2–§3（三层契约与 Linux 适配形态） |
-| 软件单元可实现 | ipcs/ 源码路径与构建说明 |
+本章节建立本模块软件详细设计与上游（软件需求、软件架构）及下游（物理源代码）之间的双向追溯关系，满足 ASPICE SWE.3.BP4 要求。
 
-## 7.2 架构—设计—源码追溯矩阵
+需求—架构组件分配依据 `ipcs-architecture.pdf` §2.4；架构组件—软件单元映射依据本文档 §2.1–§2.2；单元行为与接口依据 §4–§6。本 SDD 范围见 §1.3；矩阵仅列出在该范围内由 `ipcs/` 源码实现的分配需求（与架构 §2.4 中过程类及集成侧需求不重复展开）。
 
-### 7.2.1 软件单元追溯（节选）
+本矩阵用于证明：已分配至本驱动的架构组件与需求在详细设计单元及源码中均有对应实现，并支持变更影响分析。
 
-| SW-Unit-ID | 函数/设计章节出处 | 源文件 |
-|---|---|---|
-| SWU_IPCS_CORE_SHM | §5.3、§5.4（Core 内部函数） | ipcs/ipcs_cores/ipc-shm.c |
-| SWU_IPCS_CORE_QUEUE | §5.4.1–4.4.5 | ipcs/ipcs_cores/ipc-queue.c |
-| SWU_IPCS_HAL_MCU | §5.6 HAL、§5.3–4.5 OSAL | ipcs/mcu/hw/ipc-hw.c |
-| SWU_IPCS_LINUX_OS_KERN | §6.3 | ipcs/mpu/os_kernel/ipc-os.c |
-| SWU_IPCS_LINUX_OS_UIO | §6.4 | ipcs/mpu/os_uio/ipc-os.c |
-| SWU_IPCS_LINUX_UIO_KO | §6.5 | ipcs/mpu/os_kernel/ipc-uio.c |
-| SWU_IPCS_LINUX_OS_CDEV | §6.6 | ipcs/mpu/os_cdev/ipc-os.c |
-| SWU_IPCS_LINUX_CDEV_KO | §6.7 | ipcs/mpu/os_kernel/ipc-cdev.c |
-| SWU_IPCS_HAL_LINUX | §6.8 | ipcs/mpu/hw/c1/ipc-hw.c |
+## 7.2 需求-架构-设计-代码 双向追溯矩阵 (Bidirectional Traceability Matrix)
 
-| 架构组件 ID | 部署变体 / 实现 | 主要源码 |
-|---|---|---|
-| Drv_Ipcs_Core_Cmp | 全部 | ipcs/ipcs_cores/ipc-shm.c |
-| Drv_Ipcs_Queue_Cmp | 全部 | ipcs/ipcs_cores/ipc-queue.c |
-| Drv_Ipcs_Conf_Cmp | 全部 | ipcs/ipcs_cores/ipc-types.h |
-| Drv_Ipcs_Osal_Cmp | RTOS 各 OS 实现 | ipcs/mcu/os/*/ipc-os-*.c |
-| Drv_Ipcs_Hal_Cmp | RTOS 部署变体 | ipcs/mcu/hw/ipc-hw.c |
-| Drv_Ipcs_Linux_Adapt_Cmp | Linux 全内核 | ipcs/mpu/os_kernel/ipc-os.c |
-| Drv_Ipcs_Linux_Adapt_Cmp | Linux UIO | ipcs/mpu/os_uio/ipc-os.c + ipcs/mpu/os_kernel/ipc-uio.c |
-| Drv_Ipcs_Linux_Adapt_Cmp | Linux CDEV | ipcs/mpu/os_cdev/ipc-os.c + ipcs/mpu/os_kernel/ipc-cdev.c |
-
-## 7.3 源码核对结果
-
-核对基准：`ipcs/` 目录（2026-05-19），与本文档设计条目一致。
-
-| 路径 | 纳入章节 | 说明 |
-|---|---|---|
-| ipcs/ipcs_cores/ipc-shm.c | §4.2、§4.3–4.4 | Core 对外/内部 API 与源码一致 |
-| ipcs/ipcs_cores/ipc-queue.c | §3.2、§5.4.1–4.4.5 | 队列单元 |
-| ipcs/ipcs_cores/ipc-util.c | §4.2、§4.4.23 | memcpy 等工具 |
-| ipcs/ipcs_cores/ipc-types.h | §4.6 | 配置与 BD 类型 |
-| ipcs/mcu/hw/ipc-hw.c | §5.2、§5.6 | RTOS HAL；`ipcsHw*` 与 §4.6 一致 |
-| ipcs/mcu/os/autosar/ipc-os-autosar.c | §5.3 | AUTOSAR OSAL |
-| ipcs/mcu/os/freertos/ipc-os-freertos.c | §5.4 | FreeRTOS OSAL |
-| ipcs/mcu/os/threadx/ipc-os-threadx.c | §5.5 | ThreadX OSAL |
-| ipcs/mcu/os/baremetal/ipc-os-baremetal.c | — | 不在 SDD 范围 |
-| ipcs/mpu/os_kernel/ipc-os.c | §6.3 | 全内核实现 |
-| ipcs/mpu/os_uio/ipc-os.c | §6.4 | UIO 用户侧 P4/P5 代理 |
-| ipcs/mpu/os_cdev/ipc-os.c | §6.6 | CDEV 用户侧 P4/P5 代理 |
-| ipcs/mpu/os_kernel/ipc-uio.c | §6.5 | UIO 内核 Backend |
-| ipcs/mpu/os_kernel/ipc-cdev.c | §6.7 | CDEV 内核 Backend |
-| ipcs/mpu/hw/c1/ipc-hw.c | §6.8、§3.4 | Linux 内核 HAL |
-
-对外 API（`ipcs-shm.h`）：`ipcsShmInit`、`ipcsShmFree`、`ipcsShmAcquireBuf`、`ipcsShmReleaseBuf`、`ipcsShmTx`、`ipcsShmUnmanagedAcquire`、`ipcsShmUnmanagedTx`、`ipcsShmIsRemoteReady`、`ipcsShmPollChannels` — 与 §3.3 一致。
-
-
-## 7.4 对外/内部接口判定规则
-
-| 类型 | 规则 |
-|---|---|
-| 对外（应用） | ipcs/ipcs_cores/ipc-shm.h 中声明且 ipcs-shm.c 中非 static 的 API |
-| OSAL/HAL | 以 ipc-os.h、ipc-hw.h 声明；实现位置见 §3.4、§6.3–§6.8 |
-| 用户侧代理 | 用户库内 `ipcsOs*`/`ipcsHw*` 满足 P4/P5 契约，实现为转发；属 Linux Adapt（§3.4） |
-| 内部 | static 函数及仅单元内使用的类型 |
+| 软件需求 ID (SWE.1) | 架构组件 ID (SWE.2) | 本详细设计单元 ID (SWE.3) | 物理源代码实体 (Code) | 追溯关系及设计覆盖说明 |
+| :--- | :--- | :--- | :--- | :--- |
+| IPCS_001 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_UTIL、SWU_IPCS_CORE_QUEUE、SWU_IPCS_CORE_TYPES；§2.1 所列 OSAL/HAL 单元 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-util.c`、`ipc-types.h`；`ipcs/mcu/os/`、`ipcs/mcu/hw/ipc-hw.c`；`ipcs/mpu/` 各实现文件 | 同核/异核点对点双向通信：实例、通道、队列、共享内存映射与核间通知 |
+| IPCS_002 | Drv_Ipcs_Osal_Cmp | SWU_IPCS_OSAL_AUTOSAR | `ipcs/mcu/os/autosar/ipc-os-autosar.c` | AutoSAR OS 部署下 OSAL 集成边界；安全目标与证据见项目安全工件 |
+| IPCS_003 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Hal_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE、SWU_IPCS_HAL_MCU、SWU_IPCS_HAL_LINUX | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`；`ipcs/mcu/hw/ipc-hw.c`；`ipcs/mpu/hw/c1/ipc-hw.c` | 可移植逻辑在 Core/Queue；平台与字节序相关行为在 HAL |
+| IPCS_005 | Drv_Ipcs_Osal_Cmp | SWU_IPCS_OSAL_AUTOSAR | `ipcs/mcu/os/autosar/ipc-os-autosar.c` | AutoSAR CDD/OS 封装、调度与错误处理 |
+| IPCS_006 | Drv_Ipcs_Osal_Cmp | SWU_IPCS_OSAL_THREADX | `ipcs/mcu/os/threadx/ipc-os-threadx.c` | ThreadX 任务、中断与同步原语映射 |
+| IPCS_010 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c` | 传输路径可观测计数/时间戳（可选编译） |
+| IPCS_012 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp | §2.1 Core/OSAL/HAL 单元 | `ipcs/` 目录下对应单元源文件 | OSAL/HAL 接口可替换实现，便于单元测试 |
+| IPCS_014 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE、SWU_IPCS_CORE_TYPES | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-types.h` | 多通信通道与共享内存布局 |
+| IPCS_015 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c` | 单通道内消息顺序保持 |
+| IPCS_016 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE、SWU_IPCS_CORE_TYPES | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-types.h` | 每通道多缓冲池与队列管理 |
+| IPCS_017 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_TYPES；§2.1 OSAL 单元 | `ipcs/ipcs_cores/ipc-shm.c`；各 `ipc-os-*.c` | 多 instance 与每核 OSAL 执行及中断亲和 |
+| IPCS_018 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c` | 零拷贝：BD/指针传递缓冲区 |
+| IPCS_019 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Osal_Cmp | SWU_IPCS_CORE_SHM；§2.1 OSAL 单元 | `ipcs/ipcs_cores/ipc-shm.c`；各 OSAL 实现文件 | 基于通知的异步接收与回调分发 |
+| IPCS_020 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_TYPES | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-types.h`；集成配置 `ipcf_Ip_Cfg*.h` | 通信端内存隔离：布局配置与 Core 边界检查 |
+| IPCS_021 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_TYPES | `ipcs/ipcs_cores/ipc-shm.c` | 非托管通道：`ipcsShmUnmanagedAcquire`/`ipcsShmUnmanagedTx` |
+| IPCS_022 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp | §2.1 所列相关单元 | `ipcs/ipcs_cores/`；OSAL/HAL 源文件 | 虚拟中断与队列状态协调，避免陈旧数据投递 |
+| IPCS_023 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c` | 共享内存提交顺序保证；可与 IPCS_039 轮询协同 |
+| IPCS_024 | Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_OSAL_AUTOSAR、SWU_IPCS_CORE_TYPES | `ipcs/mcu/os/autosar/ipc-os-autosar.c`、`ipc-types.h` | 与 AUTOSAR R4.4+ 接口及配置模型对齐 |
+| IPCS_025 | Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_TYPES | `ipcs/ipcs_cores/ipc-types.h`；`ipcf_Ip_Cfg*.h` | 缓冲池数量与大小由集成配置提供 |
+| IPCS_028 | Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Osal_Cmp | SWU_IPCS_HAL_MCU、SWU_IPCS_HAL_LINUX；§2.1 OSAL 单元 | `ipcs/mcu/hw/ipc-hw.c`、`ipcs/mpu/hw/c1/ipc-hw.c`；各 OSAL 文件 | 核间中断作为收发通知 |
+| IPCS_029 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE、SWU_IPCS_CORE_UTIL；OSAL 单元 | `ipcs/ipcs_cores/`；`ipcs/mcu/os/`、`ipcs/mpu/os_kernel/`、`ipcs/mpu/os_uio/`、`ipcs/mpu/os_cdev/` | 静态分配池与队列，无动态堆 |
+| IPCS_031 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_TYPES | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-types.h` | 多核多 instance 独立 SHM/IRQ 配置 |
+| IPCS_034 | Drv_Ipcs_Core_Cmp | SWU_IPCS_CORE_SHM | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-shm.h` | 公共 API 参数校验 |
+| IPCS_035 | Drv_Ipcs_Core_Cmp | SWU_IPCS_CORE_SHM | `ipcs/ipcs_cores/ipc-shm.c` | managed/unmanaged 与 channel 类型及操作一致性 |
+| IPCS_036 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Linux_Adapt_Cmp、Drv_Ipcs_Conf_Cmp | §2.1 全部软件单元 | `ipcs/` 源码树 | 按部署变体与编译选项裁剪 HW/OS/传输实现 |
+| IPCS_039 | Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp | §2.1 OSAL/HAL 单元 | `ipcsShmPollChannels`（`ipc-shm.c`）；各 OSAL/HAL 文件 | IRQ_NONE 轮询接收路径 |

@@ -1,0 +1,43 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam component {
+  BackgroundColor #F5E6CC
+  BorderColor #8B7355
+  FontSize 11
+}
+skinparam package {
+  BackgroundColor #FAF0E0
+  BorderColor #A08060
+}
+skinparam arrowColor #5C4033
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+left to right direction
+component [ipc-os.c] as SRC
+component [fcntl.h] as H0 <<posix>>
+component [unistd.h] as H1 <<posix>>
+component [stdio.h] as H2 <<posix>>
+component [sys/mman.h] as H3 <<posix>>
+component [sys/syscall.h] as H4 <<posix>>
+component [pthread.h] as H5 <<posix>>
+component [stdlib.h] as H6 <<posix>>
+component [dirent.h] as H7 <<posix>>
+component [ipc-os.h] as H8
+component [ipc-hw.h] as H9
+component [ipc-shm.h] as H10
+component [ipc-uio.h] as H11
+SRC ..> H0
+SRC ..> H1
+SRC ..> H2
+SRC ..> H3
+SRC ..> H4
+SRC ..> H5
+SRC ..> H6
+SRC ..> H7
+SRC ..> H8
+SRC ..> H9
+SRC ..> H10
+SRC ..> H11
+@enduml

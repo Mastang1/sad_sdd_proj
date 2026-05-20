@@ -2,6 +2,9 @@
 r"""
 Regenerate chapter 6 Linux PlantUML flows and render SVG via plantuml.jar.
 
+Pre-flight: cursor_tmp/SDD_TOOLCHAIN.md §1 (G1–G3). Edit linux_ch6_flows.FLOWS
+before running. Pipeline A → optional pipeline C (md0519_to_final_sdd + validate).
+
 Usage (repository root)::
 
     python cursor_tmp/format_docx_py/render_linux_ch6_flows.py

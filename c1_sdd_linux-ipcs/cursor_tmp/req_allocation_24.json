@@ -1,0 +1,188 @@
+[
+  {
+    "id": "IPCS_001",
+    "summary": "同核或异核上应 用间点对点双向 通信",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Queue_Cmp， Drv_Ipcs_Osal_Cmp， Drv_Ipcs_Hal_Cmp， Drv_Ipcs_Conf_Cmp",
+    "notes": "端到端路径：Drv_Ipcs_Conf_Cmp 配置对称布 局；Drv_Ipcs_Core_Cmp 实例/通道； Drv_Ipcs_Queue_Cmp 队列与 BD； Drv_Ipcs_Osal_Cmp/Drv_Ipcs_Hal_Cmp 地址与 通知"
+  },
+  {
+    "id": "IPCS_002",
+    "summary": "部署于 AutoSAR OS 时 满足 ASIL-D",
+    "components": "过程类 + Drv_Ipcs_Osal_Cmp",
+    "notes": "安全目标分解、安全机制与证据在独立安全工作 中产品化；架构上 Drv_Ipcs_Osal_Cmp 承担 AutoSAR 集成与 OS 交互边界"
+  },
+  {
+    "id": "IPCS_003",
+    "summary": "内核与硬件平 台、字节序无关",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Queue_Cmp， Drv_Ipcs_Hal_Cmp",
+    "notes": "可移植逻辑在 Drv_Ipcs_Core_Cmp/Drv_Ipcs_Queue_Cmp； 平台相关集中在 Drv_Ipcs_Hal_Cmp；字节序通 过可移植类型与显式转换策略在 Drv_Ipcs_Core_Cmp/Drv_Ipcs_Queue_Cmp 收 敛"
+  },
+  {
+    "id": "IPCS_005",
+    "summary": "作为复杂驱动在 AutoSAR OS 下 运行",
+    "components": "Drv_Ipcs_Osal_Cmp",
+    "notes": "与 AutoSAR CDD/OS 接口封装、调度与错误钩 子对齐；Drv_Ipcs_Conf_Cmp 配置由集成方提供"
+  },
+  {
+    "id": "IPCS_006",
+    "summary": "作为驱动在 ThreadX 下运行",
+    "components": "Drv_Ipcs_Osal_Cmp",
+    "notes": "ThreadX 变体 OSAL：任务/中断/同步原语映射"
+  },
+  {
+    "id": "IPCS_009",
+    "summary": "platform / os / phy / transport",
+    "components": "过程类 + 全组件边界",
+    "notes": "目录与依赖方向约束架构分层；删除一层仅当上 层不依赖该抽象时成立，需在集成配置中关闭对"
+  },
+  {
+    "id": "IPCS_010",
+    "summary": "传输层设计支持 基准与吞吐量估 计",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Queue_Cmp，（传输 层实现）",
+    "notes": "在传输路径保留可观测计数/时间戳或钩子，供基 准测试构建使用；不与生产最小集强制绑定"
+  },
+  {
+    "id": "IPCS_011",
+    "summary": "可在 Windows 主机上构建",
+    "components": "过程类",
+    "notes": "构建系统、工具链与主机桩实现；不属 Drv_Ipcs_Core_Cmp～ Drv_Ipcs_Linux_Adapt_Cmp 运行时职责"
+  },
+  {
+    "id": "IPCS_012",
+    "summary": "主机单元测试、 组件易于模型替 换",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Queue_Cmp， Drv_Ipcs_Osal_Cmp， Drv_Ipcs_Hal_Cmp + 过程类",
+    "notes": "通过 OSAL/HWAL 接口注入替身；测试工程与 mock 属 SWE.3/SWE.5 支持"
+  },
+  {
+    "id": "IPCS_013",
+    "summary": "信息安全与功能 安全验证需模糊 测试",
+    "components": "过程类",
+    "notes": "SWE.5 /安全验证计划中的测试手段；架构上保持 接口边界清晰以便 fuzz 目标收敛"
+  },
+  {
+    "id": "IPCS_014",
+    "summary": "SHM 驱动支持 多通信通道（数 据流）",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Queue_Cmp， Drv_Ipcs_Conf_Cmp",
+    "notes": "多 channel 模型与共享内存布局"
+  },
+  {
+    "id": "IPCS_015",
+    "summary": "通道/流内消息 顺序保持",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Queue_Cmp",
+    "notes": "单通道队列语义与发送/接收顺序约定"
+  },
+  {
+    "id": "IPCS_016",
+    "summary": "每通道支持多个 缓冲池",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Queue_Cmp， Drv_Ipcs_Conf_Cmp",
+    "notes": "pool 配置与 Drv_Ipcs_Queue_Cmp 多队列管理"
+  },
+  {
+    "id": "IPCS_017",
+    "summary": "全核多传输并 行、高效核利用",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Osal_Cmp， Drv_Ipcs_Conf_Cmp",
+    "notes": "多 instance；Drv_Ipcs_Osal_Cmp 每核执行模 型与中断亲和"
+  },
+  {
+    "id": "IPCS_018",
+    "summary": "零拷贝 API 与实 现",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Queue_Cmp",
+    "notes": "指针/BD 描述已有缓冲区，避免驱动内额外拷贝"
+  },
+  {
+    "id": "IPCS_019",
+    "summary": "异步（基于通 知）接收 API",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Osal_Cmp",
+    "notes": "回调由 Drv_Ipcs_Osal_Cmp 异步上下文触发； Drv_Ipcs_Core_Cmp 分发"
+  },
+  {
+    "id": "IPCS_020",
+    "summary": "两通信端间不受 干扰（内存保 护）",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Conf_Cmp + 集成环 境",
+    "notes": "共享内存分区与访问权限由布局 （Drv_Ipcs_Conf_Cmp）与 SoC/OS 内存保护共 同保证；Drv_Ipcs_Core_Cmp 遵守边界"
+  },
+  {
+    "id": "IPCS_021",
+    "summary": "非托管通道，应 用独占通道内存",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Conf_Cmp",
+    "notes": "unmanaged 模型与 ipcsShmUnmanaged* 路 径"
+  },
+  {
+    "id": "IPCS_022",
+    "summary": "虚拟中断不投递 陈旧数据",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Queue_Cmp， Drv_Ipcs_Osal_Cmp， Drv_Ipcs_Hal_Cmp",
+    "notes": "序列号/队列状态与通知路径协调，避免在无效状 态下回调"
+  },
+  {
+    "id": "IPCS_023",
+    "summary": "丢失中断不导致 数据丢失",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Queue_Cmp",
+    "notes": "依赖共享内存中的提交顺序与对端可见性；接收 方可通过轮询或计数补偿（与 IPCS_039 协同）"
+  },
+  {
+    "id": "IPCS_024",
+    "summary": "与 AUTOSAR 4.4 或更高版本 兼容",
+    "components": "Drv_Ipcs_Osal_Cmp， Drv_Ipcs_Conf_Cmp",
+    "notes": "接口与配置模型对齐 R4.4+ 集成约定"
+  },
+  {
+    "id": "IPCS_025",
+    "summary": "池中缓冲区数量 与大小可配置",
+    "components": "Drv_Ipcs_Conf_Cmp",
+    "notes": "集成配置数据；Drv_Ipcs_Core_Cmp/ Drv_Ipcs_Queue_Cmp 消费"
+  },
+  {
+    "id": "IPCS_028",
+    "summary": "支持 核间中断 作为收发通知",
+    "components": "Drv_Ipcs_Hal_Cmp， Drv_Ipcs_Osal_Cmp",
+    "notes": "Drv_Ipcs_Hal_Cmp 平台实现； Drv_Ipcs_Osal_Cmp 挂接 Linux/RTOS 中断模型"
+  },
+  {
+    "id": "IPCS_029",
+    "summary": "软件组件使用静 态内存分配",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Queue_Cmp， Drv_Ipcs_Osal_Cmp",
+    "notes": "实现约束：无堆或受限堆；池与队列静态维度由 Drv_Ipcs_Conf_Cmp 定义"
+  },
+  {
+    "id": "IPCS_030",
+    "summary": "设备端源码符合 编码规范",
+    "components": "过程类",
+    "notes": "编码标准与静态分析门禁"
+  },
+  {
+    "id": "IPCS_031",
+    "summary": "多对内核（多实 例）通信",
+    "components": "Drv_Ipcs_Core_Cmp， Drv_Ipcs_Conf_Cmp",
+    "notes": "多 instance 与独立 SHM/IRQ 配置"
+  },
+  {
+    "id": "IPCS_034",
+    "summary": "校验应用传入的 公共 API 参数",
+    "components": "Drv_Ipcs_Core_Cmp",
+    "notes": "各公共 API 入口参数与范围检查"
+  },
+  {
+    "id": "IPCS_035",
+    "summary": "校验通道类型与 所请求操作是否 匹配",
+    "components": "Drv_Ipcs_Core_Cmp",
+    "notes": "managed/unmanaged API 与 channel 类型一 致性"
+  },
+  {
+    "id": "IPCS_036",
+    "summary": "低延迟、小体 积、可按需裁剪 HW/OS/传输",
+    "components": "Drv_Ipcs_Core_Cmp～ Drv_Ipcs_Linux_Adapt_Cmp， Drv_Ipcs_Conf_Cmp",
+    "notes": "可选编译与目录级特性开关；Linux 路径 Drv_Ipcs_Linux_Adapt_Cmp 按需链接"
+  },
+  {
+    "id": "IPCS_038",
+    "summary": "按辰至汽车质量 流程开发为生产 级软件",
+    "components": "过程类",
+    "notes": "项目管理、配置管理、问题解决与发布流程；架 构文档为 SWE.2 工作产品之一"
+  },
+  {
+    "id": "IPCS_039",
+    "summary": "支持轮询方式 （IRQ_NONE）",
+    "components": "Drv_Ipcs_Osal_Cmp， Drv_Ipcs_Hal_Cmp",
+    "notes": "Drv_Ipcs_Osal_Cmp ipcsShmPollChannels / 轮 询桥接；Drv_Ipcs_Hal_Cmp 在无硬件 IRQ 路径 下的空操作或最小支持"
+  }
+]
