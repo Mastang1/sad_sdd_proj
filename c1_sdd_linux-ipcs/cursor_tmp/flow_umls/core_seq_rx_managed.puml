@@ -1,0 +1,57 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam sequenceArrowThickness 1.2
+skinparam sequence {
+  ArrowColor #5C4033
+  LifeLineBorderColor #8B7355
+  ParticipantBorderColor #8B7355
+  BoxBorderColor #A08060
+}
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+skinparam actor {
+  BackgroundColor #FAF0E0
+  BorderColor #8B7355
+}
+participant "Remote core (peer)" as REMOTE #E8DAEF
+participant "Drv_Ipcs_Hal_Cmp (ipcs-hw.h)" as HAL #F5E6CC
+participant "Drv_Ipcs_Osal_Cmp (ipc-os.h)" as OSAL #D5F5E3
+participant "SWU_IPCS_CORE_SHM (ipc-shm.c)" as CORE #D4E6F1
+participant "SWU_IPCS_CORE_QUEUE (ipc-queue.c)" as QUEUE #D4E6F1
+participant "Application (rx_cb)" as APP #FAF0E0
+
+autonumber
+activate REMOTE
+REMOTE -> HAL : inter-core notification
+activate HAL
+HAL -> OSAL : deferred Rx entry (variant)
+activate OSAL
+note right of OSAL
+  Variant OSAL: IRQ disable/clear,
+  schedule softirq or poll hook
+end note
+OSAL -> CORE : ipcsShmRx(instance, budget)
+activate CORE
+loop work < budget
+  CORE -> CORE : ipcsChannelRx(instance, chan, budget)
+  CORE -> QUEUE : ipcsQueuePop(remote BD ring)
+  activate QUEUE
+  QUEUE --> CORE : BD
+  deactivate QUEUE
+  CORE -> APP : rx_cb(instance, chan, buf, size)
+  activate APP
+  APP -> CORE : ipcsShmReleaseBuf(instance, chan, buf)
+  APP --> CORE : IPC_SHM_E_OK
+  deactivate APP
+end
+CORE --> OSAL : work done
+deactivate CORE
+OSAL -> HAL : re-enable notification (variant)
+activate HAL
+deactivate HAL
+deactivate OSAL
+deactivate HAL
+deactivate REMOTE
+@enduml

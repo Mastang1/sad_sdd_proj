@@ -14,7 +14,6 @@ skinparam note {
   BackgroundColor #FFF8E8
   BorderColor #B89968
 }
-title common/ipc-util.h — 无 IPCS_49 内其他头文件
-component [common/ipc-util.h] as H
-note right of H : 工程内无其他 .h #include
+component [ipcs/ipcs_cores/ipc-util.h] as SRC
+note right of SRC : 工程内无其他 .h #include
 @enduml

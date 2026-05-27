@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Cross-unit scenario sequence diagrams for §5.7 (RTOS) and §6.7 (Linux).
+Cross-unit scenario sequence diagrams for §4.7 (Core logic), §5.7 (RTOS), §6.7 (Linux).
 
 Render: python format_docx_py/render_scenario_sequences.py
 """
@@ -21,6 +21,230 @@ from scenario_seq_common import (
 )
 
 P = participant
+
+CORE_DIAGRAMS: dict[str, str] = {
+    "core_seq_init": SEQ_HEADER
+    + P("Application", "caller", "APP", "#FAF0E0")
+    + "\n"
+    + P("SWU_IPCS_CORE_SHM", "ipc-shm.c", "CORE", COLOR_CORE)
+    + "\n"
+    + P("Drv_Ipcs_Hal_Cmp", "ipcs-hw.h", "HAL", COLOR_HAL)
+    + "\n"
+    + P("Drv_Ipcs_Osal_Cmp", "ipc-os.h", "OSAL", COLOR_OSAL_RTOS)
+    + "\n"
+    + P("SWU_IPCS_CORE_QUEUE", "ipc-queue.c", "QUEUE", COLOR_QUEUE)
+    + """
+
+autonumber
+activate APP
+APP -> CORE : ipcsShmInit(cfg)
+activate CORE
+CORE -> CORE : ipcsShmInitInstance(instance, cfg)
+CORE -> HAL : ipcsHwInit(instance, cfg)
+activate HAL
+note right of HAL
+  Variant HAL: map HW resources,
+  validate IRQ/core indices,
+  disable notify until channels ready
+end note
+HAL --> CORE : IPC_SHM_E_OK
+deactivate HAL
+CORE -> OSAL : ipcsOsInit(instance, cfg, ipcsShmRx)
+activate OSAL
+note right of OSAL
+  Variant OSAL: save SHM addresses,
+  register deferred Rx dispatch
+end note
+OSAL --> CORE : IPC_SHM_E_OK
+deactivate OSAL
+CORE -> CORE : ipcsShmInitChannels(instance, cfg)
+CORE -> QUEUE : ipcsQueueInit per channel
+activate QUEUE
+QUEUE --> CORE : IPC_SHM_E_OK
+deactivate QUEUE
+CORE -> HAL : ipcsHwIrqClear(instance)
+activate HAL
+CORE -> HAL : ipcsHwIrqEnable(instance)
+HAL --> CORE : IPC_SHM_E_OK
+deactivate HAL
+CORE -> CORE : state = READY; flush cache
+CORE --> APP : IPC_SHM_E_OK
+deactivate CORE
+deactivate APP
+@enduml
+""",
+    "core_seq_tx_managed": SEQ_HEADER
+    + P("Application", "caller", "APP", "#FAF0E0")
+    + "\n"
+    + P("SWU_IPCS_CORE_SHM", "ipc-shm.c", "CORE", COLOR_CORE)
+    + "\n"
+    + P("SWU_IPCS_CORE_QUEUE", "ipc-queue.c", "QUEUE", COLOR_QUEUE)
+    + "\n"
+    + P("Drv_Ipcs_Hal_Cmp", "ipcs-hw.h", "HAL", COLOR_HAL)
+    + "\n"
+    + P("Remote core", "peer", "REMOTE", COLOR_REMOTE)
+    + """
+
+autonumber
+activate APP
+APP -> CORE : ipcsShmAcquireBuf(instance, chan, size)
+activate CORE
+CORE -> QUEUE : ipcsQueuePop(local free BD ring)
+activate QUEUE
+QUEUE --> CORE : BD / buffer address
+deactivate QUEUE
+CORE --> APP : local buffer pointer
+APP -> APP : fill payload
+APP -> CORE : ipcsShmTx(instance, chan, buf, size)
+CORE -> CORE : validate channel / build BD
+CORE -> QUEUE : ipcsQueuePush(remote BD ring, BD)
+activate QUEUE
+QUEUE --> CORE : IPC_SHM_E_OK
+deactivate QUEUE
+CORE -> HAL : ipcsHwIrqNotify(instance)
+activate HAL
+note right of HAL
+  Variant HAL: signal remote core
+end note
+HAL -> REMOTE : inter-core notification
+activate REMOTE
+deactivate REMOTE
+deactivate HAL
+CORE --> APP : IPC_SHM_E_OK
+deactivate CORE
+deactivate APP
+@enduml
+""",
+    "core_seq_rx_managed": SEQ_HEADER
+    + P("Remote core", "peer", "REMOTE", COLOR_REMOTE)
+    + "\n"
+    + P("Drv_Ipcs_Hal_Cmp", "ipcs-hw.h", "HAL", COLOR_HAL)
+    + "\n"
+    + P("Drv_Ipcs_Osal_Cmp", "ipc-os.h", "OSAL", COLOR_OSAL_RTOS)
+    + "\n"
+    + P("SWU_IPCS_CORE_SHM", "ipc-shm.c", "CORE", COLOR_CORE)
+    + "\n"
+    + P("SWU_IPCS_CORE_QUEUE", "ipc-queue.c", "QUEUE", COLOR_QUEUE)
+    + "\n"
+    + P("Application", "rx_cb", "APP", "#FAF0E0")
+    + """
+
+autonumber
+activate REMOTE
+REMOTE -> HAL : inter-core notification
+activate HAL
+HAL -> OSAL : deferred Rx entry (variant)
+activate OSAL
+note right of OSAL
+  Variant OSAL: IRQ disable/clear,
+  schedule softirq or poll hook
+end note
+OSAL -> CORE : ipcsShmRx(instance, budget)
+activate CORE
+loop work < budget
+  CORE -> CORE : ipcsChannelRx(instance, chan, budget)
+  CORE -> QUEUE : ipcsQueuePop(remote BD ring)
+  activate QUEUE
+  QUEUE --> CORE : BD
+  deactivate QUEUE
+  CORE -> APP : rx_cb(instance, chan, buf, size)
+  activate APP
+  APP -> CORE : ipcsShmReleaseBuf(instance, chan, buf)
+  APP --> CORE : IPC_SHM_E_OK
+  deactivate APP
+end
+CORE --> OSAL : work done
+deactivate CORE
+OSAL -> HAL : re-enable notification (variant)
+activate HAL
+deactivate HAL
+deactivate OSAL
+deactivate HAL
+deactivate REMOTE
+@enduml
+""",
+    "core_seq_unmanaged": SEQ_HEADER
+    + P("Application (local)", "caller", "APP_L", "#FAF0E0")
+    + "\n"
+    + P("SWU_IPCS_CORE_SHM", "ipc-shm.c", "CORE_L", COLOR_CORE)
+    + "\n"
+    + P("Drv_Ipcs_Hal_Cmp", "ipcs-hw.h", "HAL", COLOR_HAL)
+    + "\n"
+    + P("Remote core", "peer", "REMOTE", COLOR_REMOTE)
+    + "\n"
+    + P("SWU_IPCS_CORE_SHM", "peer instance", "CORE_R", COLOR_CORE)
+    + """
+
+autonumber
+activate APP_L
+APP_L -> CORE_L : ipcsShmUnmanagedAcquire(instance, chan)
+activate CORE_L
+CORE_L --> APP_L : local unmanaged memory
+APP_L -> CORE_L : write payload to local mem
+APP_L -> CORE_L : ipcsShmUnmanagedTx(instance, chan)
+CORE_L -> CORE_L : increment tx_count
+CORE_L -> HAL : ipcsHwIrqNotify(instance)
+activate HAL
+HAL -> REMOTE : inter-core notification
+activate REMOTE
+REMOTE -> CORE_R : OSAL/HAL Rx path
+activate CORE_R
+CORE_R -> CORE_R : ipcsChannelRx: compare tx_count
+note right of CORE_R
+  If remote tx_count changed,
+  invoke rx_cb with remote mem
+end note
+CORE_R --> REMOTE : rx_cb done
+deactivate CORE_R
+deactivate REMOTE
+deactivate HAL
+deactivate CORE_L
+deactivate APP_L
+@enduml
+""",
+    "core_seq_irq_poll": SEQ_HEADER
+    + P("Application", "caller", "APP", "#FAF0E0")
+    + "\n"
+    + P("SWU_IPCS_CORE_SHM", "ipc-shm.c", "CORE", COLOR_CORE)
+    + "\n"
+    + P("Drv_Ipcs_Osal_Cmp", "ipc-os.h", "OSAL", COLOR_OSAL_RTOS)
+    + "\n"
+    + P("Drv_Ipcs_Hal_Cmp", "ipcs-hw.h", "HAL", COLOR_HAL)
+    + """
+
+autonumber
+alt inter_core_rx_irq != IPC_IRQ_NONE
+  activate HAL
+  HAL -> OSAL : hardware notification
+  activate OSAL
+  OSAL -> CORE : ipcsShmRx(instance, budget)
+  activate CORE
+  loop fair channel dispatch
+    CORE -> CORE : ipcsChannelRx per channel
+  end
+  CORE --> OSAL : channels serviced
+  deactivate CORE
+  deactivate OSAL
+  deactivate HAL
+else polling (IPC_IRQ_NONE)
+  activate APP
+  APP -> CORE : ipcsShmPollChannels(instance)
+  activate CORE
+  CORE -> OSAL : ipcsOsPollChannels(instance)
+  activate OSAL
+  note right of OSAL
+    Variant OSAL: invoke registered
+    rx_cb with IPC_SOFTIRQ_BUDGET
+  end note
+  OSAL -> CORE : ipcsShmRx(instance, budget)
+  deactivate OSAL
+  CORE --> APP : work done / channels serviced
+  deactivate CORE
+  deactivate APP
+end
+@enduml
+""",
+}
 
 RTOS_DIAGRAMS: dict[str, str] = {
     "rtos_seq_init": SEQ_HEADER
@@ -503,4 +727,4 @@ deactivate REMOTE
 """,
 }
 
-ALL_DIAGRAMS = {**RTOS_DIAGRAMS, **LINUX_DIAGRAMS}
+ALL_DIAGRAMS = {**CORE_DIAGRAMS, **RTOS_DIAGRAMS, **LINUX_DIAGRAMS}

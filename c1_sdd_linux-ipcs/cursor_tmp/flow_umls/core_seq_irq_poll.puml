@@ -1,0 +1,53 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam sequenceArrowThickness 1.2
+skinparam sequence {
+  ArrowColor #5C4033
+  LifeLineBorderColor #8B7355
+  ParticipantBorderColor #8B7355
+  BoxBorderColor #A08060
+}
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+skinparam actor {
+  BackgroundColor #FAF0E0
+  BorderColor #8B7355
+}
+participant "Application (caller)" as APP #FAF0E0
+participant "SWU_IPCS_CORE_SHM (ipc-shm.c)" as CORE #D4E6F1
+participant "Drv_Ipcs_Osal_Cmp (ipc-os.h)" as OSAL #D5F5E3
+participant "Drv_Ipcs_Hal_Cmp (ipcs-hw.h)" as HAL #F5E6CC
+
+autonumber
+alt inter_core_rx_irq != IPC_IRQ_NONE
+  activate HAL
+  HAL -> OSAL : hardware notification
+  activate OSAL
+  OSAL -> CORE : ipcsShmRx(instance, budget)
+  activate CORE
+  loop fair channel dispatch
+    CORE -> CORE : ipcsChannelRx per channel
+  end
+  CORE --> OSAL : channels serviced
+  deactivate CORE
+  deactivate OSAL
+  deactivate HAL
+else polling (IPC_IRQ_NONE)
+  activate APP
+  APP -> CORE : ipcsShmPollChannels(instance)
+  activate CORE
+  CORE -> OSAL : ipcsOsPollChannels(instance)
+  activate OSAL
+  note right of OSAL
+    Variant OSAL: invoke registered
+    rx_cb with IPC_SOFTIRQ_BUDGET
+  end note
+  OSAL -> CORE : ipcsShmRx(instance, budget)
+  deactivate OSAL
+  CORE --> APP : work done / channels serviced
+  deactivate CORE
+  deactivate APP
+end
+@enduml

@@ -1,0 +1,49 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam sequenceArrowThickness 1.2
+skinparam sequence {
+  ArrowColor #5C4033
+  LifeLineBorderColor #8B7355
+  ParticipantBorderColor #8B7355
+  BoxBorderColor #A08060
+}
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+skinparam actor {
+  BackgroundColor #FAF0E0
+  BorderColor #8B7355
+}
+participant "Application (local) (caller)" as APP_L #FAF0E0
+participant "SWU_IPCS_CORE_SHM (ipc-shm.c)" as CORE_L #D4E6F1
+participant "Drv_Ipcs_Hal_Cmp (ipcs-hw.h)" as HAL #F5E6CC
+participant "Remote core (peer)" as REMOTE #E8DAEF
+participant "SWU_IPCS_CORE_SHM (peer instance)" as CORE_R #D4E6F1
+
+autonumber
+activate APP_L
+APP_L -> CORE_L : ipcsShmUnmanagedAcquire(instance, chan)
+activate CORE_L
+CORE_L --> APP_L : local unmanaged memory
+APP_L -> CORE_L : write payload to local mem
+APP_L -> CORE_L : ipcsShmUnmanagedTx(instance, chan)
+CORE_L -> CORE_L : increment tx_count
+CORE_L -> HAL : ipcsHwIrqNotify(instance)
+activate HAL
+HAL -> REMOTE : inter-core notification
+activate REMOTE
+REMOTE -> CORE_R : OSAL/HAL Rx path
+activate CORE_R
+CORE_R -> CORE_R : ipcsChannelRx: compare tx_count
+note right of CORE_R
+  If remote tx_count changed,
+  invoke rx_cb with remote mem
+end note
+CORE_R --> REMOTE : rx_cb done
+deactivate CORE_R
+deactivate REMOTE
+deactivate HAL
+deactivate CORE_L
+deactivate APP_L
+@enduml

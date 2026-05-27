@@ -1,0 +1,52 @@
+@startuml
+skinparam backgroundColor #FFFCF5
+skinparam sequenceArrowThickness 1.2
+skinparam sequence {
+  ArrowColor #5C4033
+  LifeLineBorderColor #8B7355
+  ParticipantBorderColor #8B7355
+  BoxBorderColor #A08060
+}
+skinparam note {
+  BackgroundColor #FFF8E8
+  BorderColor #B89968
+}
+skinparam actor {
+  BackgroundColor #FAF0E0
+  BorderColor #8B7355
+}
+participant "Application (caller)" as APP #FAF0E0
+participant "SWU_IPCS_CORE_SHM (ipc-shm.c)" as CORE #D4E6F1
+participant "SWU_IPCS_CORE_QUEUE (ipc-queue.c)" as QUEUE #D4E6F1
+participant "Drv_Ipcs_Hal_Cmp (ipcs-hw.h)" as HAL #F5E6CC
+participant "Remote core (peer)" as REMOTE #E8DAEF
+
+autonumber
+activate APP
+APP -> CORE : ipcsShmAcquireBuf(instance, chan, size)
+activate CORE
+CORE -> QUEUE : ipcsQueuePop(local free BD ring)
+activate QUEUE
+QUEUE --> CORE : BD / buffer address
+deactivate QUEUE
+CORE --> APP : local buffer pointer
+APP -> APP : fill payload
+APP -> CORE : ipcsShmTx(instance, chan, buf, size)
+CORE -> CORE : validate channel / build BD
+CORE -> QUEUE : ipcsQueuePush(remote BD ring, BD)
+activate QUEUE
+QUEUE --> CORE : IPC_SHM_E_OK
+deactivate QUEUE
+CORE -> HAL : ipcsHwIrqNotify(instance)
+activate HAL
+note right of HAL
+  Variant HAL: signal remote core
+end note
+HAL -> REMOTE : inter-core notification
+activate REMOTE
+deactivate REMOTE
+deactivate HAL
+CORE --> APP : IPC_SHM_E_OK
+deactivate CORE
+deactivate APP
+@enduml

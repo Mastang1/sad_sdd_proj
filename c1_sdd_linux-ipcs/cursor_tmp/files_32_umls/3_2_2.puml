@@ -15,12 +15,11 @@ skinparam note {
   BorderColor #B89968
 }
 left to right direction
-title common/ipc-queue.c — #include 依赖（组件视图）
-component [common/ipc-queue.c] as SRC
+component [ipcs/ipcs_cores/ipc-queue.c] as SRC
 component [ipc-shm.h] as H0
 component [ipc-queue.h] as H1
 component [ipc-util.h] as H2
-SRC ..> H0 : #include
-SRC ..> H1 : #include
-SRC ..> H2 : #include
+SRC ..> H0
+SRC ..> H1
+SRC ..> H2
 @enduml

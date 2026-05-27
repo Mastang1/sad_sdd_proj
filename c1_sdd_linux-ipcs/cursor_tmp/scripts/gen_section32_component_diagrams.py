@@ -61,116 +61,159 @@ skinparam note {
 }
 """
 
+# §4.2 Files — ipcs/ipcs_cores/ component diagrams (slug 3_2_2 .. 3_2_8)
+CH4_DIAGRAMS = [
+    (
+        "3_2_2",
+        "ipcs/ipcs_cores/ipc-queue.c",
+        [("ipc-shm.h", None), ("ipc-queue.h", None), ("ipc-util.h", None)],
+        None,
+        True,
+    ),
+    (
+        "3_2_3",
+        "ipcs/ipcs_cores/ipc-queue.h",
+        [],
+        "除标准版本信息外，无工程内其他 .h 依赖",
+        False,
+    ),
+    (
+        "3_2_4",
+        "ipcs/ipcs_cores/ipc-shm.c",
+        [
+            ("ipc-shm.h", None),
+            ("ipc-os.h", None),
+            ("ipc-hw.h", None),
+            ("ipc-queue.h", None),
+        ],
+        None,
+        True,
+    ),
+    (
+        "3_2_5",
+        "ipcs/ipcs_cores/ipc-shm.h",
+        [("ipc-types.h", None), ("ipcf_Ip_Cfg.h", "config")],
+        None,
+        False,
+    ),
+    (
+        "3_2_6",
+        "ipcs/ipcs_cores/ipc-types.h",
+        None,  # special body
+        False,
+    ),
+    (
+        "3_2_7",
+        "ipcs/ipcs_cores/ipc-util.c",
+        [("ipc-shm.h", None), ("ipc-util.h", None)],
+        None,
+        True,
+    ),
+    (
+        "3_2_8",
+        "ipcs/ipcs_cores/ipc-util.h",
+        [],
+        "工程内无其他 .h #include",
+        False,
+    ),
+]
+
+
+def stereotype(st: str | None) -> str:
+    if not st:
+        return ""
+    return f" <<{st}>>"
+
+
+def build_ch4_body(
+    rel_path: str,
+    deps: list[tuple[str, str | None]] | None,
+    note: str | None,
+    ltr: bool,
+) -> str:
+    lines: list[str] = []
+    if ltr:
+        lines.append("left to right direction")
+    lines.append(f"component [{rel_path}] as SRC")
+    if deps is not None:
+        for i, (dep, st) in enumerate(deps):
+            lines.append(f"component [{dep}] as H{i}{stereotype(st)}")
+        for i, _ in enumerate(deps):
+            lines.append(f"SRC ..> H{i}")
+    if note:
+        lines.append(f"note right of SRC : {note}")
+    return "\n".join(lines) + "\n"
+
+
+def build_ch4_types_body() -> str:
+    rel = "ipcs/ipcs_cores/ipc-types.h"
+    return f"""component [{rel}] as R
+package "NO_STDINT_H == 0" {{
+  component [<stdint.h>] as U1 <<system>>
+  component [<stddef.h>] as U2 <<system>>
+  component [<errno.h>] as U3 <<system>>
+}}
+package "NO_STDINT_H != 0" {{
+  component [uintptr_t 等\\\\n(CPU_* 定义)] as CPU <<macros>>
+}}
+component [Mcal.h] as M <<external>>
+component [ipcf_Ip_Cfg_Defines.h] as D <<config>>
+R ..> M
+R ..> D
+R ..> U1
+R ..> U2
+R ..> U3
+R ..> CPU
+"""
+
+
+def write_ch4_diagrams() -> list[Path]:
+    OUT_PUML.mkdir(parents=True, exist_ok=True)
+    paths: list[Path] = []
+    for item in CH4_DIAGRAMS:
+        slug = item[0]
+        if slug == "3_2_6":
+            body = build_ch4_types_body()
+        else:
+            _, rel, deps, note, ltr = item
+            body = build_ch4_body(rel, deps, note, ltr)
+        p = OUT_PUML / f"{slug}.puml"
+        p.write_text(HEADER + body + "@enduml\n", encoding="utf-8")
+        paths.append(p)
+    return paths
+
+
+def render_puml(paths: list[Path]) -> None:
+    OUT_SVG.mkdir(parents=True, exist_ok=True)
+    subprocess.check_call(
+        [
+            "java",
+            "-jar",
+            str(JAR),
+            "-charset",
+            "UTF-8",
+            "-tsvg",
+            "-o",
+            str(OUT_SVG),
+            *[str(p) for p in paths],
+        ]
+    )
+
 
 def w(name: str, body: str) -> None:
     OUT_PUML.mkdir(parents=True, exist_ok=True)
-    (OUT_PUML / f"{name}.puml").write_text(HEADER + body.strip() + "\n@enduml\n", encoding="utf-8")
+    (OUT_PUML / f"{name}.puml").write_text(
+        HEADER + body.strip() + "\n@enduml\n", encoding="utf-8"
+    )
 
 
 def main() -> None:
     if not JAR.is_file():
         sys.exit(f"missing {JAR}")
 
-    w(
-        "3_2_2",
-        """
-left to right direction
-title common/ipc-queue.c — #include 依赖（组件视图）
-component [common/ipc-queue.c] as SRC
-component [ipc-shm.h] as H0
-component [ipc-queue.h] as H1
-component [ipc-util.h] as H2
-SRC ..> H0 : #include
-SRC ..> H1 : #include
-SRC ..> H2 : #include
-""",
-    )
-
-    w(
-        "3_2_3",
-        """
-title common/ipc-queue.h — 无 IPCS_49 内其他头文件
-component [common/ipc-queue.h] as H
-note right of H
-  除标准版本信息外，无工程内其他 .h 依赖
-end note
-""",
-    )
-
-    w(
-        "3_2_4",
-        """
-left to right direction
-title common/ipc-shm.c — #include 依赖
-component [common/ipc-shm.c] as SRC
-component [ipc-shm.h] as H0
-component [ipc-os.h] as H1
-component [ipc-hw.h] as H2
-component [ipc-queue.h] as H3
-SRC ..> H0 : #include
-SRC ..> H1 : #include
-SRC ..> H2 : #include
-SRC ..> H3 : #include
-""",
-    )
-
-    w(
-        "3_2_5",
-        """
-title common/ipc-shm.h — #include 依赖
-component [common/ipc-shm.h] as SRC
-component [ipc-types.h] as H0
-component [ipcf_Ip_Cfg.h] as H1 <<config>>
-SRC ..> H0 : #include
-SRC ..> H1 : #include
-""",
-    )
-
-    w(
-        "3_2_6",
-        """
-title common/ipc-types.h — 条件与配置头依赖
-component [common/ipc-types.h] as R
-package "NO_STDINT_H == 0" {
-  component [<stdint.h>] as U1 <<system>>
-  component [<stddef.h>] as U2 <<system>>
-  component [<errno.h>] as U3 <<system>>
-}
-package "NO_STDINT_H != 0" {
-  component [uintptr_t 等\\\n(CPU_* 定义)] as CPU <<macros>>
-}
-component [Mcal.h] as M <<external>>
-component [ipcf_Ip_Cfg_Defines.h] as D <<config>>
-R ..> M : #include
-R ..> D : #include
-R ..> U1 : 条件
-R ..> U2 : 条件
-R ..> U3 : 条件
-R ..> CPU : else
-""",
-    )
-
-    w(
-        "3_2_7",
-        """
-left to right direction
-title common/ipc-util.c — #include 依赖
-component [common/ipc-util.c] as SRC
-component [ipc-shm.h] as H0
-component [ipc-util.h] as H1
-SRC ..> H0 : #include
-SRC ..> H1 : #include
-""",
-    )
-
-    w(
-        "3_2_8",
-        """
-title common/ipc-util.h — 无 IPCS_49 内其他头文件
-component [common/ipc-util.h] as H
-note right of H : 工程内无其他 .h #include
-""",
-    )
+    ch4_paths = write_ch4_diagrams()
+    render_puml(ch4_paths)
+    print(f"wrote {len(ch4_paths)} §4.2 .puml and SVG under {OUT_SVG}/")
 
     w(
         "3_2_9",

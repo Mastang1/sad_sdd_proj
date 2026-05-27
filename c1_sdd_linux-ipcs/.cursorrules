@@ -81,7 +81,7 @@ Copy-Item cursor_tmp/cursorrules_backups/.cursorrules.snapshot .cursorrules -For
 
 | 位置 | 内容 |
 |------|------|
-| **根目录（交付物）** | `ipcs/`、`*.md`、`final_sdd.docx`、`ipcs-architecture.pdf`、`plantuml.jar`、`.cursorrules` |
+| **根目录（交付物）** | `ipcs/`、`*.md`、`final_sdd.docx`、`final.pdf`、`ipcs-architecture.pdf`、`plantuml.jar`、`.cursorrules` |
 | **`cursor_tmp/`** | `mem_info.md`（跨会话记忆）、`SDD_TOOLCHAIN.md`、`format_docx_py/`、`scripts/`、`flow_svgs/`、`flow_umls/`、`files_32_svgs/`、`files_32_umls/`、`cursorrules_backups/`、构建临时与校验报告 |
 
 - 路径常量：`cursor_tmp/workspace_paths.py`（`WORKSPACE_ROOT`、`CURSOR_TMP`、`FLOW_SVGS` 等）；**脚本必须 import，禁止硬编码旧路径**。
@@ -95,6 +95,7 @@ Copy-Item cursor_tmp/cursorrules_backups/.cursorrules.snapshot .cursorrules -For
 ```bash
 python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
 python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
+python word_to_pdf.py --Word final_sdd.docx -o final.pdf
 python cursor_tmp/scripts/render_flow_svgs.py
 ```
 
@@ -362,6 +363,39 @@ python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 | 磁盘 SVG 缺失 | **0** |
 | viewBox 宽高比 vs DOCX extent | **166/166**，偏差 ≤ 2% |
 | `min(extent.cx)` | ≥ 100000 EMU |
+
+### 6.5 Word → PDF 交付导出（`word_to_pdf.py`）
+
+**交付物**：根目录 `final.pdf`（由 `final_sdd.docx` 导出）。
+
+**前提**
+- 已执行 §6.1 流水线且 `validate_md_docx_consistency.py` **PASS**。
+- 本机已安装 **LibreOffice**（Windows：`soffice.exe` 在 PATH 或 `C:\Program Files\LibreOffice\program\`）。
+- Word 文档须使用标准 **Heading 1–4** 样式，PDF 书签/大纲才完整。
+
+**脚本**：工作区根目录 `word_to_pdf.py`（LibreOffice headless；每 run 使用独立 `UserInstallation` 临时目录，避免 Windows `bootstrap.ini` 冲突）。
+
+**强制命令（根目录）**
+```bash
+python word_to_pdf.py --Word final_sdd.docx -o final.pdf
+```
+
+| 参数 | 说明 |
+|------|------|
+| `--Word` | 输入 `.docx` / `.doc` 路径（必填） |
+| `-o` / `--output` | 输出 `.pdf` 路径；省略则写入当前目录 `{stem}.pdf` |
+
+**交付闭环顺序（DOCX + PDF）**
+```bash
+python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
+python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
+python word_to_pdf.py --Word final_sdd.docx -o final.pdf
+```
+
+**失败处理**
+- `LibreOffice executable not found`：安装 LibreOffice 或将 `program` 目录加入 PATH。
+- 转换超时（默认 300s）或 exit ≠ 0：关闭占用 `final_sdd.docx` 的 Word 进程后重试。
+- 成功标志：日志 `Success! Output saved to:` 且根目录 `final.pdf` 存在。
 
 ---
 

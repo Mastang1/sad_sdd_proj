@@ -15,10 +15,9 @@ skinparam note {
   BorderColor #B89968
 }
 left to right direction
-title common/ipc-util.c — #include 依赖
-component [common/ipc-util.c] as SRC
+component [ipcs/ipcs_cores/ipc-util.c] as SRC
 component [ipc-shm.h] as H0
 component [ipc-util.h] as H1
-SRC ..> H0 : #include
-SRC ..> H1 : #include
+SRC ..> H0
+SRC ..> H1
 @enduml

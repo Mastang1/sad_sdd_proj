@@ -58,7 +58,9 @@ IPCS Driver软件详细设计规范
   - 5.4 SWU_IPCS_OSAL_FREERTOS 软件单元设计
   - 5.5 SWU_IPCS_OSAL_THREADX 软件单元设计
   - 5.6 SWU_IPCS_HAL_MCU 软件单元设计
-  - 5.7 RTOS 动态详细设计
+  - 5.7 Global variants 全局变量
+  - 5.8 Data Structure 类型定义
+  - 5.9 RTOS 动态详细设计
 - 6 Linux 部署变体详细设计
   - 6.1 Definition定义
   - 6.2 Files
@@ -69,7 +71,8 @@ IPCS Driver软件详细设计规范
   - 6.7 SWU_IPCS_LINUX_CDEV_KO 软件单元设计
   - 6.8 Linux HAL 函数设计
   - 6.9 Linux 关键场景流程
-  - 6.10 Linux 全局变量与私有类型
+  - 6.10 Global variants 全局变量
+  - 6.11 Data Structure 类型定义
 - 7 双向追溯与一致性 (Bidirectional Traceability and Consistency)
   - 7.1 追溯性策略与声明
   - 7.2 需求-架构-设计-代码 双向追溯矩阵
@@ -129,7 +132,6 @@ IPCS Driver软件详细设计规范
 | SHM | Shared Memory |
 | SPSC | Single Producer Single Consumer |
 | UIO | Userspace I/O |
-
 | Deployment Variant | 部署变体（RTOS 部署变体 / Linux 部署变体） |
 | Implementation | 实现（如 FreeRTOS 实现、UIO 实现、全内核实现） |
 | User-Side Proxy | 用户侧代理（Linux UIO/CDEV 用户库：满足 P4/P5 契约，对 OS/HW 操作为转发实现） |
@@ -189,13 +191,6 @@ IPCS 采用 SHM、OSAL、HAL 三层结构。SHM 层位于 `ipcs/ipcs_cores`，�
 | HAL | Drv_Ipcs_Hal_Cmp | `ipc-hw.h` | `ipcsHwInit`、`ipcsHwIrqNotify`、`ipcsHwIrqEnable` | 提供 MSCM/IRQ、缓存与平台核索引操作 |
 
 该契约保证 `ipcs_cores` 可在 RTOS、Linux UIO、Linux CDEV、Linux 全内核实现间复用。
-
-### 3.1.1 分层与部署实现静态图
-
-下图描述 SHM、OSAL、HAL 三层契约，以及 RTOS、Linux UIO/CDEV、Linux 全内核三类实现位置。
-
-![IPCS layered architecture and Linux deployment variants](cursor_tmp/flow_svgs/architecture_layered_linux_variants.svg)
-
 
 ## 3.2 RTOS 部署变体
 
@@ -2864,25 +2859,55 @@ processing flow
 
 本节描述与部署变体无关的 **逻辑** 数据路径（Core + Queue）。变体相关的 OSAL/HAL/跨边界路径见第 4.7、5.7 节。
 
-### 4.7.1 初始化流程
+第 4 章各函数已给出单函数 processing flow（活动图）。本节描述 **跨软件单元** 的逻辑交互，采用 UML 序列图；HAL/OSAL 以架构组件 `Drv_Ipcs_Hal_Cmp`、`Drv_Ipcs_Osal_Cmp` 表示（具体实现见 §5、§6）。
+
+| 场景 ID | 场景名称 | 涉及软件单元 | 源码依据 |
+|---|---|---|---|
+| CORE-S01 | 初始化 | CORE_SHM、HAL、OSAL、CORE_QUEUE | `ipcsShmInit` → `ipcsHwInit` → `ipcsOsInit` → `ipcsShmInitChannels` |
+| CORE-S02 | Managed 发送 | CORE_SHM、CORE_QUEUE、HAL | `ipcsShmAcquireBuf` → `ipcsShmTx` → `ipcsQueuePush` → `ipcsHwIrqNotify` |
+| CORE-S03 | Managed 接收与释放 | HAL、OSAL、CORE_SHM、CORE_QUEUE | `ipcsShmRx` → `ipcsChannelRx` → `rx_cb` → `ipcsShmReleaseBuf` |
+| CORE-S04 | Unmanaged 收发 | CORE_SHM、HAL | `ipcsShmUnmanagedTx` / 对端 `tx_count` 比对 |
+| CORE-S05 | 中断与轮询 | CORE_SHM、OSAL、HAL | IRQ 路径 vs `ipcsShmPollChannels` |
+
+### 4.7.1 初始化流程（CORE-S01）
 
 按架构：应用调用 ipcsShmInit → 逐 instance 调用 HAL 初始化、OSAL 初始化、channel 初始化（具体 HAL/OSAL 实现见第 4/5 章）。
 
-### 4.7.2 Managed 发送流程
+sequence diagram
+
+![Core initialization sequence](cursor_tmp/flow_svgs/core_seq_init.svg)
+
+### 4.7.2 Managed 发送流程（CORE-S02）
 
 ipcsShmAcquireBuf → 填充数据 → ipcsShmTx → queue push BD → HAL 通知远端。
 
-### 4.7.3 Managed 接收与释放流程
+sequence diagram
+
+![Core managed transmit sequence](cursor_tmp/flow_svgs/core_seq_tx_managed.svg)
+
+### 4.7.3 Managed 接收与释放流程（CORE-S03）
 
 OSAL 触发 ipcsShmRx → ipcsChannelRx → 应用回调 → ipcsShmReleaseBuf。
 
-### 4.7.4 Unmanaged 发送与接收流程
+sequence diagram
+
+![Core managed receive and release sequence](cursor_tmp/flow_svgs/core_seq_rx_managed.svg)
+
+### 4.7.4 Unmanaged 发送与接收流程（CORE-S04）
 
 ipcsShmUnmanagedAcquire / ipcsShmUnmanagedTx；接收侧检查 tx_count。
 
-### 4.7.5 中断与轮询流程
+sequence diagram
+
+![Core unmanaged sequence](cursor_tmp/flow_svgs/core_seq_unmanaged.svg)
+
+### 4.7.5 中断与轮询流程（CORE-S05）
 
 OSAL 注册 hardirq/softirq 或 polling（ipcsShmPollChannels）；Core 按预算分发 channel。
+
+sequence diagram
+
+![Core IRQ and polling sequence](cursor_tmp/flow_svgs/core_seq_irq_poll.svg)
 
 # 5 RTOS 部署变体详细设计
 
@@ -2890,7 +2915,7 @@ OSAL 注册 hardirq/softirq 或 polling（ipcsShmPollChannels）；Core 按预�
 
 RTOS 部署变体在单地址空间内实现 Drv_Ipcs_Osal_Cmp 与 Drv_Ipcs_Hal_Cmp：OS 实现三选一（FreeRTOS、ThreadX、AUTOSAR OS），HAL 位于 `ipcs/mcu/hw/` 并由三种 OS 实现共用。通信核心仍使用第 4 章 `ipcs/ipcs_cores` 与 `ipc-shm.h` 对外 API。
 
-本章描述 RTOS 侧 OSAL/HAL 源文件与头文件依赖；函数级设计见 §5.3–§5.7。Baremetal 源码存在于 `ipcs/mcu/os/baremetal/`，不纳入本文档范围（见 §1.3）。
+本章描述 RTOS 侧 OSAL/HAL 源文件与头文件依赖；函数级设计见 §5.3–§5.6；全局变量与私有类型见 §5.7–§5.8。Baremetal 源码存在于 `ipcs/mcu/os/baremetal/`，不纳入本文档范围（见 §1.3）。
 
 ## 5.2 Files
 
@@ -5592,24 +5617,151 @@ processing flow
 
 ![image64.png](cursor_tmp/flow_svgs/3_4_40.svg)
 
-### 4.6.24 enum IPCS_PROCESSOR_IDX_E
+## 5.7 Global variants 全局变量
+
+本节列出 RTOS 部署变体 OSAL/HAL 实现侧私有全局变量。通信核心私有数据见 §4.5。同名变量 `ipc_os_priv` 在三套 OS 实现中类型不同，见 §5.8。
+
+| 全局变量名称 | 全局变量类型 | 全局变量范围 | 全局变量描述 | 全局变量的存储RAM区 |
+|---|---|---|---|---|
+| ipc_os_priv | static struct IPCS_OS_PRIV_TYPE_TYPE | ipcs/mcu/os/autosar/ipc-os-autosar.c | AUTOSAR OS 实现私有数据 | 源码未显式指定 |
+| ipc_os_priv | static struct IPCS_OS_PRIV_TYPE_TYPE | ipcs/mcu/os/freertos/ipc-os-freertos.c | FreeRTOS 实现私有数据 | 源码未显式指定 |
+| ipc_os_priv | static struct（见 §5.8.7） | ipcs/mcu/os/threadx/ipc-os-threadx.c | ThreadX 实现私有数据 | 源码未显式指定 |
+| ipc_hw_priv | static struct IPCS_HW_PRIV_TYPE_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/mcu/hw/ipc-hw.c | 每 instance 平台 HAL 私有数据 | 源码未显式指定 |
+
+## 5.8 Data Structure 类型定义
+
+以下类型定义来自 RTOS 部署变体 OSAL/HAL 源码。与 §4.6 同名的结构体（如配置相关类型）不在此重复；此处仅列出实现侧私有类型。同名 `struct IPCS_OS_PRIV_INSTANCE_TYPE` / `struct IPCS_OS_PRIV_TYPE_TYPE` 按 OS 实现分别说明。
+
+### 5.8.1 enum msg_receive
+
+定义于 `ipcs/mcu/os/autosar/ipc-os-autosar.c` 与 `ipcs/mcu/os/freertos/ipc-os-freertos.c`（AUTOSAR / FreeRTOS 实现共用枚举名）。
 
 | Name | Description |
 |---|---|
-| IPC_A53_0 |  |
-| IPC_A53_1 |  |
-| IPC_A53_2 |  |
-| IPC_A53_3 |  |
-| IPC_M7_0 |  |
-| IPC_M7_1 |  |
-| IPC_M7_2 |  |
-| IPC_M7_3 |  |
-| IPC_A53_4 |  |
-| IPC_A53_5 |  |
-| IPC_A53_6 |  |
-| IPC_A53_7 |  |
+| MSG_NOT_RECEIVED | no new message received from the remote core |
+| MSG_IS_RECEIVED | new message received from the remote core |
 
-## 5.7 RTOS 动态详细设计
+### 5.8.2 struct IPCS_OS_PRIV_INSTANCE_TYPE（AUTOSAR 实现）
+
+定义于 `ipcs/mcu/os/autosar/ipc-os-autosar.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| uintptr_t | local_shm | local shared memory address |
+| uintptr_t | remote_shm | remote shared memory address |
+| sint32 | state | state to indicate whether instance is initialized |
+| sint32 | rx_irq_num | rx interrupt number |
+| sint32 | msg_received | state to indicate notification received for a new message |
+| ISRType | isr_id_handler | the name of OsIsr defined to handle the interrupt |
+
+### 5.8.3 struct IPCS_OS_PRIV_INSTANCE_TYPE（FreeRTOS 实现）
+
+定义于 `ipcs/mcu/os/freertos/ipc-os-freertos.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| uintptr_t | local_shm | local shared memory address |
+| uintptr_t | remote_shm | remote shared memory address |
+| sint32 | state | state of instance |
+| sint32 | rx_irq_num | rx interrupt number |
+| sint32 | msg_received | state to indicate notification received for a new message |
+
+### 5.8.4 struct IPCS_OS_PRIV_TYPE_TYPE（AUTOSAR 实现）
+
+定义于 `ipcs/mcu/os/autosar/ipc-os-autosar.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| struct IPCS_OS_PRIV_INSTANCE_TYPE | id[IPC_SHM_MAX_INSTANCES] | private data per instance |
+| sint32 (*rx_cb)(const uint8 instance, sint32 budget) | rx_cb | upper layer rx callback |
+| sint32 | task_is_initialized | flag to know if the softirq task is initialized |
+
+### 5.8.5 struct IPCS_OS_PRIV_TYPE_TYPE（FreeRTOS 实现）
+
+定义于 `ipcs/mcu/os/freertos/ipc-os-freertos.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| struct IPCS_OS_PRIV_INSTANCE_TYPE | id[IPC_SHM_MAX_INSTANCES] | private data per instance |
+| sint32 (*rx_cb)(const uint8 instance, sint32 budget) | rx_cb | upper layer rx callback |
+| TaskHandle_t | softirq_handle | rx task handle used by the ISR to notify the rx task |
+| sint32 | task_is_initialized | flag to know if the softirq task is initialized |
+
+### 5.8.6 IPC_OS_PRIV_INSTANCE_T（ThreadX 实现）
+
+定义于 `ipcs/mcu/os/threadx/ipc-os-threadx.c`（typedef struct）。
+
+| Type | Name | Description |
+|---|---|---|
+| uintptr_t | localShm | local shared memory address |
+| uintptr_t | remoteShm | remote shared memory address |
+| sint32 | state | state of u8Instance |
+| sint32 | rxIrqNum | rx interrupt number |
+| sint32 (*rxCallback)(const uint8 u8Instance, sint32 budget) | rxCallback | upper layer rx callback registered per instance |
+
+### 5.8.7 ThreadX ipc_os_priv 聚合类型
+
+`ipc_os_priv` 在 `ipcs/mcu/os/threadx/ipc-os-threadx.c` 中为匿名 static struct，成员如下。
+
+| Type | Name | Description |
+|---|---|---|
+| IPC_OS_PRIV_INSTANCE_T | id[IPC_SHM_MAX_INSTANCES] | private data per u8Instance |
+| TX_EVENT_FLAGS_GROUP | softIrqEvents | event flags used by hardirq to notify softirq thread |
+| uint8 | ipcSoftIrqStack[IPC_SOFTIRQ_STACK_SIZE] | softirq thread stack |
+| TX_THREAD | softIrqHandle | rx task handle used by the ISR to notify the rx task |
+| sint32 | taskIsInitialized | flag to know if the softirq task is initialized |
+
+### 5.8.8 struct IPCS_HW_PRIV_TYPE_TYPE
+
+定义于 `ipcs/mcu/hw/ipc-hw.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| uint8 | msi_tx_irq | MSI index of inter-core interrupt corresponds to mscm_tx_irq |
+| uint8 | msi_rx_irq | MSI index of inter-core interrupt corresponds to mscm_rx_irq |
+| uint8 | remote_core | remote core to trigger the interrupt on |
+| uint8 | local_core | local core on where this instance is running |
+| uint32 | shm_size | local/remote shared memory size |
+| sint16 | mscm_tx_irq | MSCM inter-core interrupt reserved for shm driver tx |
+| sint16 | mscm_rx_irq | MSCM inter-core interrupt reserved for shm driver rx |
+
+### 5.8.9 enum IPCS_PROCESSOR_IDX_E
+
+定义于 `ipcs/mcu/hw/ipc-hw-platform.h`。
+
+| Name | Description |
+|---|---|
+| IPC_A53_0 | ARM Cortex-A53 cluster 0 core 0 |
+| IPC_A53_1 | ARM Cortex-A53 cluster 1 core 1 |
+| IPC_A53_2 | ARM Cortex-A53 cluster 1 core 0 |
+| IPC_A53_3 | ARM Cortex-A53 cluster 1 core 1 |
+| IPC_M7_0 | ARM Cortex-M7 core 0 |
+| IPC_M7_1 | ARM Cortex-M7 core 1 |
+| IPC_M7_2 | ARM Cortex-M7 core 2 |
+| IPC_M7_3 | ARM Cortex-M7 core 2 |
+| IPC_A53_4 | ARM Cortex-A53 cluster 0 core 2 |
+| IPC_A53_5 | ARM Cortex-A53 cluster 0 core 3 |
+| IPC_A53_6 | ARM Cortex-A53 cluster 1 core 2 |
+| IPC_A53_7 | ARM Cortex-A53 cluster 1 core 3 |
+
+### 5.8.10 IPCS_MSCM_IRCP_IR_TYPE
+
+定义于 `ipcs/mcu/hw/ipc-hw-platform.h`（typedef struct）。
+
+| Type | Name | Description |
+|---|---|---|
+| volatile uint32 | IPC_ISR | Interrupt Router CPn Interruptx Status Register |
+| volatile uint32 | IPC_IGR | Interrupt Router CPn Interruptx Generation Register |
+
+### 5.8.11 IPCS_MSCM_IRCPnIRx_TYPE
+
+定义于 `ipcs/mcu/hw/ipc-hw-platform.h`（typedef struct）。
+
+| Type | Name | Description |
+|---|---|---|
+| IPCS_MSCM_IRCP_IR_TYPE | IRCPnIRx[IPC_MSCM_CPX_COUNT][IPC_MSCM_MSI_COUNT] | memory-mapped MSCM interrupt router register array |
+
+## 5.9 RTOS 动态详细设计
 
 第 4 章各函数已给出单函数 processing flow（活动图）。本节描述 **跨软件单元** 的动态交互，采用 UML 序列图；纵轴生命线为软件单元 ID（见 §2.1），颜色与分层一致：Core/Queue 为浅蓝、OSAL 为浅绿、HAL 为淡卡其、远端核为浅紫。
 
@@ -5623,31 +5775,31 @@ processing flow
 
 > 以下 OSAL 交互以 **ThreadX 实现**（`SWU_IPCS_OSAL_THREADX`）为例；FreeRTOS、AUTOSAR OS 实现与 Core/HAL 的契约相同，仅 OS 原语不同。
 
-### 5.7.1 初始化（RTOS-S01）
+### 5.9.1 初始化（RTOS-S01）
 
 sequence diagram
 
 ![RTOS initialization sequence](cursor_tmp/flow_svgs/rtos_seq_init.svg)
 
-### 5.7.2 Managed 发送（RTOS-S02）
+### 5.9.2 Managed 发送（RTOS-S02）
 
 sequence diagram
 
 ![RTOS managed transmit sequence](cursor_tmp/flow_svgs/rtos_seq_tx_managed.svg)
 
-### 5.7.3 Managed 接收（RTOS-S03）
+### 5.9.3 Managed 接收（RTOS-S03）
 
 sequence diagram
 
 ![RTOS managed receive sequence](cursor_tmp/flow_svgs/rtos_seq_rx_managed.svg)
 
-### 5.7.4 Unmanaged 收发（RTOS-S04）
+### 5.9.4 Unmanaged 收发（RTOS-S04）
 
 sequence diagram
 
 ![RTOS unmanaged sequence](cursor_tmp/flow_svgs/rtos_seq_unmanaged.svg)
 
-### 5.7.5 中断与轮询（RTOS-S05）
+### 5.9.5 中断与轮询（RTOS-S05）
 
 sequence diagram
 
@@ -10221,16 +10373,299 @@ sequence diagram
 
 ![Linux in-kernel receive sequence](cursor_tmp/flow_svgs/linux_seq_kernel_rx.svg)
 
-## 6.10 Linux 全局变量与私有类型
+## 6.10 Global variants 全局变量
 
-| 源文件 | 关键类型 / 变量 | 用途 |
+本节列出 Linux 部署变体适配层与 HAL 实现侧私有全局变量。通信核心私有数据见 §4.5。UIO/CDEV 用户侧与全内核实现均使用变量名 `priv` 或 `ipc_os_priv`，但类型与源码文件不同，见 §6.11。
+
+| 全局变量名称 | 全局变量类型 | 全局变量范围 | 全局变量描述 | 全局变量的存储RAM区 |
+|---|---|---|---|---|
+| ipc_os_priv | static struct IPCS_OS_PRIV_TYPE_TYPE | ipcs/mpu/os_uio/ipc-os.c | UIO 用户侧 OSAL 代理私有数据 | 源码未显式指定 |
+| priv | static struct IPCS_OS_PRIV_TYPE | ipcs/mpu/os_cdev/ipc-os.c | CDEV 用户侧 OSAL 代理私有数据 | 源码未显式指定 |
+| priv | static struct IPCS_OS_PRIV_TYPE | ipcs/mpu/os_kernel/ipc-os.c | 全内核 OSAL 实现私有数据 | 源码未显式指定 |
+| ipc_pdev_priv | struct IPCS_PDEV_PRIV_TYPE_TYPE | ipcs/mpu/os_kernel/ipc-uio.c | UIO 内核 Backend 平台设备与 cdev/UIO 实例状态 | 源码未显式指定 |
+| ipc_cdev_priv | struct IPCS_CDEV_PRIV_TYPE_TYPE | ipcs/mpu/os_kernel/ipc-cdev.c | CDEV 内核 Backend 字符设备与 wait queue 状态 | 源码未显式指定 |
+| ipc_hw_priv | static struct IPCS_HW_PRIV_TYPE_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/mpu/hw/c1/ipc-hw.c | 每 instance Linux HAL 私有数据 | 源码未显式指定 |
+
+## 6.11 Data Structure 类型定义
+
+以下类型定义来自 Linux 部署变体源码。与 §4.6 或 §5.8 同名的结构体/枚举若语义因部署变体不同，在本节按实现分别说明。
+
+### 6.11.1 enum ipc_status（UIO 用户侧）
+
+定义于 `ipcs/mpu/os_uio/ipc-os.c`。
+
+| Name | Description |
+|---|---|
+| IPC_STATUS_CLEAR | 0 |
+| IPC_STATUS_SET | 1 |
+
+### 6.11.2 enum ipc_status（CDEV 用户侧）
+
+定义于 `ipcs/mpu/os_cdev/ipc-os.c`（枚举名与 UIO 实现相同，取值一致）。
+
+| Name | Description |
+|---|---|
+| IPC_STATUS_CLEAR | 0 |
+| IPC_STATUS_SET | 1 |
+
+### 6.11.3 struct IPCS_OS_PRIV_INSTANCE_TYPE（UIO 用户侧）
+
+定义于 `ipcs/mpu/os_uio/ipc-os.c`。
+
+| Type | Name | Description |
 |---|---|---|
-| `ipcs/mpu/os_uio/ipc-os.c` | `struct IPCS_OS_PRIV_TYPE_TYPE ipc_os_priv` | 用户侧 fd、mmap 地址、RX 线程与回调状态 |
-| `ipcs/mpu/os_cdev/ipc-os.c` | `priv` / `IPCS_OS_PRIV_TYPE` | CDEV 用户侧 fd、共享内存映射和代理状态 |
-| `ipcs/mpu/os_kernel/ipc-os.c` | `priv` | 全内核实例状态、共享内存地址、IRQ 和 rx_cb |
-| `ipcs/mpu/os_kernel/ipc-uio.c` | `ipc_pdev_priv` | UIO 平台设备、cdev、UIO 实例和 IRQ 状态 |
-| `ipcs/mpu/os_kernel/ipc-cdev.c` | `ipc_cdev_priv` | 字符设备、wait queue、目标实例和 IRQ 状态 |
-| `ipcs/mpu/hw/c1/ipc-hw.c` | `ipc_hw_priv[]` | MSCM、IRQ、核索引和平台私有状态 |
+| uint8_t | state | state to indicate whether instance is initialized |
+| uint8_t | instance | target instance |
+| int | irq_num | target instance interrupt index |
+| int | uio_fd | UIO device file descriptor |
+| void * | local_virt_shm | local ShM virtual address |
+| void * | remote_virt_shm | remote ShM virtual address |
+| void * | local_shm_map | local ShM mapped page address |
+| void * | remote_shm_map | remote ShM mapped page address |
+| size_t | local_shm_offset | local ShM offset in mapped page |
+| size_t | remote_shm_offset | remote ShM offset in mapped page |
+| size_t | shm_size | local/remote ShM size |
+| int (*rx_cb)(const uint8_t instance, int budget) | rx_cb | upper layer Rx callback function |
+| pthread_t | irq_thread_id | Rx interrupt thread id |
+
+### 6.11.4 struct IPCS_OS_PRIV_TYPE_TYPE（UIO 用户侧）
+
+定义于 `ipcs/mpu/os_uio/ipc-os.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| uint8_t | ipc_files_opened | indicate whether device files are opened |
+| int | ipc_cdev_fd | kernel character device file descriptor |
+| int | dev_mem_fd | MEM device file descriptor |
+| struct IPCS_OS_PRIV_INSTANCE_TYPE | id[IPC_SHM_MAX_INSTANCES] | private data per instance |
+
+### 6.11.5 struct IPCS_OS_PRIV_INSTANCE_TYPE（CDEV 用户侧）
+
+定义于 `ipcs/mpu/os_cdev/ipc-os.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| uint8_t | state | state to indicate whether instance is initialized |
+| int | irq_num | rx interrupt number using to check for polling |
+| size_t | shm_size | local/remote ShM size |
+| void * | local_virt_shm | local ShM virtual address |
+| void * | remote_virt_shm | remote ShM virtual address |
+| void * | local_shm_map | local ShM mapped page address |
+| void * | remote_shm_map | remote ShM mapped page address |
+| size_t | local_shm_offset | local ShM offset in mapped page |
+| size_t | remote_shm_offset | remote ShM offset in mapped page |
+
+### 6.11.6 struct IPCS_OS_PRIV_TYPE（CDEV 用户侧）
+
+定义于 `ipcs/mpu/os_cdev/ipc-os.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| uint8_t | ipc_files_opened | indicate whether device files are opened |
+| uint8_t | ipc_soft_created | indicate whether ipcsShmSoftirq thread is opened |
+| int | ipc_usr_fd | ipc-shm-usr kernel device file descriptor |
+| int | dev_mem_fd | MEM device file descriptor |
+| pthread_t | irq_thread_id | Rx interrupt thread id |
+| struct IPCS_OS_PRIV_INSTANCE_TYPE | id[IPC_SHM_MAX_INSTANCES] | private data per instance |
+| int (*rx_cb)(const uint8_t instance, int budget) | rx_cb | upper layer rx callback function |
+
+### 6.11.7 struct IPCS_OS_PRIV_INSTANCE_TYPE（全内核 OSAL）
+
+定义于 `ipcs/mpu/os_kernel/ipc-os.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| int | shm_size | local/remote shared memory size |
+| uintptr_t | local_phys_shm | local shared memory physical address |
+| uintptr_t | remote_phys_shm | remote shared memory physical address |
+| uintptr_t | local_virt_shm | local shared memory virtual address |
+| uintptr_t | remote_virt_shm | remote shared memory virtual address |
+| int | irq_num | Linux IRQ number |
+| int | state | state to indicate whether instance is initialized |
+
+### 6.11.8 struct IPCS_OS_PRIV_TYPE（全内核 OSAL）
+
+定义于 `ipcs/mpu/os_kernel/ipc-os.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| struct IPCS_OS_PRIV_INSTANCE_TYPE | id[IPC_SHM_MAX_INSTANCES] | private data per instance |
+| int (*rx_cb)(const uint8_t instance, int budget) | rx_cb | upper layer rx callback |
+| int | irq_num_init[IPC_SHM_MAX_INSTANCES] | array to save all initialized irq |
+
+### 6.11.9 struct IPCS_UIO_CDEV_DATA_TYPE
+
+定义于 `ipcs/mpu/os_kernel/ipc-uio.h`。
+
+| Type | Name | Description |
+|---|---|---|
+| uint8_t | instance | target instance |
+| struct IPCS_SHM_CFG_TYPE | cfg | instance configuration passed from user space |
+
+### 6.11.10 struct IPCS_UIO_PRIV_TYPE_TYPE
+
+定义于 `ipcs/mpu/os_kernel/ipc-uio.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| int | state | instance state (initialized or not) |
+| int | irq_num | rx interrupt number using to request irq |
+| struct device * | dev | Linux device capabilities |
+| atomic_t | refcnt | reference counter to allow a single UIO device open at a time |
+| struct uio_info | info | UIO device capabilities |
+| struct IPCS_UIO_CDEV_DATA_TYPE | data | Chrdev private data to get user space configuration |
+| char | uio_name[32] | UIO device name |
+
+### 6.11.11 struct IPCS_PDEV_PRIV_TYPE_TYPE
+
+定义于 `ipcs/mpu/os_kernel/ipc-uio.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| dev_t | major | chrdev major number which is allocated dynamically |
+| int | irq_num_init[IPC_SHM_MAX_INSTANCES] | interrupt index for each instance |
+| struct platform_device * | ipc_pdev | Linux platform device capabilities |
+| void __iomem * | pdev_reg | Platform device register |
+| struct class * | cdev_class | class use to create device file in /dev |
+| struct cdev | cdev | variable use for character device |
+| struct IPCS_UIO_PRIV_TYPE_TYPE | uio_id[IPC_SHM_MAX_INSTANCES] | IPCS SHM UIO device data for each instance |
+
+### 6.11.12 struct IPCS_OS_PRIV_INSTANCE_TYPE（CDEV 内核 Backend）
+
+定义于 `ipcs/mpu/os_kernel/ipc-cdev.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| int | state | instance state (initialized or not) |
+| int | irq_num | rx interrupt number using to request irq |
+
+### 6.11.13 struct IPCS_CDEV_PRIV_TYPE_TYPE
+
+定义于 `ipcs/mpu/os_kernel/ipc-cdev.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| char | dev_is_opened | to check if device is open or not |
+| uint8_t | target_instance | instance to be initialized |
+| uint8_t | wait_queue_flag | flag to wake up the wait queue |
+| int | irq_num_init[IPC_SHM_MAX_INSTANCES] | array to save all initialized irq |
+| wait_queue_head_t | wait_queue | variable use for wait queue operation |
+| dev_t | dev_major_num | major number is dynamically allocated when initialize |
+| struct class * | ipc_class | class use to create device file in /dev |
+| struct cdev | ipc_cdev | variable use for character device |
+| struct IPCS_OS_PRIV_INSTANCE_TYPE | instance_id[IPC_SHM_MAX_INSTANCES] | private data per instance |
+
+### 6.11.14 struct IPCS_HW_PRIV_TYPE_TYPE（Linux HAL）
+
+定义于 `ipcs/mpu/hw/c1/ipc-hw.c`。
+
+| Type | Name | Description |
+|---|---|---|
+| uint8_t | msi_tx_irq | MSI index of inter-core interrupt corresponds to mscm_tx_irq |
+| uint8_t | msi_rx_irq | MSI index of inter-core interrupt corresponds to mscm_rx_irq |
+| uint8_t | spi_index | shared peripheral interrupts index |
+| int | mscm_tx_irq | MSCM inter-core interrupt reserved for shm driver tx |
+| int | mscm_rx_irq | MSCM inter-core interrupt reserved for shm driver rx |
+| int | remote_core | index of remote core to trigger the interrupt on |
+| int | local_core | index of the local core targeted by remote |
+| struct IPCS_MSCM_REGS_TYPE * | ipc_mscm | pointer to memory-mapped hardware peripheral MSCM |
+
+### 6.11.15 enum ipc_s32g3xx_processor_idx
+
+定义于 `ipcs/mpu/hw/c1/ipc-hw-platform.h`。
+
+| Name | Description |
+|---|---|
+| IPC_A53_0 | ARM Cortex-A53 cluster 0 core 0 |
+| IPC_A53_1 | ARM Cortex-A53 cluster 1 core 1 |
+| IPC_A53_2 | ARM Cortex-A53 cluster 1 core 0 |
+| IPC_A53_3 | ARM Cortex-A53 cluster 1 core 1 |
+| IPC_M7_0 | ARM Cortex-M7 core 0 |
+| IPC_M7_1 | ARM Cortex-M7 core 1 |
+| IPC_M7_2 | ARM Cortex-M7 core 2 |
+| IPC_M7_3 | ARM Cortex-M7 core 2 |
+| IPC_A53_4 | ARM Cortex-A53 cluster 0 core 2 |
+| IPC_A53_5 | ARM Cortex-A53 cluster 0 core 3 |
+| IPC_A53_6 | ARM Cortex-A53 cluster 1 core 2 |
+| IPC_A53_7 | ARM Cortex-A53 cluster 1 core 3 |
+
+### 6.11.16 struct IPCS_MSCM_REGS_TYPE
+
+定义于 `ipcs/mpu/hw/c1/ipc-hw-platform.h`（MSCM Peripheral Register Structure）。
+
+| Type | Name | Description |
+|---|---|---|
+| volatile const uint32_t | CPXTYPE | 源码未提供描述 |
+| volatile const uint32_t | CPXNUM | 源码未提供描述 |
+| volatile const uint32_t | CPXREV | 源码未提供描述 |
+| volatile const uint32_t | CPXCFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED00[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CP0TYPE | 源码未提供描述 |
+| volatile const uint32_t | CP0NUM | 源码未提供描述 |
+| volatile const uint32_t | CP0REV | 源码未提供描述 |
+| volatile const uint32_t | CP0CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED01[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CP1TYPE | 源码未提供描述 |
+| volatile const uint32_t | CP1NUM | 源码未提供描述 |
+| volatile const uint32_t | CP1REV | 源码未提供描述 |
+| volatile const uint32_t | CP1CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED02[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CP2TYPE | 源码未提供描述 |
+| volatile const uint32_t | CP2NUM | 源码未提供描述 |
+| volatile const uint32_t | CP2REV | 源码未提供描述 |
+| volatile const uint32_t | CP2CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED03[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CP3TYPE | 源码未提供描述 |
+| volatile const uint32_t | CP3NUM | 源码未提供描述 |
+| volatile const uint32_t | CP3REV | 源码未提供描述 |
+| volatile const uint32_t | CP3CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED04[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CP4TYPE | 源码未提供描述 |
+| volatile const uint32_t | CP4NUM | 源码未提供描述 |
+| volatile const uint32_t | CP4REV | 源码未提供描述 |
+| volatile const uint32_t | CP4CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED05[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CP5TYPE | 源码未提供描述 |
+| volatile const uint32_t | CP5NUM | 源码未提供描述 |
+| volatile const uint32_t | CP5REV | 源码未提供描述 |
+| volatile const uint32_t | CP5CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED06[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CP6TYPE | 源码未提供描述 |
+| volatile const uint32_t | CP6NUM | 源码未提供描述 |
+| volatile const uint32_t | CP6REV | 源码未提供描述 |
+| volatile const uint32_t | CP6CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED07[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CP7TYPE | 源码未提供描述 |
+| volatile const uint32_t | CP7NUM | 源码未提供描述 |
+| volatile const uint32_t | CP7REV | 源码未提供描述 |
+| volatile const uint32_t | CP7CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED08[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CP8TYPE | 源码未提供描述 |
+| volatile const uint32_t | CP8NUM | 源码未提供描述 |
+| volatile const uint32_t | CP8REV | 源码未提供描述 |
+| volatile const uint32_t | CP8CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED09[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CP9TYPE | 源码未提供描述 |
+| volatile const uint32_t | CP9NUM | 源码未提供描述 |
+| volatile const uint32_t | CP9REV | 源码未提供描述 |
+| volatile const uint32_t | CP9CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED010[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CP10TYPE | 源码未提供描述 |
+| volatile const uint32_t | CP10NUM | 源码未提供描述 |
+| volatile const uint32_t | CP10REV | 源码未提供描述 |
+| volatile const uint32_t | CP10CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED011[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CP11TYPE | 源码未提供描述 |
+| volatile const uint32_t | CP11NUM | 源码未提供描述 |
+| volatile const uint32_t | CP11REV | 源码未提供描述 |
+| volatile const uint32_t | CP11CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
+| uint8_t | RESERVED012[IPC_MSCM_RESERVED01_COUNT] | 源码未提供描述 |
+| volatile uint32_t | IRCPCFG | 源码未提供描述 |
+| uint8_t | RESERVED013[IPC_MSCM_RESERVED02_COUNT] | 源码未提供描述 |
+| volatile uint32_t | IRNMIC | 源码未提供描述 |
+| uint8_t | RESERVED14[IPC_MSCM_RESERVED03_COUNT] | 源码未提供描述 |
+| volatile uint16_t | IRSPRC[IPC_MSCM_IRSPRC_COUNT] | 源码未提供描述 |
+| struct { volatile uint32_t IPC_ISR; volatile uint32_t IPC_IGR; } | IRCPnIRx[IPC_MSCM_CP_COUNT][IPC_MSCM_IRQ_COUNT] | 源码未提供描述 |
 
 # 7 双向追溯与一致性 (Bidirectional Traceability and Consistency)
 
