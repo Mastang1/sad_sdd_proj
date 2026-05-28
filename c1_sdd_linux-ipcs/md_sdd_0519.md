@@ -285,7 +285,7 @@ CDEV 变体经单一字符设备 **`/dev/ipc-shm-cdev`** 承载全部适配操�
 ![](cursor_tmp/svgs_if_impl/if_impl_kern.svg)
 
 
-# 4 COMMON SWU DETAILED DESIGN 公共软件详设
+# 4 COMMON SWU DESIGN 公共单元设计
 
 ## 4.1 DEFINITION AND SCOPE 定义与范围
 
@@ -4474,26 +4474,6 @@ processing flow
 processing flow
 
 ![](cursor_tmp/flow_svgs/tx_3_4_63.svg)
-
-### 4.6.35 struct IPCS_OS_PRIV_INSTANCE_TYPE
-
-| Type | Name | Description |
-|---|---|---|
-| uintptr_t | local_shm | local shared memory address |
-| uintptr_t | remote_shm | remote shared memory address |
-| sint32 | state | state of instance |
-| sint32 | rx_irq_num | rx interrupt number |
-| sint32 (*rx_callback)(const uint8 instance, sint32 budget) | rx_callback | upper layer rx callback |
-
-### 4.6.36 struct IPCS_OS_PRIV_TYPE_TYPE
-
-| Type | Name | Description |
-|---|---|---|
-| IPC_OS_PRIV_INSTANCE_T | id[IPC_SHM_MAX_INSTANCES] | private data per instance |
-| TX_EVENT_FLAGS_GROUP | soft_irq_events | event flags for softirq task signaling |
-| uint8 | ipc_soft_irq_stack[IPC_SOFTIRQ_STACK_SIZE] | softirq thread stack |
-| TX_THREAD | soft_irq_handle | rx softirq thread handle |
-| sint32 | task_is_initialized | flag to know if the softirq task is initialized |
 
 ## 5.6 SWU_IPCS_HAL_MCU DESIGN 单元设计
 

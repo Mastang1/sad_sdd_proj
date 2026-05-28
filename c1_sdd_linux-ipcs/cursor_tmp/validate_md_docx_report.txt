@@ -1,12 +1,12 @@
 === MD / DOCX consistency report ===
 
-Markdown headings (h1-h4): 292
-DOCX Heading 1-4 paragraphs: 292
+Markdown headings (h1-h4): 283
+DOCX Heading 1-4 paragraphs: 283
 
-Markdown pipe tables (blocks): 83
+Markdown pipe tables (blocks): 73
 Markdown HTML function tables: 138
 DOCX HTML-style function tables (5+ cols): 138
-DOCX tables (total): 222
+DOCX tables (total): 212
 
 Markdown image refs: 183
 DOCX inline images (blips): 183
@@ -25,7 +25,7 @@ Key phrase spot-check:
   [OK] SWU_IPCS_LINUX_OS_UIO
   [OK] ipcsShmInit
 
-Function subsections (### x.y.z name) in MD: 243
+Function subsections (### x.y.z name) in MD: 234
 
 --- WARNINGS ---
   [WARN] Phrase not in DOCX body: 5.7 RTOS
@@ -33,4 +33,4 @@ Function subsections (### x.y.z name) in MD: 243
 
 --- RESULT: PASS (no ERROR) ---
 
-DOCX paragraphs total: 885
+DOCX paragraphs total: 854
