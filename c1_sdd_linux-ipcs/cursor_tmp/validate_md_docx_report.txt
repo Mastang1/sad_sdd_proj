@@ -10,7 +10,7 @@ DOCX tables (total): 222
 
 Markdown image refs: 183
 DOCX inline images (blips): 183
-DOCX word/media extensions: {'.png': 176, '.svg': 220, '.emf': 3}
+DOCX word/media extensions: {'.png': 180, '.svg': 180}
 DOCX body SVG (svgBlip): 183
 
 SVG aspect ratios (viewBox vs DOCX): 183/183 OK
@@ -33,4 +33,4 @@ Function subsections (### x.y.z name) in MD: 243
 
 --- RESULT: PASS (no ERROR) ---
 
-DOCX paragraphs total: 1000
+DOCX paragraphs total: 885

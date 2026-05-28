@@ -12,17 +12,17 @@ IPCS Driver软件详细设计规范
 
 | Version / 版本 | Date / 日期 | Editor / 编辑人 | Status / 文档状态 | Change description / 变更简述 |
 |---|---|---|---|---|
-| V0.1 | 2026.5.7 | Cursor Agent | Draft | Initial version for review，基于 ipcs 源码、reference.md、ipcs-architecture.pdf 与 aspice.pdf 生成 |
-| V0.2 | 2026.5.19 | Cursor Agent | Draft | 按 ASPICE SWE.3 重构为第 1–6 章；新增 §2.4–2.6、Linux Refinement、第 5 章与第 6 章追溯 |
+| V0.1 | 2026.5.7 | Cursor Agent | Draft | Initial version for review，基于软件需求、ipcs-architecture.pdf、reference.md 与 ASPICE SWE.3 生成 |
+| V0.2 | 2026.5.19 | Cursor Agent | Draft | 按 ASPICE SWE.3 重构为第 1–6 章；新增 章节2.4–2.6、Linux Refinement、第 5 章与第 6 章追溯 |
 | V0.7 | 2026.5.19 | Cursor Agent | Draft | 完善 Linux 部署变体函数设计、关键场景 SVG 与分层静态图 |
-| V0.8 | 2026.5.19 | Cursor Agent | Draft | §5.7/§6.7 跨单元场景改为 UML 序列图（PlantUML→SVG） |
-| V0.9 | 2026.5.20 | Cursor Agent | Draft | 新增第 7 章双向追溯矩阵（架构 §2.4 × §2 单元 × 源码） |
+| V0.8 | 2026.5.19 | Cursor Agent | Draft | 章节5.7/章节6.7 跨单元场景改为 UML 序列图（PlantUML→SVG） |
+| V0.9 | 2026.5.20 | Cursor Agent | Draft | 新增第 7 章双向追溯矩阵（架构 章节2.4 × 章节2 单元 × 物理实现） |
 | V1.0 | 2026.5.20 | Cursor Agent | Draft | 章节序号连贯（5.x 重排、6.5/6.7 子节）；第 7 章追溯矩阵产品化（剔除过程类伪追溯行） |
-| V1.1 | 2026.5.20 | Cursor Agent | Draft | §5.1/5.2、§6.1/6.2 对齐 §4.1/4.2；头文件组件 UML→SVG；源码文件列表核对 PASS |
-| V0.6 | 2026.5.19 | Cursor Agent | Draft | 基于 ipcs 源码补强第 2、3 章；明确 UIO/CDEV 与全内核实现的用户侧/内核侧职责 |
+| V1.1 | 2026.5.20 | Cursor Agent | Draft | 章节5.1/5.2、章节6.1/6.2 对齐 章节4.1/4.2；头文件组件 UML→SVG；实现文件列表核对 PASS |
+| V0.6 | 2026.5.19 | Cursor Agent | Draft | 补强第 2、3 章；明确 UIO/CDEV 与全内核实现的用户侧/内核侧职责 |
 | V0.5 | 2026.5.19 | Cursor Agent | Draft | 精简第 2 章为组件—单元映射；重写第 3 章分层与部署变体；清理目录重复项 |
 | V0.4 | 2026.5.19 | Cursor Agent | Draft | 拆分第 2 章；新增第 3 章三层架构与 Linux 适配；勘误 UIO/CDEV 代理与全内核形态 |
-| V0.3 | 2026.5.19 | Cursor Agent | Draft | 第 2 章改为架构符合性与软件单元划分；增加 SW-Unit-ID 与组件映射；插图全部 SVG；对照 ipcs/ 源码修订 |
+| V0.3 | 2026.5.19 | Cursor Agent | Draft | 第 2 章改为架构符合性与软件单元划分；增加 SW-Unit-ID 与组件映射；插图全部 SVG；对照详细设计与实现一致性修订 |
 
 ## CONTENTS 目录
 
@@ -46,8 +46,8 @@ IPCS Driver软件详细设计规范
 - 4 COMMON SOFTWARE UNIT DETAILED DESIGN 公共软件单元详细设计
   - 4.1 Definition and Scope 定义与范围
   - 4.2 File Structure 文件结构
-  - 4.3 External Interfaces 外部接口
-  - 4.4 Internal Functions 内部函数
+  - 4.3 SWU_IPCS_CORE_SHM Software Unit Design — External Interfaces 软件单元设计 — 外部接口
+  - 4.4 SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE、SWU_IPCS_CORE_UTIL Software Unit Design — Internal Functions 软件单元设计 — 内部函数
   - 4.5 Global Variables 全局变量
   - 4.6 Data Types 类型定义
   - 4.7 Dynamic Detailed Design 动态详细设计
@@ -77,38 +77,37 @@ IPCS Driver软件详细设计规范
   - 7.1 Traceability Statement 追溯性策略与声明
   - 7.2 Bidirectional Traceability Matrix 双向追溯矩阵
 
-# 1 INTRODUCTION简介
+# 1 INTRODUCTION 简介
 
-## 1.1 Confidentiality 保密性
+## 1.1 CONFIDENTIALITY 保密性
 
 任何披露必须与负责的流程经理协调。
 
 本文件过程说明仅限直接参与项目的人员查看。转让给其他方，尤其是 Star Gather 以外的合作伙伴，必须由项目负责人协调，并受开发合同中有关保密规定的约束。
 
-## 1.2 Purpose of the document文档目的
+## 1.2 DOCUMENT PURPOSE 文档目的
 
 本文档按照 SWE.3 Software Detailed Design and Unit Construction 的要求，为 IPCS Driver（RTOS 与 Linux 部署变体）建立软件详细设计。文档内容描述软件单元的静态结构、接口、数据结构、关键动态行为，并与 IPCS 软件架构中定义的组件和接口保持一致。
 
-## 1.3 Scope范围
+## 1.3 SCOPE 范围
 
-本文档适用于 ipcs/ 目录下的 IPC Shared Memory Driver 源码，包括：
+本文档规定 IPC Shared Memory Driver（IPCS Driver）的软件详细设计（SWE.3）范围。**设计输入**为：已分配的软件需求、软件架构设计、ASPICE SWE.3 过程要求及约束。**设计输出**为下文各章所述的软件单元结构、接口、数据类型与动态行为。
 
-- ipcs/ipcs_cores/：跨部署变体共享的通信核心与队列；
-- ipcs/mcu/：RTOS 部署变体（FreeRTOS、ThreadX、AUTOSAR OS 实现，不含 Baremetal 详细设计）；
-- ipcs/mpu/：Linux 部署变体（全内核、UIO、CDEV 实现）。
+设计范围包括：
 
-逻辑架构以 ipcs-architecture.pdf 为准；三层架构与 Linux 部署变体见第 3 章。
+- 跨部署变体共享的通信核心与队列（架构组件 Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Conf_Cmp）；
+- RTOS 部署变体 OSAL/HAL 实现（FreeRTOS、ThreadX、AUTOSAR OS）；
+- Linux 部署变体适配与 HAL 实现（全内核、UIO、CDEV）。
 
-## 1.4 References 参考文件
+## 1.4 REFERENCES 参考文件
 
 | Reference ID / 编号 | Document Name / 文档名称 | Version / 版本 | Date / 日期 | Author / 作者 | Status / 状态 |
 |---|---|---|---|---|---|
 | 1 | Automotive SPICE® Process Assessment Model, SWE.3 Software Detailed Design and Unit Construction | 4.0 | 2023 | VDA | Release |
 | 2 | IPCS Driver 软件架构设计 ipcs-architecture.pdf | 1.0 | 2026.4.16 | 倘亚朋 | 待评审 |
 | 3 | reference.md 详细设计文档模板 | N/A | N/A | N/A | 模板输入 |
-| 4 | ipcs/ IPCF Shared Memory Driver for Real-Time Operating Systems 源码 | SW 4.0.1 | 2023 | Star-Gather | 源码输入 |
 
-## 1.5 Abbreviations缩略语
+## 1.5 ABBREVIATIONS 缩略语
 
 | Abbreviation / 缩写 | Meaning/Explanation / 解释 |
 |---|---|
@@ -118,36 +117,27 @@ IPCS Driver软件详细设计规范
 | CDD | Complex Device Driver |
 | HAL | Hardware Abstraction Layer |
 | HW | Hardware |
-| IPCF | Inter-Platform Communication Framework |
 | IPCS | Inter-Processor Communication System |
 | IRQ | Interrupt Request |
 | ISR | Interrupt Service Routine |
-| MMU | Memory Management Unit |
-| MSCM | Multi-Core Shared Memory / Messaging interrupt controller as used by source naming |
-| MRU | Messaging/Message Routing Unit, used by integration notes |
-| MU | Messaging Unit, used by integration notes |
 | OS | Operating System |
 | OSAL | OS Abstraction Layer |
 | RTOS | Real-Time Operating System |
 | SHM | Shared Memory |
-| SPSC | Single Producer Single Consumer |
 | UIO | Userspace I/O |
 | Deployment Variant | 部署变体（RTOS 部署变体 / Linux 部署变体） |
 | Implementation | 实现（如 FreeRTOS 实现、UIO 实现、全内核实现） |
 | User-Side Proxy | 用户侧代理（Linux UIO/CDEV 用户库：满足 P4/P5 契约，对 OS/HW 操作为转发实现） |
-| Refinement | 架构细化：SDD 对逻辑组件的实现分解，不新增架构 ID |
 | In-Kernel | 全内核实现 |
-| CDEV | Character Device 实现 |
+| CDEV | Character Device |
 
 # 2 SOFTWARE UNIT IDENTIFICATION 软件单元划分
 
-本章只定义软件单元及其与软件架构组件的映射关系。架构基线见参考文献 [2] `ipcs-architecture.pdf`；分层与部署变体设计见第 3 章；函数级详细设计见第 4–6 章。
+## 2.1 SOFTWARE UNIT LIST 软件单元清单
 
-## 2.1 Software Unit List 软件单元清单
+软件单元按可编译实现文件（`.c`）划分。头文件作为单元接口或类型规格，在 章节4.2 Files 及函数设计表「函数声明文件」中描述，不单独编号为 SWU。
 
-软件单元按可编译源码文件（`.c`）划分。头文件作为单元接口或类型规格，在 §4.2 Files 及函数设计表「函数声明文件」中描述，不单独编号为 SWU。
-
-| SW-Unit-ID | 源码文件 | 说明 |
+| SW-Unit-ID | 实现文件 | 说明 |
 |---|---|---|
 | SWU_IPCS_CORE_SHM | ipcs/ipcs_cores/ipc-shm.c | SHM Core，实现实例、通道、发送接收主流程 |
 | SWU_IPCS_CORE_QUEUE | ipcs/ipcs_cores/ipc-queue.c | 环形队列实现 |
@@ -163,68 +153,69 @@ IPCS Driver软件详细设计规范
 | SWU_IPCS_LINUX_UIO_KO | ipcs/mpu/os_kernel/ipc-uio.c | UIO 内核 Backend |
 | SWU_IPCS_LINUX_CDEV_KO | ipcs/mpu/os_kernel/ipc-cdev.c | CDEV 内核 Backend |
 
-## 2.2 Architecture Component to Software Unit Mapping 架构组件与软件单元映射
+## 2.2 COMPONENT-SWU MAPPING 组件单元映射
 
 | 架构组件 ID | SW-Unit-ID | 适用范围 |
 |---|---|---|
 | Drv_Ipcs_Core_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_UTIL | 全部部署变体 |
 | Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_QUEUE | 全部部署变体 |
-| Drv_Ipcs_Conf_Cmp | 无独立 SWU；公共类型见 §4.6（`ipc-types.h`），工程配置见 `ipcf_Ip_Cfg*.h` | 全部部署变体 |
 | Drv_Ipcs_Osal_Cmp | SWU_IPCS_OSAL_AUTOSAR、SWU_IPCS_OSAL_FREERTOS、SWU_IPCS_OSAL_THREADX、SWU_IPCS_LINUX_OS_KERN | RTOS 各 OS 实现、Linux 全内核实现 |
 | Drv_Ipcs_Hal_Cmp | SWU_IPCS_HAL_MCU、SWU_IPCS_HAL_LINUX | RTOS HAL、Linux 内核 HAL |
 | Drv_Ipcs_Linux_Adapt_Cmp | SWU_IPCS_LINUX_OS_UIO、SWU_IPCS_LINUX_OS_CDEV、SWU_IPCS_LINUX_OS_KERN、SWU_IPCS_LINUX_UIO_KO、SWU_IPCS_LINUX_CDEV_KO、SWU_IPCS_HAL_LINUX | Linux 部署变体 |
 
-第 4 章及以下函数说明表中的「软件单元 ID」引用本章；「对应软件架构 ID」引用 `ipcs-architecture.pdf` 中的架构组件 ID。
+第 4 章及以下函数说明表中的「软件单元 ID」引用本章；「对应软件架构 ID」引用 架构设计规范中的架构组件 ID。
 
-# 3 LAYERED ARCHITECTURE AND DEPLOYMENT VARIANTS 分层架构与部署变体设计
+# 3 LAYERED ARCHITECTURE 分层部署变体
 
-## 3.1 SHM / OSAL / HAL Interface Contract 三层接口契约
+## 3.1 SHM/OSAL/HAL CONTRACT 三层接口契约
 
-IPCS 采用 SHM、OSAL、HAL 三层结构。SHM 层位于 `ipcs/ipcs_cores`，只通过固定函数原型调用 OSAL 与 HAL；不同部署变体不得改变这些接口契约。
+IPCS 采用 SHM、OSAL、HAL 三层结构。SHM为应用层提供固定函数原型接口，只通过固定函数原型调用 OSAL 与 HAL；不同部署变体实现不得改变这些接口契约。
 
 | 层 | 架构组件 | 接口符号 | 接口文件 | 关键接口 | 设计约束 |
 |---|---|---|---|---|---|
-| SHM | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | IF_AppSvc | `ipc-shm.h`、`ipc-queue.h` | `ipcsShmInit`、`ipcsShmTx`、`ipcsShmPollChannels` | 对上提供应用接口，对下只依赖 OSAL/HAL 契约 |
+| SHM | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | IF_AppSvc | `ipc-shm.h` | `ipcsShmInit`、`ipcsShmTx`、`ipcsShmPollChannels` | 对上提供应用接口，对下只依赖 OSAL/HAL 契约 |
 | OSAL | Drv_Ipcs_Osal_Cmp | IF_OSAbst | `ipc-os.h` 或同名 Linux 用户侧符号 | `ipcsOsInit`、`ipcsOsGetLocalShm`、`ipcsOsPollChannels` | 提供共享内存映射、收包调度与中断上下文联结 |
-| HAL | Drv_Ipcs_Hal_Cmp | IF_HWAbst | `ipc-hw.h` | `ipcsHwInit`、`ipcsHwIrqNotify`、`ipcsHwIrqEnable` | 提供 MSCM/IRQ、缓存与平台核索引操作 |
+| HAL | Drv_Ipcs_Hal_Cmp | IF_HWAbst | `ipc-hw.h` | `ipcsHwInit`、`ipcsHwIrqNotify`、`ipcsHwIrqEnable` | 提供 核间中断控制器/IRQ、缓存与平台核索引操作 |
 
 该契约保证 `ipcs_cores` 可在 RTOS、Linux UIO、Linux CDEV、Linux 全内核实现间复用。
 
-![变体部署接口设计约束](cursor_tmp/svgs_if_impl/if_impl_cores.svg)
+![](cursor_tmp/svgs_if_impl/if_impl_cores.svg)
 
-## 3.2 RTOS Deployment Variant RTOS 部署变体
+## 3.2 RTOS DEPLOYMENT VARIANT RTOS部署变体
 
-RTOS 部署变体包括 FreeRTOS、ThreadX、AUTOSAR OS 三种实现。Baremetal 源码存在于 `ipcs/mcu/os/baremetal`，但不纳入本文档详细设计范围。
+RTOS 部署变体包括 FreeRTOS、ThreadX、AUTOSAR OS 三种实现。
 
-| 实现 | OSAL 源文件 | HAL 源文件 | 结构说明 |
+| 实现 | OSAL 实现单元 | HAL 实现单元 | 结构说明 |
 |---|---|---|---|
-| FreeRTOS 实现 | `ipcs/mcu/os/freertos/ipc-os-freertos.c` | `ipcs/mcu/hw/ipc-hw.c` | SHM、OSAL、HAL 位于同一地址空间 |
-| ThreadX 实现 | `ipcs/mcu/os/threadx/ipc-os-threadx.c` | `ipcs/mcu/hw/ipc-hw.c` | SHM、OSAL、HAL 位于同一地址空间 |
-| AUTOSAR OS 实现 | `ipcs/mcu/os/autosar/ipc-os-autosar.c` | `ipcs/mcu/hw/ipc-hw.c` | SHM、OSAL、HAL 位于同一地址空间 |
+| FreeRTOS 实现 | SWU_IPCS_OSAL_FREERTOS | SWU_IPCS_HAL_MCU | SHM、OSAL、HAL 位于同一地址空间 |
+| ThreadX 实现 | SWU_IPCS_OSAL_THREADX | SWU_IPCS_HAL_MCU | SHM、OSAL、HAL 位于同一地址空间 |
+| AUTOSAR OS 实现 | SWU_IPCS_OSAL_AUTOSAR | SWU_IPCS_HAL_MCU | SHM、OSAL、HAL 位于同一地址空间 |
 
 RTOS 部署变体中，Core 调用 `ipcsOs*` 与 `ipcsHw*` 时直接进入 OSAL/HAL 实现，不存在用户侧代理或内核 Backend。
 
-![RTOS变体三种实现关系图](cursor_tmp/svgs_if_impl/if_impl_rtos.svg)
+![](cursor_tmp/svgs_if_impl/if_impl_rtos.svg)
 
-## 3.3 Linux Deployment Variants Linux 部署变体
+## 3.3 LINUX DEPLOY VARIANTS LINUX部署变体
 
-Linux 部署变体包括 UIO、CDEV、全内核三种实现。`ipcs-architecture.pdf` 中的 `Drv_Ipcs_Linux_Adapt_Cmp` 是逻辑组件；详细设计按源码进一步说明其用户侧与内核侧职责。
+Linux 部署变体包括 UIO、CDEV、全内核三种实现。`ipcs-architecture.pdf` 中的 `Drv_Ipcs_Linux_Adapt_Cmp` 是逻辑组件；本 SDD 按架构 Refinement 进一步分解其用户侧与内核侧职责。
 
 ### 3.3.1 UIO Implementation UIO 实现
 
 UIO 实现由用户库代理、UIO 内核 Backend、Linux HAL 三部分组成。
 
-| 部分 | 源码 | 设计职责 |
+| 部分 | 实现单元 | 设计职责 |
 |---|---|---|
-| 用户侧代理 | `ipcs/mpu/os_uio/ipc-os.c` | 导出 `ipcsOs*`、`ipcsHw*` 同名符号，满足 SHM 对 OSAL/HAL 的接口契约；完成 `/dev/mem` 映射、UIO 设备打开、RX 线程创建 |
-| 内核 Backend | `ipcs/mpu/os_kernel/ipc-uio.c` | 注册 UIO 设备、处理中断、向用户侧传递事件 |
-| 内核 HAL | `ipcs/mpu/hw/c1/ipc-hw.c` | 执行 MSCM 与 IRQ 相关真实硬件操作 |
+| 用户侧代理 | SWU_IPCS_LINUX_OS_UIO | 导出 `ipcsOs*`、`ipcsHw*` 同名符号，满足 SHM 对 OSAL/HAL 的接口契约；完成 `/dev/mem` 映射、UIO 设备打开、RX 线程创建 |
+| 内核 Backend | SWU_IPCS_LINUX_UIO_KO | 注册 UIO 设备、处理中断、向用户侧传递事件 |
+| 内核 HAL | SWU_IPCS_HAL_LINUX | 执行 核间中断控制器 与 IRQ 相关真实硬件操作 |
 
-用户侧 `ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify` 通过 `ipcsSendUioCmd` 写 UIO fd 转发命令；`ipcsHwInit`、`ipcsHwFree` 是空实现，源码注释说明初始化和释放由内核 UIO 模块处理。
+用户侧 `ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify` 通过 `ipcsSendUioCmd` 写 UIO fd 转发命令；`ipcsHwInit`、`ipcsHwFree` 是空实现，设计规定初始化和释放由内核 UIO 模块处理。
+
+![](cursor_tmp/svgs_if_impl/if_impl_uio.svg)
 
 ### 3.3.1.1 User-Kernel Adaptation Interface (IF_LinuxAdapt_UIO) User-Kernel 适配接口
 
-Core 仍只依赖 §3.1 的 `IF_OSAbst` / `IF_HWAbst`。UIO 变体中，用户侧 `SWU_IPCS_LINUX_OS_UIO` 对上层**呈现**这两套接口；跨地址空间实现则经 **`IF_LinuxAdapt_UIO`** 由 `SWU_IPCS_LINUX_UIO_KO` 完成。该接口属于 `Drv_Ipcs_Linux_Adapt_Cmp` 内部分配接口，不是新的架构层。
+Core 仍只依赖 章节3.1 的 `IF_OSAbst` / `IF_HWAbst`。UIO 变体中，用户侧 `SWU_IPCS_LINUX_OS_UIO` 对上层**呈现**这两套接口；跨地址空间实现则经 **`IF_LinuxAdapt_UIO`** 由 `SWU_IPCS_LINUX_UIO_KO` 完成。该接口属于 `Drv_Ipcs_Linux_Adapt_Cmp` 内部分配接口，不是新的架构层。
 
 共享内存映射（`ipcsOsGetLocalShm` / `ipcsOsGetRemoteShm`）经 `/dev/mem` 完成，**不经过**本适配接口。本文档不展开 VFS、系统调用、UIO 子系统内部实现；仅定义 User Adapt SWU 与 Kernel Adapt SWU 之间的操作契约（定义见 `ipcs/mpu/os_kernel/ipc-uio.h`）。
 
@@ -245,21 +236,22 @@ UIO 变体采用 **Init 通道 + Runtime 通道** 双通道模型：
 | `UIO_HW_TRIGGER` | User → Kernel | `IPC_UIO_TRIGGER_CMD`（0x0003） | `ipcsHwIrqNotify` | `ipcsShmUioIrqcontrol` → `ipcsHwIrqNotify` | `IF_HWAbst` |
 | `UIO_RX_EVENT` | Kernel → User | UIO 事件计数（read 返回） | `ipcsShmSoftirq` 线程 read Runtime 通道 | hardirq → `ipcsShmUioHandler` → UIO 框架唤醒 | `IF_OSAbst` 收包调度（`rx_cb`） |
 
-收包路径：硬件 IRQ → 内核 `ipcsShmUioHandler`（清中断）→ UIO 事件 → 用户线程 `read` 返回 → 调用 `rx_cb` → 再次 `ipcsHwIrqEnable`。动态交互详见 §6.7 UIO 序列图。
+收包路径：硬件 IRQ → 内核 `ipcsShmUioHandler`（清中断）→ UIO 事件 → 用户线程 `read` 返回 → 调用 `rx_cb` → 再次 `ipcsHwIrqEnable`。动态交互详见 章节6.7 UIO 序列图。
 
-![Linux部署变体UIO实现关系图](cursor_tmp/svgs_if_impl/if_impl_uio.svg)
 
 ### 3.3.2 CDEV Implementation CDEV 实现
 
 CDEV 实现由用户库代理、字符设备 Backend、Linux HAL 三部分组成。
 
-| 部分 | 源码 | 设计职责 |
+| 部分 | 实现单元 | 设计职责 |
 |---|---|---|
-| 用户侧代理 | `ipcs/mpu/os_cdev/ipc-os.c` | 导出 `ipcsOs*`、`ipcsHw*` 同名符号，满足 SHM 对 OSAL/HAL 的接口契约；通过 `/dev/ipc-shm-cdev` 与内核通信 |
-| 内核 Backend | `ipcs/mpu/os_kernel/ipc-cdev.c` | 提供字符设备、ioctl、wait queue、ISR 处理 |
-| 内核 HAL | `ipcs/mpu/hw/c1/ipc-hw.c` | 执行 MSCM 与 IRQ 相关真实硬件操作 |
+| 用户侧代理 | SWU_IPCS_LINUX_OS_CDEV | 导出 `ipcsOs*`、`ipcsHw*` 同名符号，满足 SHM 对 OSAL/HAL 的接口契约；通过 `/dev/ipc-shm-cdev` 与内核通信 |
+| 内核 Backend | SWU_IPCS_LINUX_CDEV_KO | 提供字符设备、ioctl、wait queue、ISR 处理 |
+| 内核 HAL | SWU_IPCS_HAL_LINUX | 执行 核间中断控制器 与 IRQ 相关真实硬件操作 |
 
-用户侧 `ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify` 使用 `IPC_CDEV_CMD_*` ioctl 转发到内核；`ipcsHwInit`、`ipcsHwFree` 是空实现，源码注释说明由内核模块处理。
+用户侧 `ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify` 使用 `IPC_CDEV_CMD_*` ioctl 转发到内核；`ipcsHwInit`、`ipcsHwFree` 是空实现，设计规定由内核模块处理。
+
+![](cursor_tmp/svgs_if_impl/if_impl_cdev.svg)
 
 ### 3.3.2.1 User-Kernel Adaptation Interface (IF_LinuxAdapt_CDEV) User-Kernel 适配接口
 
@@ -276,33 +268,32 @@ CDEV 变体经单一字符设备 **`/dev/ipc-shm-cdev`** 承载全部适配操�
 | `CDEV_HW_TRIGGER` | User → Kernel | `IPC_CDEV_CMD_TRIGGER_TX_IRQ`（instance） | `ipcsHwIrqNotify` | `ipcsCdevIoctl` → `ipcsHwIrqNotify` | `IF_HWAbst` |
 | `CDEV_RX_EVENT` | Kernel → User | read 阻塞返回（wait queue 唤醒） | `ipcsShmSoftirq` 线程 read | hardirq → `wake_up_interruptible` | `IF_OSAbst` 收包调度（`rx_cb`） |
 
-与 UIO 变体对比：CDEV 不依赖 Linux UIO 框架；Init 与 HW 控制均通过自定义 ioctl 完成；RX 通知经内核 wait queue + 用户 read，而非 UIO event read。动态交互详见 §6.7 CDEV 序列图。
+与 UIO 变体对比：CDEV 不依赖 Linux UIO 框架；Init 与 HW 控制均通过自定义 ioctl 完成；RX 通知经内核 wait queue + 用户 read，而非 UIO event read。动态交互详见 章节6.7 CDEV 序列图。
 
-![Linux部署变体CDEV实现关系图](cursor_tmp/svgs_if_impl/if_impl_cdev.svg)
 
 ### 3.3.3 In-Kernel Implementation 全内核实现
 
 全内核实现不使用用户侧代理。Core、OSAL、HAL 均在内核模块中运行，形态与 RTOS 部署变体一致。
 
-| 部分 | 源码 | 设计职责 |
+| 部分 | 实现单元 | 设计职责 |
 |---|---|---|
-| OSAL | `ipcs/mpu/os_kernel/ipc-os.c` | 实现 `ipcsOsInit`、`ipcsOsFree`、`ipcsOsGetLocalShm`、`ipcsOsGetRemoteShm`、`ipcsOsPollChannels` |
-| HAL | `ipcs/mpu/hw/c1/ipc-hw.c` | 实现 `ipcsHwInit`、`ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify`、`ipcsHwIrqClear` 等硬件操作 |
+| OSAL | SWU_IPCS_LINUX_OS_KERN | 实现 `ipcsOsInit`、`ipcsOsFree`、`ipcsOsGetLocalShm`、`ipcsOsGetRemoteShm`、`ipcsOsPollChannels` |
+| HAL | SWU_IPCS_HAL_LINUX | 实现 `ipcsHwInit`、`ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify`、`ipcsHwIrqClear` 等硬件操作 |
 
-`ipcs/mpu/os_kernel/ipc-os.c` 使用 tasklet 进行延迟收包处理，`ipcs/mpu/hw/c1/ipc-hw.c` 负责映射 MSCM 并访问中断相关寄存器。
+`ipcs/mpu/os_kernel/ipc-os.c` 使用 tasklet 进行延迟收包处理，`ipcs/mpu/hw/c1/ipc-hw.c` 负责映射 核间中断控制器 并访问中断相关寄存器。
 
-![Linux部署变体in-kernel实现关系图](cursor_tmp/svgs_if_impl/if_impl_kern.svg)
+![](cursor_tmp/svgs_if_impl/if_impl_kern.svg)
 
 
-# 4 COMMON SOFTWARE UNIT DETAILED DESIGN 公共软件单元详细设计
+# 4 COMMON SWU DETAILED DESIGN 公共软件详设
 
-## 4.1 Definition and Scope 定义与范围
+## 4.1 DEFINITION AND SCOPE 定义与范围
 
 IPCS Driver 是面向同一 SoC 内不同处理核心的 shared memory 通信驱动。公共部分（ipcs/ipcs_cores）实现 IPCF Shared Memory 协议核心，支持 managed/unmanaged channel、中断通知与 polling、多 instance/channel。
 
 本章描述跨部署变体共享的 Core、Queue、配置类型（SHM 层）。分层与部署变体见第 3 章；RTOS 实现见第 5 章；Linux 实现见第 6 章。
 
-## 4.2 File Structure 文件结构
+## 4.2 FILE STRUCTURE 文件结构
 
 ### 4.2.1 File List 文件列表
 
@@ -327,7 +318,7 @@ IPCS Driver 是面向同一 SoC 内不同处理核心的 shared memory 通信驱
 
 ipc-shm.h, ipc-queue.h, ipc-util.h（与 ipcs/ipcs_cores/ipc-queue.c 中 #include 顺序一致）
 
-![image1.png](cursor_tmp/files_32_svgs/3_2_2.svg)
+![](cursor_tmp/files_32_svgs/3_2_2.svg)
 
 ### 4.2.3 ipc-queue.h
 
@@ -339,7 +330,7 @@ ipc-shm.h, ipc-queue.h, ipc-util.h（与 ipcs/ipcs_cores/ipc-queue.c 中 #includ
 
 本头文件未 #include ipcs 内其他头文件（除标准版本宏定义外无外部文件依赖）。
 
-![image2.png](cursor_tmp/files_32_svgs/3_2_3.svg)
+![](cursor_tmp/files_32_svgs/3_2_3.svg)
 
 ### 4.2.4 ipc-shm.c
 
@@ -351,7 +342,7 @@ ipc-shm.h, ipc-queue.h, ipc-util.h（与 ipcs/ipcs_cores/ipc-queue.c 中 #includ
 
 ipc-shm.h, ipc-os.h, ipc-hw.h, ipc-queue.h（与 ipcs/ipcs_cores/ipc-shm.c 中 #include 顺序一致）
 
-![image3.png](cursor_tmp/files_32_svgs/3_2_4.svg)
+![](cursor_tmp/files_32_svgs/3_2_4.svg)
 
 ### 4.2.5 ipc-shm.h
 
@@ -363,7 +354,7 @@ ipc-shm.h, ipc-os.h, ipc-hw.h, ipc-queue.h（与 ipcs/ipcs_cores/ipc-shm.c 中 #
 
 ipc-types.h, ipcf_Ip_Cfg.h（与 ipcs/ipcs_cores/ipc-shm.h 中 #include 一致；ipcf_Ip_Cfg.h 为工程配置头）
 
-![image4.png](cursor_tmp/files_32_svgs/3_2_5.svg)
+![](cursor_tmp/files_32_svgs/3_2_5.svg)
 
 ### 4.2.6 ipc-types.h
 
@@ -375,7 +366,7 @@ ipc-types.h, ipcf_Ip_Cfg.h（与 ipcs/ipcs_cores/ipc-shm.h 中 #include 一致�
 
 条件编译：NO_STDINT_H==0 时包含 <stdint.h>、<stddef.h>、<errno.h>；否则由 CPU 宏定义 uintptr_t 等；均包含 Mcal.h、ipcf_Ip_Cfg_Defines.h（与 ipcs/ipcs_cores/ipc-types.h 一致）。
 
-![image5.png](cursor_tmp/files_32_svgs/3_2_6.svg)
+![](cursor_tmp/files_32_svgs/3_2_6.svg)
 
 ### 4.2.7 ipc-util.c
 
@@ -387,7 +378,7 @@ ipc-types.h, ipcf_Ip_Cfg.h（与 ipcs/ipcs_cores/ipc-shm.h 中 #include 一致�
 
 ipc-shm.h, ipc-util.h（与 ipcs/ipcs_cores/ipc-util.c 中 #include 一致）
 
-![image6.png](cursor_tmp/files_32_svgs/3_2_7.svg)
+![](cursor_tmp/files_32_svgs/3_2_7.svg)
 
 ### 4.2.8 ipc-util.h
 
@@ -399,11 +390,9 @@ ipc-shm.h, ipc-util.h（与 ipcs/ipcs_cores/ipc-util.c 中 #include 一致）
 
 本头文件未 #include ipcs 内其他头文件。
 
-![image7.png](cursor_tmp/files_32_svgs/3_2_8.svg)
+![](cursor_tmp/files_32_svgs/3_2_8.svg)
 
-## 4.3 External Interfaces 外部接口
-
-本节严格按照 reference.md 的函数说明表格格式描述外部接口。按照任务要求，只有 ipcs/ipcs/ipcs_cores/ipc-shm.c 中的非静态接口为对外接口。
+## 4.3 SWU_CORE_SHM EXT INTERFACES 外部接口
 
 ### 4.3.1 ipcsShmInit
 
@@ -468,7 +457,7 @@ ipc-shm.h, ipc-util.h（与 ipcs/ipcs_cores/ipc-util.c 中 #include 一致）
 
 processing flow
 
-![image8.png](cursor_tmp/flow_svgs/3_3_1.svg)
+![](cursor_tmp/flow_svgs/3_3_1.svg)
 
 ### 4.3.2 ipcsShmFree
 
@@ -532,7 +521,7 @@ processing flow
 
 processing flow
 
-![image9.png](cursor_tmp/flow_svgs/3_3_2.svg)
+![](cursor_tmp/flow_svgs/3_3_2.svg)
 
 ### 4.3.3 ipcsShmAcquireBuf
 
@@ -609,7 +598,7 @@ processing flow
 
 processing flow
 
-![image10.png](cursor_tmp/flow_svgs/3_3_3.svg)
+![](cursor_tmp/flow_svgs/3_3_3.svg)
 
 ### 4.3.4 ipcsShmReleaseBuf
 
@@ -686,7 +675,7 @@ processing flow
 
 processing flow
 
-![image11.png](cursor_tmp/flow_svgs/3_3_4.svg)
+![](cursor_tmp/flow_svgs/3_3_4.svg)
 
 ### 4.3.5 ipcsShmTx
 
@@ -769,7 +758,7 @@ processing flow
 
 processing flow
 
-![image12.png](cursor_tmp/flow_svgs/3_3_5.svg)
+![](cursor_tmp/flow_svgs/3_3_5.svg)
 
 ### 4.3.6 ipcsShmUnmanagedAcquire
 
@@ -840,7 +829,7 @@ processing flow
 
 processing flow
 
-![image13.png](cursor_tmp/flow_svgs/3_3_6.svg)
+![](cursor_tmp/flow_svgs/3_3_6.svg)
 
 ### 4.3.7 ipcsShmUnmanagedTx
 
@@ -911,7 +900,7 @@ processing flow
 
 processing flow
 
-![image14.png](cursor_tmp/flow_svgs/3_3_7.svg)
+![](cursor_tmp/flow_svgs/3_3_7.svg)
 
 ### 4.3.8 ipcsShmIsRemoteReady
 
@@ -976,7 +965,7 @@ processing flow
 
 processing flow
 
-![image15.png](cursor_tmp/flow_svgs/3_3_8.svg)
+![](cursor_tmp/flow_svgs/3_3_8.svg)
 
 ### 4.3.9 ipcsShmPollChannels
 
@@ -1041,11 +1030,10 @@ processing flow
 
 processing flow
 
-![image16.png](cursor_tmp/flow_svgs/3_3_9.svg)
+![](cursor_tmp/flow_svgs/3_3_9.svg)
 
-## 4.4 Internal Functions 内部函数
+## 4.4 SWU CORE/QUEUE/UTIL INTERNAL 内部函数
 
-本节严格按照 reference.md 的内部函数表格格式描述内部函数。除 3.3 中列出的 9 个对外接口之外，其余源码函数、跨组件调用接口和 OS task 单元均作为内部接口。
 
 ### 4.4.1 ipcsQueuePop
 
@@ -1112,7 +1100,7 @@ processing flow
 
 processing flow
 
-![image17.png](cursor_tmp/flow_svgs/3_4_1.svg)
+![](cursor_tmp/flow_svgs/3_4_1.svg)
 
 ### 4.4.2 ipcsQueuePush
 
@@ -1179,7 +1167,7 @@ processing flow
 
 processing flow
 
-![image18.png](cursor_tmp/flow_svgs/3_4_2.svg)
+![](cursor_tmp/flow_svgs/3_4_2.svg)
 
 ### 4.4.3 ipcsQueueInit
 
@@ -1264,7 +1252,7 @@ processing flow
 
 processing flow
 
-![image19.png](cursor_tmp/flow_svgs/3_4_3.svg)
+![](cursor_tmp/flow_svgs/3_4_3.svg)
 
 ### 4.4.4 ipcsQueueCheckIntegrity
 
@@ -1325,7 +1313,7 @@ processing flow
 
 processing flow
 
-![image20.png](cursor_tmp/flow_svgs/3_4_4.svg)
+![](cursor_tmp/flow_svgs/3_4_4.svg)
 
 ### 4.4.5 ipcsQueueMemSize
 
@@ -1386,7 +1374,7 @@ processing flow
 
 processing flow
 
-![image21.png](cursor_tmp/flow_svgs/3_4_5.svg)
+![](cursor_tmp/flow_svgs/3_4_5.svg)
 
 ### 4.4.6 getChannel
 
@@ -1453,7 +1441,7 @@ processing flow
 
 processing flow
 
-![image22.png](cursor_tmp/flow_svgs/3_4_6.svg)
+![](cursor_tmp/flow_svgs/3_4_6.svg)
 
 ### 4.4.7 getManagedChan
 
@@ -1520,7 +1508,7 @@ processing flow
 
 processing flow
 
-![image23.png](cursor_tmp/flow_svgs/3_4_7.svg)
+![](cursor_tmp/flow_svgs/3_4_7.svg)
 
 ### 4.4.8 getUnmanagedChan
 
@@ -1587,7 +1575,7 @@ processing flow
 
 processing flow
 
-![image24.png](cursor_tmp/flow_svgs/3_4_8.svg)
+![](cursor_tmp/flow_svgs/3_4_8.svg)
 
 ### 4.4.9 ipcsCheckUchanIntegrity
 
@@ -1648,7 +1636,7 @@ processing flow
 
 processing flow
 
-![image25.png](cursor_tmp/flow_svgs/3_4_9.svg)
+![](cursor_tmp/flow_svgs/3_4_9.svg)
 
 ### 4.4.10 ipcsCheckMchanIntegrity
 
@@ -1709,7 +1697,7 @@ processing flow
 
 processing flow
 
-![image26.png](cursor_tmp/flow_svgs/3_4_10.svg)
+![](cursor_tmp/flow_svgs/3_4_10.svg)
 
 ### 4.4.11 ipcsChannelRx
 
@@ -1782,7 +1770,7 @@ processing flow
 
 processing flow
 
-![image27.png](cursor_tmp/flow_svgs/3_4_11.svg)
+![](cursor_tmp/flow_svgs/3_4_11.svg)
 
 ### 4.4.12 ipcsInstanceIsFree
 
@@ -1843,7 +1831,7 @@ processing flow
 
 processing flow
 
-![image28.png](cursor_tmp/flow_svgs/3_4_12.svg)
+![](cursor_tmp/flow_svgs/3_4_12.svg)
 
 ### 4.4.13 ipcsShmRx
 
@@ -1910,7 +1898,7 @@ processing flow
 
 processing flow
 
-![image29.png](cursor_tmp/flow_svgs/3_4_13.svg)
+![](cursor_tmp/flow_svgs/3_4_13.svg)
 
 ### 4.4.14 ipcsBufPoolInit
 
@@ -1995,7 +1983,7 @@ processing flow
 
 processing flow
 
-![image30.png](cursor_tmp/flow_svgs/3_4_14.svg)
+![](cursor_tmp/flow_svgs/3_4_14.svg)
 
 ### 4.4.15 ipcsGetTotalBufPerChan
 
@@ -2068,7 +2056,7 @@ processing flow
 
 processing flow
 
-![image31.png](cursor_tmp/flow_svgs/3_4_15.svg)
+![](cursor_tmp/flow_svgs/3_4_15.svg)
 
 ### 4.4.16 managedChannelInit
 
@@ -2153,7 +2141,7 @@ processing flow
 
 processing flow
 
-![image32.png](cursor_tmp/flow_svgs/3_4_16.svg)
+![](cursor_tmp/flow_svgs/3_4_16.svg)
 
 ### 4.4.17 unmanagedChannelInit
 
@@ -2238,7 +2226,7 @@ processing flow
 
 processing flow
 
-![image33.png](cursor_tmp/flow_svgs/3_4_17.svg)
+![](cursor_tmp/flow_svgs/3_4_17.svg)
 
 ### 4.4.18 ipcsShmInitChannel
 
@@ -2323,7 +2311,7 @@ processing flow
 
 processing flow
 
-![image34.png](cursor_tmp/flow_svgs/3_4_18.svg)
+![](cursor_tmp/flow_svgs/3_4_18.svg)
 
 ### 4.4.19 getChanMemmapSize
 
@@ -2390,7 +2378,7 @@ processing flow
 
 processing flow
 
-![image35.png](cursor_tmp/flow_svgs/3_4_19.svg)
+![](cursor_tmp/flow_svgs/3_4_19.svg)
 
 ### 4.4.20 ipcsShmInitChannels
 
@@ -2457,7 +2445,7 @@ processing flow
 
 processing flow
 
-![image36.png](cursor_tmp/flow_svgs/3_4_20.svg)
+![](cursor_tmp/flow_svgs/3_4_20.svg)
 
 ### 4.4.21 ipcsShmInitInstance
 
@@ -2524,7 +2512,7 @@ processing flow
 
 processing flow
 
-![image37.png](cursor_tmp/flow_svgs/3_4_21.svg)
+![](cursor_tmp/flow_svgs/3_4_21.svg)
 
 ### 4.4.22 findPoolForBuf
 
@@ -2597,7 +2585,7 @@ processing flow
 
 processing flow
 
-![image38.png](cursor_tmp/flow_svgs/3_4_22.svg)
+![](cursor_tmp/flow_svgs/3_4_22.svg)
 
 ### 4.4.23 ipcsMemcpy
 
@@ -2669,18 +2657,17 @@ processing flow
 
 processing flow
 
-![image39.png](cursor_tmp/flow_svgs/3_4_23.svg)
+![](cursor_tmp/flow_svgs/3_4_23.svg)
 
 
-## 4.5 Global Variables 全局变量
+## 4.5 GLOBAL VARIABLES 全局变量
 
-本节仅列出 ipcs/ipcs_cores 内通信核心私有数据。RTOS/Linux 实现侧私有数据见第 5、6 章。
 
 | 全局变量名称 | 全局变量类型 | 全局变量范围 | 全局变量描述 | 全局变量的存储RAM区 |
 |---|---|---|---|---|
-| ipc_shm_priv_data | static struct IPCS_SHM_PRIV_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/ipcs_cores/ipc-shm.c | IPCS shm private data | 源码未显式指定 |
+| ipc_shm_priv_data | static struct IPCS_SHM_PRIV_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/ipcs_cores/ipc-shm.c | IPCS shm private data | 编译器/链接器默认 RAM（.bss，未指定 section） |
 
-## 4.6 Data Types 类型定义
+## 4.6 DATA TYPES 类型定义
 
 ### 4.6.1 struct IPCS_RING_TYPE
 
@@ -2894,13 +2881,11 @@ processing flow
 | struct IPCS_SHM_CFG_TYPE | *shm_cfg | IPC shm parameters array |
 
 
-## 4.7 Dynamic Detailed Design 动态详细设计
+## 4.7 DYNAMIC DETAILED DESIGN 动态详细设计
 
-本节描述与部署变体无关的 **逻辑** 数据路径（Core + Queue）。变体相关的 OSAL/HAL/跨边界路径见第 4.7、5.7 节。
+本节描述与部署变体无关的 **逻辑** 数据路径（Core + Queue）。
 
-第 4 章各函数已给出单函数 processing flow（活动图）。本节描述 **跨软件单元** 的逻辑交互，采用 UML 序列图；HAL/OSAL 以架构组件 `Drv_Ipcs_Hal_Cmp`、`Drv_Ipcs_Osal_Cmp` 表示（具体实现见 §5、§6）。
-
-| 场景 ID | 场景名称 | 涉及软件单元 | 源码依据 |
+| 场景 ID | 场景名称 | 涉及软件单元 | 设计依据 |
 |---|---|---|---|
 | CORE-S01 | 初始化 | CORE_SHM、HAL、OSAL、CORE_QUEUE | `ipcsShmInit` → `ipcsHwInit` → `ipcsOsInit` → `ipcsShmInitChannels` |
 | CORE-S02 | Managed 发送 | CORE_SHM、CORE_QUEUE、HAL | `ipcsShmAcquireBuf` → `ipcsShmTx` → `ipcsQueuePush` → `ipcsHwIrqNotify` |
@@ -2914,7 +2899,7 @@ processing flow
 
 sequence diagram
 
-![Core initialization sequence](cursor_tmp/flow_svgs/core_seq_init.svg)
+![](cursor_tmp/flow_svgs/core_seq_init.svg)
 
 ### 4.7.2 Managed Transmit Sequence (CORE-S02) Managed 发送流程
 
@@ -2922,7 +2907,7 @@ ipcsShmAcquireBuf → 填充数据 → ipcsShmTx → queue push BD → HAL 通�
 
 sequence diagram
 
-![Core managed transmit sequence](cursor_tmp/flow_svgs/core_seq_tx_managed.svg)
+![](cursor_tmp/flow_svgs/core_seq_tx_managed.svg)
 
 ### 4.7.3 Managed Receive and Release Sequence (CORE-S03) Managed 接收与释放流程
 
@@ -2930,7 +2915,7 @@ OSAL 触发 ipcsShmRx → ipcsChannelRx → 应用回调 → ipcsShmReleaseBuf�
 
 sequence diagram
 
-![Core managed receive and release sequence](cursor_tmp/flow_svgs/core_seq_rx_managed.svg)
+![](cursor_tmp/flow_svgs/core_seq_rx_managed.svg)
 
 ### 4.7.4 Unmanaged Sequence (CORE-S04) Unmanaged 收发流程
 
@@ -2938,7 +2923,7 @@ ipcsShmUnmanagedAcquire / ipcsShmUnmanagedTx；接收侧检查 tx_count。
 
 sequence diagram
 
-![Core unmanaged sequence](cursor_tmp/flow_svgs/core_seq_unmanaged.svg)
+![](cursor_tmp/flow_svgs/core_seq_unmanaged.svg)
 
 ### 4.7.5 Interrupt and Polling Sequence (CORE-S05) 中断与轮询流程
 
@@ -2946,17 +2931,15 @@ OSAL 注册 hardirq/softirq 或 polling（ipcsShmPollChannels）；Core 按预�
 
 sequence diagram
 
-![Core IRQ and polling sequence](cursor_tmp/flow_svgs/core_seq_irq_poll.svg)
+![](cursor_tmp/flow_svgs/core_seq_irq_poll.svg)
 
-# 5 RTOS DEPLOYMENT VARIANT DETAILED DESIGN RTOS 部署变体详细设计
+# 5 RTOS VARIANT DETAILED DESIGN RTOS详设
 
-## 5.1 Definition and Scope 定义与范围
+## 5.1 DEFINITION AND SCOPE 定义与范围
 
 RTOS 部署变体在单地址空间内实现 Drv_Ipcs_Osal_Cmp 与 Drv_Ipcs_Hal_Cmp：OS 实现三选一（FreeRTOS、ThreadX、AUTOSAR OS），HAL 位于 `ipcs/mcu/hw/` 并由三种 OS 实现共用。通信核心仍使用第 4 章 `ipcs/ipcs_cores` 与 `ipc-shm.h` 对外 API。
 
-本章描述 RTOS 侧 OSAL/HAL 源文件与头文件依赖；函数级设计见 §5.3–§5.6；全局变量与私有类型见 §5.7–§5.8。Baremetal 源码存在于 `ipcs/mcu/os/baremetal/`，不纳入本文档范围（见 §1.3）。
-
-## 5.2 File Structure 文件结构
+## 5.2 FILE STRUCTURE 文件结构
 
 ### 5.2.1 File List 文件列表
 
@@ -2969,7 +2952,6 @@ RTOS 部署变体在单地址空间内实现 Drv_Ipcs_Osal_Cmp 与 Drv_Ipcs_Hal_
 | Drv_Ipcs_Osal_Cmp | ipcs/mcu/os/freertos/ipc-os-freertos.c |
 | Drv_Ipcs_Osal_Cmp | ipcs/mcu/os/ipc-os.h |
 | Drv_Ipcs_Osal_Cmp | ipcs/mcu/os/threadx/ipc-os-threadx.c |
-| （构建） | ipcs/mcu/ipc-shm-rtos.mk |
 
 ### 5.2.2 ipc-hw-platform.h
 
@@ -2981,7 +2963,7 @@ RTOS 部署变体在单地址空间内实现 Drv_Ipcs_Osal_Cmp 与 Drv_Ipcs_Hal_
 
 C1_M7_COMMON.h、C1_SCB.h、C1_MSCM.h（与 `ipcs/mcu/hw/ipc-hw-platform.h` 一致）
 
-![RTOS ipc-hw-platform.h 头文件依赖](cursor_tmp/files_32_svgs/5_2_02.svg)
+![](cursor_tmp/files_32_svgs/5_2_02.svg)
 
 ### 5.2.3 ipc-hw.c
 
@@ -2993,7 +2975,7 @@ C1_M7_COMMON.h、C1_SCB.h、C1_MSCM.h（与 `ipcs/mcu/hw/ipc-hw-platform.h` 一�
 
 ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-hw-platform.h（与 `ipcs/mcu/hw/ipc-hw.c` 中 #include 顺序一致）
 
-![RTOS ipc-hw.c 头文件依赖](cursor_tmp/files_32_svgs/5_2_03.svg)
+![](cursor_tmp/files_32_svgs/5_2_03.svg)
 
 ### 5.2.4 ipc-hw.h
 
@@ -3005,7 +2987,7 @@ ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-hw-platform.h（与 `ipcs/mcu/hw/ipc-hw.c`
 
 本头文件未 #include 工程内其他头文件（仅 HAL API 声明）。
 
-![RTOS ipc-hw.h 头文件依赖](cursor_tmp/files_32_svgs/5_2_04.svg)
+![](cursor_tmp/files_32_svgs/5_2_04.svg)
 
 ### 5.2.5 ipc-os-autosar.c
 
@@ -3017,7 +2999,7 @@ ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-hw-platform.h（与 `ipcs/mcu/hw/ipc-hw.c`
 
 Os.h、ipc-shm.h、ipc-os.h、ipc-hw.h（与 `ipcs/mcu/os/autosar/ipc-os-autosar.c` 中 #include 顺序一致）
 
-![RTOS ipc-os-autosar.c 头文件依赖](cursor_tmp/files_32_svgs/5_2_05.svg)
+![](cursor_tmp/files_32_svgs/5_2_05.svg)
 
 ### 5.2.6 ipc-os-freertos.c
 
@@ -3029,7 +3011,7 @@ Os.h、ipc-shm.h、ipc-os.h、ipc-hw.h（与 `ipcs/mcu/os/autosar/ipc-os-autosar
 
 ipc-shm.h、ipc-os.h、ipc-hw.h、FreeRTOS.h、task.h（与 `ipcs/mcu/os/freertos/ipc-os-freertos.c` 一致）
 
-![RTOS ipc-os-freertos.c 头文件依赖](cursor_tmp/files_32_svgs/5_2_06.svg)
+![](cursor_tmp/files_32_svgs/5_2_06.svg)
 
 ### 5.2.7 ipc-os.h
 
@@ -3041,7 +3023,7 @@ ipc-shm.h、ipc-os.h、ipc-hw.h、FreeRTOS.h、task.h（与 `ipcs/mcu/os/freerto
 
 本头文件未 #include 工程内其他头文件（OSAL 宏与 API 声明）。
 
-![RTOS ipc-os.h 头文件依赖](cursor_tmp/files_32_svgs/5_2_07.svg)
+![](cursor_tmp/files_32_svgs/5_2_07.svg)
 
 ### 5.2.8 ipc-os-threadx.c
 
@@ -3053,20 +3035,10 @@ ipc-shm.h、ipc-os.h、ipc-hw.h、FreeRTOS.h、task.h（与 `ipcs/mcu/os/freerto
 
 ipc-shm.h、ipc-os.h、ipc-hw.h、tx_api.h、tx_event_flags.h（与 `ipcs/mcu/os/threadx/ipc-os-threadx.c` 一致）
 
-![RTOS ipc-os-threadx.c 头文件依赖](cursor_tmp/files_32_svgs/5_2_08.svg)
-
-### 5.2.9 ipc-shm-rtos.mk
-
-描述：
-
-> ipcs/mcu/ipc-shm-rtos.mk 为 RTOS 侧构建集成 Makefile，声明参与编译的 Core/OSAL/HAL 源文件集合。
-
-依赖关系：
-
-构建描述文件，无 C 头文件 #include 依赖图。
+![](cursor_tmp/files_32_svgs/5_2_08.svg)
 
 
-## 5.3 SWU_IPCS_OSAL_AUTOSAR Software Unit Design 软件单元设计
+## 5.3 SWU_IPCS_OSAL_AUTOSAR DESIGN 单元设计
 
 ### 4.4.41 ipcsOsInit
 
@@ -3139,7 +3111,7 @@ ipc-shm.h、ipc-os.h、ipc-hw.h、tx_api.h、tx_event_flags.h（与 `ipcs/mcu/os
 
 processing flow
 
-![image65.png](cursor_tmp/flow_svgs/3_4_41.svg)
+![](cursor_tmp/flow_svgs/3_4_41.svg)
 
 ### 4.4.42 ipcsOsFree
 
@@ -3199,7 +3171,7 @@ processing flow
 
 processing flow
 
-![image66.png](cursor_tmp/flow_svgs/3_4_42.svg)
+![](cursor_tmp/flow_svgs/3_4_42.svg)
 
 ### 4.4.43 ipcsShmSoftirq
 
@@ -3259,7 +3231,7 @@ processing flow
 
 processing flow
 
-![image67.png](cursor_tmp/flow_svgs/3_4_43.svg)
+![](cursor_tmp/flow_svgs/3_4_43.svg)
 
 ### 4.4.44 ipcsShmHardirq
 
@@ -3319,7 +3291,7 @@ processing flow
 
 processing flow
 
-![image68.png](cursor_tmp/flow_svgs/3_4_44.svg)
+![](cursor_tmp/flow_svgs/3_4_44.svg)
 
 ### 4.4.45 ipcsShmHardirqInstance
 
@@ -3379,7 +3351,7 @@ processing flow
 
 processing flow
 
-![image69.png](cursor_tmp/flow_svgs/3_4_45.svg)
+![](cursor_tmp/flow_svgs/3_4_45.svg)
 
 ### 4.4.46 ipcsOsGetLocalShm
 
@@ -3440,7 +3412,7 @@ processing flow
 
 processing flow
 
-![image70.png](cursor_tmp/flow_svgs/3_4_46.svg)
+![](cursor_tmp/flow_svgs/3_4_46.svg)
 
 ### 4.4.47 ipcsOsGetRemoteShm
 
@@ -3501,7 +3473,7 @@ processing flow
 
 processing flow
 
-![image71.png](cursor_tmp/flow_svgs/3_4_47.svg)
+![](cursor_tmp/flow_svgs/3_4_47.svg)
 
 ### 4.4.48 ipcsOsPollChannels
 
@@ -3562,35 +3534,10 @@ processing flow
 
 processing flow
 
-![image72.png](cursor_tmp/flow_svgs/3_4_48.svg)
+![](cursor_tmp/flow_svgs/3_4_48.svg)
 
-### 4.6.25 enum msg_receive
 
-| Name | Description |
-|---|---|
-| MSG_NOT_RECEIVED | no new message received from the remote core |
-| MSG_IS_RECEIVED | new message received from the remote core |
-
-### 4.6.26 struct IPCS_OS_PRIV_INSTANCE_TYPE
-
-| Type | Name | Description |
-|---|---|---|
-| uintptr_t | local_shm | local shared memory address |
-| uintptr_t | remote_shm | remote shared memory address |
-| sint32 | state | state to indicate whether instance is initialized |
-| sint32 | rx_irq_num | rx interrupt number |
-| sint32 | msg_received | state to indicate notification received for a new message |
-| ISRType | isr_id_handler | the name of OsIsr defined to handle the interrupt |
-| sint32 (*rx_cb)(const uint8 instance, sint32 budget) | rx_cb | upper layer rx callback |
-
-### 4.6.27 struct IPCS_OS_PRIV_TYPE_TYPE
-
-| Type | Name | Description |
-|---|---|---|
-| struct IPCS_OS_PRIV_INSTANCE_TYPE | id[IPC_SHM_MAX_INSTANCES] | 源码未提供描述 |
-| sint32 | task_is_initialized | flag to know if the softirq task is initialized |
-
-## 5.4 SWU_IPCS_OSAL_FREERTOS Software Unit Design 软件单元设计
+## 5.4 SWU_IPCS_OSAL_FREERTOS DESIGN 单元设计
 
 ### 4.4.49 ipcsOsInit
 
@@ -3663,7 +3610,7 @@ processing flow
 
 processing flow
 
-![image73.png](cursor_tmp/flow_svgs/3_4_49.svg)
+![](cursor_tmp/flow_svgs/3_4_49.svg)
 
 ### 4.4.50 ipcsOsFree
 
@@ -3723,7 +3670,7 @@ processing flow
 
 processing flow
 
-![image74.png](cursor_tmp/flow_svgs/3_4_50.svg)
+![](cursor_tmp/flow_svgs/3_4_50.svg)
 
 ### 4.4.58 ipcsShmSoftirq
 
@@ -3784,7 +3731,7 @@ processing flow
 
 processing flow
 
-![image75.png](cursor_tmp/flow_svgs/3_4_58.svg)
+![](cursor_tmp/flow_svgs/3_4_58.svg)
 
 ### 4.4.51 ipcsShmHardirq
 
@@ -3844,7 +3791,7 @@ processing flow
 
 processing flow
 
-![image76.png](cursor_tmp/flow_svgs/3_4_51.svg)
+![](cursor_tmp/flow_svgs/3_4_51.svg)
 
 ### 4.4.52 ipcsShmHardirqInstance
 
@@ -3904,7 +3851,7 @@ processing flow
 
 processing flow
 
-![image77.png](cursor_tmp/flow_svgs/3_4_52.svg)
+![](cursor_tmp/flow_svgs/3_4_52.svg)
 
 ### 4.4.53 ipcsOsGetLocalShm
 
@@ -3965,7 +3912,7 @@ processing flow
 
 processing flow
 
-![image78.png](cursor_tmp/flow_svgs/3_4_53.svg)
+![](cursor_tmp/flow_svgs/3_4_53.svg)
 
 ### 4.4.54 ipcsOsGetRemoteShm
 
@@ -4026,7 +3973,7 @@ processing flow
 
 processing flow
 
-![image79.png](cursor_tmp/flow_svgs/3_4_54.svg)
+![](cursor_tmp/flow_svgs/3_4_54.svg)
 
 ### 4.4.55 ipcsOsPollChannels
 
@@ -4087,35 +4034,9 @@ processing flow
 
 processing flow
 
-![image80.png](cursor_tmp/flow_svgs/3_4_55.svg)
+![](cursor_tmp/flow_svgs/3_4_55.svg)
 
-### 4.6.30 enum msg_receive
-
-| Name | Description |
-|---|---|
-| MSG_NOT_RECEIVED | no new message received from the remote core |
-| MSG_IS_RECEIVED | new message received from the remote core |
-
-### 4.6.31 struct IPCS_OS_PRIV_INSTANCE_TYPE
-
-| Type | Name | Description |
-|---|---|---|
-| uintptr_t | local_shm | local shared memory address |
-| uintptr_t | remote_shm | remote shared memory address |
-| sint32 | state | state of instance |
-| sint32 | rx_irq_num | rx interrupt number |
-| sint32 | msg_received | state to indicate notification received for a new message |
-
-### 4.6.32 struct IPCS_OS_PRIV_TYPE_TYPE
-
-| Type | Name | Description |
-|---|---|---|
-| struct IPCS_OS_PRIV_INSTANCE_TYPE | id[IPC_SHM_MAX_INSTANCES] | private data per instance |
-| sint32 (*rx_cb)(const uint8 instance, sint32 budget) | rx_cb | upper layer rx callback |
-| TaskHandle_t | softirq_handle | rx task handle used by the ISR to notify the rx task |
-| sint32 | task_is_initialized | flag to know if the softirq task is initialized |
-
-## 5.5 SWU_IPCS_OSAL_THREADX Software Unit Design 软件单元设计
+## 5.5 SWU_IPCS_OSAL_THREADX DESIGN 单元设计
 
 ### 4.4.56 ipcsOsInit
 
@@ -4188,7 +4109,7 @@ processing flow
 
 processing flow
 
-![3.4.56 ipcsOsInit processing flow](cursor_tmp/flow_svgs/tx_3_4_56.svg)
+![](cursor_tmp/flow_svgs/tx_3_4_56.svg)
 
 ### 4.4.57 ipcsOsFree
 
@@ -4248,7 +4169,7 @@ processing flow
 
 processing flow
 
-![3.4.57 ipcsOsFree processing flow](cursor_tmp/flow_svgs/tx_3_4_57.svg)
+![](cursor_tmp/flow_svgs/tx_3_4_57.svg)
 
 ### 4.4.58 ipcsShmSoftIrq
 
@@ -4309,7 +4230,7 @@ processing flow
 
 processing flow
 
-![3.4.58 ipcsShmSoftIrq processing flow](cursor_tmp/flow_svgs/tx_3_4_58.svg)
+![](cursor_tmp/flow_svgs/tx_3_4_58.svg)
 
 ### 4.4.59 ipcsShmHardIrq
 
@@ -4369,7 +4290,7 @@ processing flow
 
 processing flow
 
-![3.4.59 ipcsShmHardIrq processing flow](cursor_tmp/flow_svgs/tx_3_4_59.svg)
+![](cursor_tmp/flow_svgs/tx_3_4_59.svg)
 
 ### 4.4.61 ipcsOsGetLocalShm
 
@@ -4430,7 +4351,7 @@ processing flow
 
 processing flow
 
-![3.4.61 ipcsOsGetLocalShm processing flow](cursor_tmp/flow_svgs/tx_3_4_61.svg)
+![](cursor_tmp/flow_svgs/tx_3_4_61.svg)
 
 ### 4.4.62 ipcsOsGetRemoteShm
 
@@ -4491,7 +4412,7 @@ processing flow
 
 processing flow
 
-![3.4.62 ipcsOsGetRemoteShm processing flow](cursor_tmp/flow_svgs/tx_3_4_62.svg)
+![](cursor_tmp/flow_svgs/tx_3_4_62.svg)
 
 ### 4.4.63 ipcsOsPollChannels
 
@@ -4552,7 +4473,7 @@ processing flow
 
 processing flow
 
-![3.4.63 ipcsOsPollChannels processing flow](cursor_tmp/flow_svgs/tx_3_4_63.svg)
+![](cursor_tmp/flow_svgs/tx_3_4_63.svg)
 
 ### 4.6.35 struct IPCS_OS_PRIV_INSTANCE_TYPE
 
@@ -4574,9 +4495,9 @@ processing flow
 | TX_THREAD | soft_irq_handle | rx softirq thread handle |
 | sint32 | task_is_initialized | flag to know if the softirq task is initialized |
 
-## 5.6 SWU_IPCS_HAL_MCU Software Unit Design 软件单元设计
+## 5.6 SWU_IPCS_HAL_MCU DESIGN 单元设计
 
-本节严格按照 reference.md 的内部函数表格格式描述内部函数。除 3.3 中列出的 9 个对外接口之外，其余源码函数、跨组件调用接口和 OS task 单元均作为内部接口。
+本节严格按照 reference.md 的内部函数表格格式描述内部函数。除 3.3 中列出的 9 个对外接口之外，其余内部函数、跨组件调用接口和 OS task 单元均作为内部接口。
 
 ### 5.6.1 ipcsHwGetCoreIndexM7
 
@@ -4637,7 +4558,7 @@ processing flow
 
 processing flow
 
-![image48.png](cursor_tmp/flow_svgs/3_4_24.svg)
+![](cursor_tmp/flow_svgs/3_4_24.svg)
 
 ### 5.6.2 ipcsHwGetCoreIndexA53
 
@@ -4698,7 +4619,7 @@ processing flow
 
 processing flow
 
-![image49.png](cursor_tmp/flow_svgs/3_4_25.svg)
+![](cursor_tmp/flow_svgs/3_4_25.svg)
 
 ### 5.6.3 ipcsHwSetRemoteCore
 
@@ -4765,7 +4686,7 @@ processing flow
 
 processing flow
 
-![image50.png](cursor_tmp/flow_svgs/3_4_26.svg)
+![](cursor_tmp/flow_svgs/3_4_26.svg)
 
 ### 5.6.4 ipcsHwSetLocalCore
 
@@ -4832,7 +4753,7 @@ processing flow
 
 processing flow
 
-![image51.png](cursor_tmp/flow_svgs/3_4_27.svg)
+![](cursor_tmp/flow_svgs/3_4_27.svg)
 
 ### 5.6.5 ipcsHwSetCore
 
@@ -4899,7 +4820,7 @@ processing flow
 
 processing flow
 
-![image52.png](cursor_tmp/flow_svgs/3_4_28.svg)
+![](cursor_tmp/flow_svgs/3_4_28.svg)
 
 ### 5.6.6 ipcsHwSetTxIrqIdx
 
@@ -4966,7 +4887,7 @@ processing flow
 
 processing flow
 
-![image53.png](cursor_tmp/flow_svgs/3_4_29.svg)
+![](cursor_tmp/flow_svgs/3_4_29.svg)
 
 ### 5.6.7 ipcsHwSetRxIrqIdx
 
@@ -5033,7 +4954,7 @@ processing flow
 
 processing flow
 
-![image54.png](cursor_tmp/flow_svgs/3_4_30.svg)
+![](cursor_tmp/flow_svgs/3_4_30.svg)
 
 ### 5.6.8 ipcsHwSetIrqIdx
 
@@ -5100,7 +5021,7 @@ processing flow
 
 processing flow
 
-![image55.png](cursor_tmp/flow_svgs/3_4_31.svg)
+![](cursor_tmp/flow_svgs/3_4_31.svg)
 
 ### 5.6.9 ipcsHwInit
 
@@ -5167,7 +5088,7 @@ processing flow
 
 processing flow
 
-![image56.png](cursor_tmp/flow_svgs/3_4_32.svg)
+![](cursor_tmp/flow_svgs/3_4_32.svg)
 
 ### 5.6.10 ipcsHwFree
 
@@ -5227,7 +5148,7 @@ processing flow
 
 processing flow
 
-![image57.png](cursor_tmp/flow_svgs/3_4_33.svg)
+![](cursor_tmp/flow_svgs/3_4_33.svg)
 
 ### 5.6.11 ipcsHwIrqEnable
 
@@ -5287,7 +5208,7 @@ processing flow
 
 processing flow
 
-![image58.png](cursor_tmp/flow_svgs/3_4_34.svg)
+![](cursor_tmp/flow_svgs/3_4_34.svg)
 
 ### 5.6.12 ipcsHwIrqDisable
 
@@ -5347,7 +5268,7 @@ processing flow
 
 processing flow
 
-![image59.png](cursor_tmp/flow_svgs/3_4_35.svg)
+![](cursor_tmp/flow_svgs/3_4_35.svg)
 
 ### 5.6.13 ipcsHwIrqNotify
 
@@ -5407,7 +5328,7 @@ processing flow
 
 processing flow
 
-![image60.png](cursor_tmp/flow_svgs/3_4_36.svg)
+![](cursor_tmp/flow_svgs/3_4_36.svg)
 
 ### 5.6.14 ipcsHwIrqClear
 
@@ -5467,7 +5388,7 @@ processing flow
 
 processing flow
 
-![image61.png](cursor_tmp/flow_svgs/3_4_37.svg)
+![](cursor_tmp/flow_svgs/3_4_37.svg)
 
 ### 5.6.15 ipcsHwFlushCache
 
@@ -5534,7 +5455,7 @@ processing flow
 
 processing flow
 
-![image62.png](cursor_tmp/flow_svgs/3_4_38.svg)
+![](cursor_tmp/flow_svgs/3_4_38.svg)
 
 ### 5.6.16 ipcsHwFlushCacheLocal
 
@@ -5594,7 +5515,7 @@ processing flow
 
 processing flow
 
-![image63.png](cursor_tmp/flow_svgs/3_4_39.svg)
+![](cursor_tmp/flow_svgs/3_4_39.svg)
 
 ### 5.6.17 ipcsHwFlushCacheRemote
 
@@ -5654,44 +5575,19 @@ processing flow
 
 processing flow
 
-![image64.png](cursor_tmp/flow_svgs/3_4_40.svg)
+![](cursor_tmp/flow_svgs/3_4_40.svg)
 
-## 5.7 Global Variables 全局变量
+## 5.7 GLOBAL VARIABLES 全局变量
 
-本节列出 RTOS 部署变体 OSAL/HAL 实现侧私有全局变量。通信核心私有数据见 §4.5。同名变量 `ipc_os_priv` 在三套 OS 实现中类型不同，见 §5.8。
 
 | 全局变量名称 | 全局变量类型 | 全局变量范围 | 全局变量描述 | 全局变量的存储RAM区 |
 |---|---|---|---|---|
-| ipc_os_priv | static struct IPCS_OS_PRIV_TYPE_TYPE | ipcs/mcu/os/autosar/ipc-os-autosar.c | AUTOSAR OS 实现私有数据 | 源码未显式指定 |
-| ipc_os_priv | static struct IPCS_OS_PRIV_TYPE_TYPE | ipcs/mcu/os/freertos/ipc-os-freertos.c | FreeRTOS 实现私有数据 | 源码未显式指定 |
-| ipc_os_priv | static struct（见 §5.8.7） | ipcs/mcu/os/threadx/ipc-os-threadx.c | ThreadX 实现私有数据 | 源码未显式指定 |
-| ipc_hw_priv | static struct IPCS_HW_PRIV_TYPE_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/mcu/hw/ipc-hw.c | 每 instance 平台 HAL 私有数据 | 源码未显式指定 |
+| ipc_os_priv | static struct IPCS_OS_PRIV_TYPE_TYPE | ipcs/mcu/os/autosar/ipc-os-autosar.c | AUTOSAR OS 实现私有数据 | 编译器/链接器默认 RAM（.bss，未指定 section） |
+| ipc_os_priv | static struct IPCS_OS_PRIV_TYPE_TYPE | ipcs/mcu/os/freertos/ipc-os-freertos.c | FreeRTOS 实现私有数据 | 编译器/链接器默认 RAM（.bss，未指定 section） |
+| ipc_os_priv | static struct（见 章节5.8.7） | ipcs/mcu/os/threadx/ipc-os-threadx.c | ThreadX 实现私有数据 | 编译器/链接器默认 RAM（.bss，未指定 section） |
+| ipc_hw_priv | static struct IPCS_HW_PRIV_TYPE_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/mcu/hw/ipc-hw.c | 每 instance 平台 HAL 私有数据 | 编译器/链接器默认 RAM（.bss，未指定 section） |
 
-## 5.8 Data Types 类型定义
-
-以下类型定义来自 RTOS 部署变体 OSAL/HAL 源码。与 §4.6 同名的结构体（如配置相关类型）不在此重复；此处仅列出实现侧私有类型。同名 `struct IPCS_OS_PRIV_INSTANCE_TYPE` / `struct IPCS_OS_PRIV_TYPE_TYPE` 按 OS 实现分别说明。
-
-### 5.8.1 enum msg_receive
-
-定义于 `ipcs/mcu/os/autosar/ipc-os-autosar.c` 与 `ipcs/mcu/os/freertos/ipc-os-freertos.c`（AUTOSAR / FreeRTOS 实现共用枚举名）。
-
-| Name | Description |
-|---|---|
-| MSG_NOT_RECEIVED | no new message received from the remote core |
-| MSG_IS_RECEIVED | new message received from the remote core |
-
-### 5.8.2 struct IPCS_OS_PRIV_INSTANCE_TYPE（AUTOSAR 实现）
-
-定义于 `ipcs/mcu/os/autosar/ipc-os-autosar.c`。
-
-| Type | Name | Description |
-|---|---|---|
-| uintptr_t | local_shm | local shared memory address |
-| uintptr_t | remote_shm | remote shared memory address |
-| sint32 | state | state to indicate whether instance is initialized |
-| sint32 | rx_irq_num | rx interrupt number |
-| sint32 | msg_received | state to indicate notification received for a new message |
-| ISRType | isr_id_handler | the name of OsIsr defined to handle the interrupt |
+## 5.8 DATA TYPES 类型定义
 
 ### 5.8.3 struct IPCS_OS_PRIV_INSTANCE_TYPE（FreeRTOS 实现）
 
@@ -5761,8 +5657,8 @@ processing flow
 | uint8 | remote_core | remote core to trigger the interrupt on |
 | uint8 | local_core | local core on where this instance is running |
 | uint32 | shm_size | local/remote shared memory size |
-| sint16 | mscm_tx_irq | MSCM inter-core interrupt reserved for shm driver tx |
-| sint16 | mscm_rx_irq | MSCM inter-core interrupt reserved for shm driver rx |
+| sint16 | mscm_tx_irq | 核间中断控制器 inter-core interrupt reserved for shm driver tx |
+| sint16 | mscm_rx_irq | 核间中断控制器 inter-core interrupt reserved for shm driver rx |
 
 ### 5.8.9 enum IPCS_PROCESSOR_IDX_E
 
@@ -5798,40 +5694,19 @@ processing flow
 
 | Type | Name | Description |
 |---|---|---|
-| IPCS_MSCM_IRCP_IR_TYPE | IRCPnIRx[IPC_MSCM_CPX_COUNT][IPC_MSCM_MSI_COUNT] | memory-mapped MSCM interrupt router register array |
+| IPCS_MSCM_IRCP_IR_TYPE | IRCPnIRx[IPC_MSCM_CPX_COUNT][IPC_MSCM_MSI_COUNT] | memory-mapped 核间中断控制器 interrupt router register array |
 
-## 5.9 Dynamic Detailed Design 动态详细设计
+## 5.9 DYNAMIC DETAILED DESIGN 动态详细设计
 
-RTOS 部署变体与 Linux 部署变体共用 **SHM / OSAL / HAL 三层固定接口契约**（`ipc-shm.h`、`ipc-os.h`、`ipc-hw.h`；架构见 §3.1）。Core 层通过同一组 `ipcsOs*`、`ipcsHw*` 原型调用 OSAL 与 HAL；FreeRTOS、ThreadX、AUTOSAR OS 三套实现及共用 `SWU_IPCS_HAL_MCU` **不改变** 该边界。因此，与 §4.7 重复的跨单元 UML 序列图不在本节再次展开。
+RTOS 部署变体与 Linux 部署变体共用 **SHM / OSAL / HAL 三层固定接口契约**（`ipc-shm.h`、`ipc-os.h`、`ipc-hw.h`；架构见 章节3.1）。Core 层通过同一组 `ipcsOs*`、`ipcsHw*` 原型调用 OSAL 与 HAL；FreeRTOS、ThreadX、AUTOSAR OS 三套实现及共用 `SWU_IPCS_HAL_MCU` **不改变** 该边界。因此，与 章节4.7 重复的跨单元 UML 序列图不在本节再次展开。
 
-| 设计层次 | 文档位置 | 内容 |
-|---|---|---|
-| 单元内部动态行为 | §5.3–§5.6 各函数 `processing flow`（活动图） | 各 OSAL/HAL 函数体内的分支、错误处理及 OS 原语差异（如 ThreadX event flags、FreeRTOS task、AUTOSAR `ActivateTask`） |
-| 跨单元逻辑数据路径 | **§4.7 Dynamic Detailed Design**（CORE-S01–CORE-S05） | Core + Queue 与抽象 `Drv_Ipcs_Osal_Cmp` / `Drv_Ipcs_Hal_Cmp` 的交互序列；RTOS 侧将抽象参与者替换为 §2.1 所列具体 SWU 即可 |
-| RTOS 静态私有数据 | §5.7–§5.8 | 各实现 `ipc_os_priv`、`ipc_hw_priv` 及私有结构体 |
+# 6 LINUX VARIANT DETAIL DESIGN LINUX详设
 
-**与 §4.7 场景对应关系**（逻辑等价，仅 SWU 具名不同）：
+## 6.1 DEFINITION AND SCOPE 定义与范围
 
-| §4.7 场景 | RTOS 涉及 SWU（示例） |
-|---|---|
-| CORE-S01 初始化 | `SWU_IPCS_CORE_SHM`、`SWU_IPCS_HAL_MCU`、所选 OSAL（§5.3/5.4/5.5）、`SWU_IPCS_CORE_QUEUE` |
-| CORE-S02 Managed 发送 | `SWU_IPCS_CORE_SHM`、`SWU_IPCS_CORE_QUEUE`、`SWU_IPCS_HAL_MCU` |
-| CORE-S03 Managed 接收与释放 | OSAL、`SWU_IPCS_CORE_SHM`、`SWU_IPCS_CORE_QUEUE` |
-| CORE-S04 Unmanaged 收发 | `SWU_IPCS_CORE_SHM`、`SWU_IPCS_HAL_MCU` |
-| CORE-S05 中断与轮询 | OSAL、`SWU_IPCS_CORE_SHM`、`SWU_IPCS_HAL_MCU` |
+Linux 部署变体通过 `ipcs/mpu` 实现 Drv_Ipcs_Linux_Adapt_Cmp 与 Drv_Ipcs_Hal_Cmp：UIO、CDEV 为用户侧代理加内核 Backend；全内核形态将 OSAL 与 HAL 均置于内核模块（见 章节3.3）。通信核心仍使用第 4 章 `ipcs/ipcs_cores`。
 
-跨单元流程的 UML 序列图见 **§4.7.1–§4.7.5**（`cursor_tmp/flow_svgs/core_seq_*.svg`）。RTOS 读者在理解 §4.7 抽象参与者后，结合本节上表与 §5.3–§5.6 函数活动图即可完成动态设计追溯。
-
-
-# 6 LINUX DEPLOYMENT VARIANT DETAILED DESIGN Linux 部署变体详细设计
-
-## 6.1 Definition and Scope 定义与范围
-
-Linux 部署变体通过 `ipcs/mpu` 实现 Drv_Ipcs_Linux_Adapt_Cmp 与 Drv_Ipcs_Hal_Cmp：UIO、CDEV 为用户侧代理加内核 Backend；全内核形态将 OSAL 与 HAL 均置于内核模块（见 §3.3）。通信核心仍使用第 4 章 `ipcs/ipcs_cores`。
-
-本章描述 Linux 侧源文件与头文件依赖；单元函数设计见 §6.3–§6.10。
-
-## 6.2 File Structure 文件结构
+## 6.2 FILE STRUCTURE 文件结构
 
 ### 6.2.1 File List 文件列表
 
@@ -5861,7 +5736,7 @@ Linux 部署变体通过 `ipcs/mpu` 实现 Drv_Ipcs_Linux_Adapt_Cmp 与 Drv_Ipcs
 
 fcntl.h、unistd.h、stdio.h、sys/mman.h、sys/syscall.h、pthread.h、stdlib.h、dirent.h、ipc-os.h、ipc-hw.h、ipc-shm.h、ipc-uio.h（与 `ipcs/mpu/os_uio/ipc-os.c` 中 #include 顺序一致）
 
-![Linux UIO ipc-os.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_02.svg)
+![](cursor_tmp/files_32_svgs/6_2_02.svg)
 
 ### 6.2.3 ipc-os.h (UIO User Proxy) UIO 用户侧头文件
 
@@ -5873,7 +5748,7 @@ fcntl.h、unistd.h、stdio.h、sys/mman.h、sys/syscall.h、pthread.h、stdlib.h
 
 errno.h、stdint.h、stdbool.h、string.h、stdio.h；无 ipcs 内其他头文件。
 
-![Linux UIO ipc-os.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_03.svg)
+![](cursor_tmp/files_32_svgs/6_2_03.svg)
 
 ### 6.2.4 ipc-os.c (CDEV User Proxy) CDEV 用户侧代理
 
@@ -5885,7 +5760,7 @@ errno.h、stdint.h、stdbool.h、string.h、stdio.h；无 ipcs 内其他头文�
 
 fcntl.h、unistd.h、stdio.h、sys/mman.h、sys/syscall.h、sys/ioctl.h、pthread.h、stdlib.h、dirent.h、ipc-os.h、ipc-hw.h、ipc-shm.h、ipc-cdev.h（与 `ipcs/mpu/os_cdev/ipc-os.c` 一致）
 
-![Linux CDEV ipc-os.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_04.svg)
+![](cursor_tmp/files_32_svgs/6_2_04.svg)
 
 ### 6.2.5 ipc-os.h (CDEV User Proxy) CDEV 用户侧头文件
 
@@ -5897,7 +5772,7 @@ fcntl.h、unistd.h、stdio.h、sys/mman.h、sys/syscall.h、sys/ioctl.h、pthrea
 
 errno.h、stdint.h、stdbool.h、string.h、stdio.h；无 ipcs 内其他头文件。
 
-![Linux CDEV ipc-os.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_05.svg)
+![](cursor_tmp/files_32_svgs/6_2_05.svg)
 
 ### 6.2.6 ipc-os.c (In-Kernel OSAL) 全内核 OSAL
 
@@ -5909,7 +5784,7 @@ errno.h、stdint.h、stdbool.h、string.h、stdio.h；无 ipcs 内其他头文�
 
 linux/ioport.h、linux/io.h、linux/interrupt.h、linux/of_irq.h、linux/of_address.h、linux/version.h、ipc-os.h、ipc-hw.h、ipc-shm.h（与 `ipcs/mpu/os_kernel/ipc-os.c` 一致）
 
-![Linux 全内核 ipc-os.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_06.svg)
+![](cursor_tmp/files_32_svgs/6_2_06.svg)
 
 ### 6.2.7 ipc-os.h (In-Kernel OSAL) 全内核 OSAL 头文件
 
@@ -5921,7 +5796,7 @@ linux/ioport.h、linux/io.h、linux/interrupt.h、linux/of_irq.h、linux/of_addr
 
 linux/module.h
 
-![Linux 全内核 ipc-os.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_07.svg)
+![](cursor_tmp/files_32_svgs/6_2_07.svg)
 
 ### 6.2.8 ipc-uio.c
 
@@ -5933,7 +5808,7 @@ linux/module.h
 
 linux/module.h、linux/platform_device.h、linux/mod_devicetable.h、linux/uio_driver.h、linux/cdev.h、ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-uio.h（与 `ipcs/mpu/os_kernel/ipc-uio.c` 一致）
 
-![Linux ipc-uio.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_08.svg)
+![](cursor_tmp/files_32_svgs/6_2_08.svg)
 
 ### 6.2.9 ipc-uio.h
 
@@ -5945,7 +5820,7 @@ linux/module.h、linux/platform_device.h、linux/mod_devicetable.h、linux/uio_d
 
 本头文件无 #include（UIO 命令宏）。
 
-![Linux ipc-uio.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_09.svg)
+![](cursor_tmp/files_32_svgs/6_2_09.svg)
 
 ### 6.2.10 ipc-cdev.c
 
@@ -5957,7 +5832,7 @@ linux/module.h、linux/platform_device.h、linux/mod_devicetable.h、linux/uio_d
 
 linux/module.h、linux/kernel.h、linux/fs.h、linux/cdev.h、linux/interrupt.h、linux/of_irq.h、linux/of_address.h、linux/wait.h、asm/errno.h、ipc-os.h、ipc-hw.h、ipc-shm.h、ipc-cdev.h（与 `ipcs/mpu/os_kernel/ipc-cdev.c` 一致）
 
-![Linux ipc-cdev.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_10.svg)
+![](cursor_tmp/files_32_svgs/6_2_10.svg)
 
 ### 6.2.11 ipc-cdev.h
 
@@ -5969,7 +5844,7 @@ linux/module.h、linux/kernel.h、linux/fs.h、linux/cdev.h、linux/interrupt.h�
 
 linux/ioctl.h、sys/ioctl.h
 
-![Linux ipc-cdev.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_11.svg)
+![](cursor_tmp/files_32_svgs/6_2_11.svg)
 
 ### 6.2.12 ipc-hw.c
 
@@ -5981,7 +5856,7 @@ linux/ioctl.h、sys/ioctl.h
 
 linux/io.h、ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-hw-platform.h（与 `ipcs/mpu/hw/c1/ipc-hw.c` 一致）
 
-![Linux ipc-hw.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_12.svg)
+![](cursor_tmp/files_32_svgs/6_2_12.svg)
 
 ### 6.2.13 ipc-hw-platform.h
 
@@ -5991,9 +5866,9 @@ linux/io.h、ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-hw-platform.h（与 `ipcs/mpu
 
 依赖关系：
 
-本头文件无 #include（核索引与 MSCM 寄存器布局宏）。
+本头文件无 #include（核索引与 核间中断控制器 寄存器布局宏）。
 
-![Linux ipc-hw-platform.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_13.svg)
+![](cursor_tmp/files_32_svgs/6_2_13.svg)
 
 ### 6.2.14 ipc-hw.h
 
@@ -6005,12 +5880,10 @@ linux/io.h、ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-hw-platform.h（与 `ipcs/mpu
 
 本头文件无 #include（HAL API 声明）。
 
-![Linux ipc-hw.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_14.svg)
+![](cursor_tmp/files_32_svgs/6_2_14.svg)
 
 
-## 6.3 SWU_IPCS_LINUX_OS_KERN Software Unit Design 软件单元设计
-
-源码：`ipcs/mpu/os_kernel/ipc-os.c`。全内核部署变体**无用户侧代理**，OSAL 仅内核侧实现；HAL 见 §6.8。
+## 6.3 SWU_IPCS_LINUX_OS_KERN DESIGN 单元设计
 
 ### 6.3.1 ipcsShmSoftirq
 
@@ -6071,7 +5944,7 @@ linux/io.h、ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-hw-platform.h（与 `ipcs/mpu
 
 processing flow
 
-![6.3.1 ipcsShmSoftirq processing flow](cursor_tmp/flow_svgs/linux_6_3_1_ipcsShmSoftirq.svg)
+![](cursor_tmp/flow_svgs/linux_6_3_1_ipcsShmSoftirq.svg)
 
 
 ### 6.3.2 ipcsShmHardirq
@@ -6140,7 +6013,7 @@ processing flow
 
 processing flow
 
-![6.3.2 ipcsShmHardirq processing flow](cursor_tmp/flow_svgs/linux_6_3_2_ipcsShmHardirq.svg)
+![](cursor_tmp/flow_svgs/linux_6_3_2_ipcsShmHardirq.svg)
 
 
 ### 6.3.3 ipcsOsInit
@@ -6215,7 +6088,7 @@ processing flow
 
 processing flow
 
-![6.3.3 ipcsOsInit processing flow](cursor_tmp/flow_svgs/linux_6_3_3_ipcsOsInit.svg)
+![](cursor_tmp/flow_svgs/linux_6_3_3_ipcsOsInit.svg)
 
 
 ### 6.3.4 ipcsOsFree
@@ -6277,7 +6150,7 @@ processing flow
 
 processing flow
 
-![6.3.4 ipcsOsFree processing flow](cursor_tmp/flow_svgs/linux_6_3_4_ipcsOsFree.svg)
+![](cursor_tmp/flow_svgs/linux_6_3_4_ipcsOsFree.svg)
 
 
 ### 6.3.5 ipcsOsGetLocalShm
@@ -6340,7 +6213,7 @@ processing flow
 
 processing flow
 
-![6.3.5 ipcsOsGetLocalShm processing flow](cursor_tmp/flow_svgs/linux_6_3_5_ipcsOsGetLocalShm.svg)
+![](cursor_tmp/flow_svgs/linux_6_3_5_ipcsOsGetLocalShm.svg)
 
 
 ### 6.3.6 ipcsOsGetRemoteShm
@@ -6403,7 +6276,7 @@ processing flow
 
 processing flow
 
-![6.3.6 ipcsOsGetRemoteShm processing flow](cursor_tmp/flow_svgs/linux_6_3_6_ipcsOsGetRemoteShm.svg)
+![](cursor_tmp/flow_svgs/linux_6_3_6_ipcsOsGetRemoteShm.svg)
 
 
 ### 6.3.7 ipcsOsMapIntc
@@ -6457,7 +6330,7 @@ processing flow
 
 processing flow
 
-![6.3.7 ipcsOsMapIntc processing flow](cursor_tmp/flow_svgs/linux_6_3_7_ipcsOsMapIntc.svg)
+![](cursor_tmp/flow_svgs/linux_6_3_7_ipcsOsMapIntc.svg)
 
 
 ### 6.3.8 ipcsOsUnmapIntc
@@ -6519,7 +6392,7 @@ processing flow
 
 processing flow
 
-![6.3.8 ipcsOsUnmapIntc processing flow](cursor_tmp/flow_svgs/linux_6_3_8_ipcsOsUnmapIntc.svg)
+![](cursor_tmp/flow_svgs/linux_6_3_8_ipcsOsUnmapIntc.svg)
 
 
 ### 6.3.9 ipcsOsPollChannels
@@ -6582,7 +6455,7 @@ processing flow
 
 processing flow
 
-![6.3.9 ipcsOsPollChannels processing flow](cursor_tmp/flow_svgs/linux_6_3_9_ipcsOsPollChannels.svg)
+![](cursor_tmp/flow_svgs/linux_6_3_9_ipcsOsPollChannels.svg)
 
 
 ### 6.3.10 shm_mod_init
@@ -6636,7 +6509,7 @@ processing flow
 
 processing flow
 
-![6.3.10 shm_mod_init processing flow](cursor_tmp/flow_svgs/linux_6_3_10_shm_mod_init.svg)
+![](cursor_tmp/flow_svgs/linux_6_3_10_shm_mod_init.svg)
 
 
 ### 6.3.11 shm_mod_exit
@@ -6690,12 +6563,10 @@ processing flow
 
 processing flow
 
-![6.3.11 shm_mod_exit processing flow](cursor_tmp/flow_svgs/linux_6_3_11_shm_mod_exit.svg)
+![](cursor_tmp/flow_svgs/linux_6_3_11_shm_mod_exit.svg)
 
 
-## 6.4 SWU_IPCS_LINUX_OS_UIO Software Unit Design 软件单元设计
-
-源码：`ipcs/mpu/os_uio/ipc-os.c`。用户侧 OSAL/HAL **契约代理**（`ipcsOs*`、`ipcsHw*` 同名符号），通过 UIO fd、`/dev/mem`、pthread 转发至 §6.5 内核 Backend；**不**直接操作 MSCM 硬件。
+## 6.4 SWU_IPCS_LINUX_OS_UIO DESIGN 单元设计
 
 ### 6.4.1 line_from_file
 
@@ -6763,7 +6634,7 @@ processing flow
 
 processing flow
 
-![6.4.1 line_from_file processing flow](cursor_tmp/flow_svgs/linux_6_4_1_line_from_file.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_1_line_from_file.svg)
 
 
 ### 6.4.2 line_match
@@ -6832,7 +6703,7 @@ processing flow
 
 processing flow
 
-![6.4.2 line_match processing flow](cursor_tmp/flow_svgs/linux_6_4_2_line_match.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_2_line_match.svg)
 
 
 ### 6.4.3 get_uio_dev_name
@@ -6901,7 +6772,7 @@ processing flow
 
 processing flow
 
-![6.4.3 get_uio_dev_name processing flow](cursor_tmp/flow_svgs/linux_6_4_3_get_uio_dev_name.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_3_get_uio_dev_name.svg)
 
 
 ### 6.4.4 ipcsShmSoftirq
@@ -6964,7 +6835,7 @@ processing flow
 
 processing flow
 
-![6.4.4 ipcsShmSoftirq processing flow](cursor_tmp/flow_svgs/linux_6_4_4_ipcsShmSoftirq.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_4_ipcsShmSoftirq.svg)
 
 
 ### 6.4.5 ipcsOsInit
@@ -7039,7 +6910,7 @@ processing flow
 
 processing flow
 
-![6.4.5 ipcsOsInit processing flow](cursor_tmp/flow_svgs/linux_6_4_5_ipcsOsInit.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_5_ipcsOsInit.svg)
 
 
 ### 6.4.6 ipcsOsFree
@@ -7101,7 +6972,7 @@ processing flow
 
 processing flow
 
-![6.4.6 ipcsOsFree processing flow](cursor_tmp/flow_svgs/linux_6_4_6_ipcsOsFree.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_6_ipcsOsFree.svg)
 
 
 ### 6.4.7 ipcsOsGetLocalShm
@@ -7164,7 +7035,7 @@ processing flow
 
 processing flow
 
-![6.4.7 ipcsOsGetLocalShm processing flow](cursor_tmp/flow_svgs/linux_6_4_7_ipcsOsGetLocalShm.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_7_ipcsOsGetLocalShm.svg)
 
 
 ### 6.4.8 ipcsOsGetRemoteShm
@@ -7227,7 +7098,7 @@ processing flow
 
 processing flow
 
-![6.4.8 ipcsOsGetRemoteShm processing flow](cursor_tmp/flow_svgs/linux_6_4_8_ipcsOsGetRemoteShm.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_8_ipcsOsGetRemoteShm.svg)
 
 
 ### 6.4.9 ipcsOsPollChannels
@@ -7290,7 +7161,7 @@ processing flow
 
 processing flow
 
-![6.4.9 ipcsOsPollChannels processing flow](cursor_tmp/flow_svgs/linux_6_4_9_ipcsOsPollChannels.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_9_ipcsOsPollChannels.svg)
 
 
 ### 6.4.10 ipcsSendUioCmd
@@ -7358,7 +7229,7 @@ processing flow
 
 processing flow
 
-![6.4.10 ipcsSendUioCmd processing flow](cursor_tmp/flow_svgs/linux_6_4_10_ipcsSendUioCmd.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_10_ipcsSendUioCmd.svg)
 
 
 ### 6.4.11 ipcsHwIrqEnable
@@ -7420,7 +7291,7 @@ processing flow
 
 processing flow
 
-![6.4.11 ipcsHwIrqEnable processing flow](cursor_tmp/flow_svgs/linux_6_4_11_ipcsHwIrqEnable.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_11_ipcsHwIrqEnable.svg)
 
 
 ### 6.4.12 ipcsHwIrqDisable
@@ -7482,7 +7353,7 @@ processing flow
 
 processing flow
 
-![6.4.12 ipcsHwIrqDisable processing flow](cursor_tmp/flow_svgs/linux_6_4_12_ipcsHwIrqDisable.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_12_ipcsHwIrqDisable.svg)
 
 
 ### 6.4.13 ipcsHwIrqNotify
@@ -7544,7 +7415,7 @@ processing flow
 
 processing flow
 
-![6.4.13 ipcsHwIrqNotify processing flow](cursor_tmp/flow_svgs/linux_6_4_13_ipcsHwIrqNotify.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_13_ipcsHwIrqNotify.svg)
 
 
 ### 6.4.14 ipcsHwInit
@@ -7561,7 +7432,7 @@ processing flow
 </tr>
 <tr>
 <td>函数说明</td>
-<td colspan="4">初始化 HAL 资源；用户侧为空实现，内核侧映射并配置 MSCM/IRQ。</td>
+<td colspan="4">初始化 HAL 资源；用户侧为空实现，内核侧映射并配置 核间中断控制器/IRQ。</td>
 </tr>
 <tr>
 <td>函数原型</td>
@@ -7613,7 +7484,7 @@ processing flow
 
 processing flow
 
-![6.4.14 ipcsHwInit processing flow](cursor_tmp/flow_svgs/linux_6_4_14_ipcsHwInit.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_14_ipcsHwInit.svg)
 
 
 ### 6.4.15 ipcsHwFree
@@ -7675,12 +7546,10 @@ processing flow
 
 processing flow
 
-![6.4.15 ipcsHwFree processing flow](cursor_tmp/flow_svgs/linux_6_4_15_ipcsHwFree.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_15_ipcsHwFree.svg)
 
 
-## 6.5 SWU_IPCS_LINUX_UIO_KO Software Unit Design 软件单元设计
-
-源码：`ipcs/mpu/os_kernel/ipc-uio.c`。UIO 内核 Backend：UIO 设备注册、中断处理、向用户态传递事件；与 §6.8 HAL 协同完成硬件 IRQ。
+## 6.5 SWU_IPCS_LINUX_UIO_KO DESIGN 单元设计
 
 ### 6.5.1 ipcsShmUioOpen
 
@@ -7748,7 +7617,7 @@ processing flow
 
 processing flow
 
-![6.5.17 ipcsShmUioOpen processing flow](cursor_tmp/flow_svgs/linux_6_4_17_ipcsShmUioOpen.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_17_ipcsShmUioOpen.svg)
 
 
 ### 6.5.2 ipcsShmUioRelease
@@ -7817,7 +7686,7 @@ processing flow
 
 processing flow
 
-![6.5.18 ipcsShmUioRelease processing flow](cursor_tmp/flow_svgs/linux_6_4_18_ipcsShmUioRelease.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_18_ipcsShmUioRelease.svg)
 
 
 ### 6.5.3 ipcsShmUioIrqcontrol
@@ -7886,7 +7755,7 @@ processing flow
 
 processing flow
 
-![6.5.19 ipcsShmUioIrqcontrol processing flow](cursor_tmp/flow_svgs/linux_6_4_19_ipcsShmUioIrqcontrol.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_19_ipcsShmUioIrqcontrol.svg)
 
 
 ### 6.5.4 ipcsShmUioHandler
@@ -7955,7 +7824,7 @@ processing flow
 
 processing flow
 
-![6.5.20 ipcsShmUioHandler processing flow](cursor_tmp/flow_svgs/linux_6_4_20_ipcsShmUioHandler.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_20_ipcsShmUioHandler.svg)
 
 
 ### 6.5.5 ipcsUioInit
@@ -8018,7 +7887,7 @@ processing flow
 
 processing flow
 
-![6.5.21 ipcsUioInit processing flow](cursor_tmp/flow_svgs/linux_6_4_21_ipcsUioInit.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_21_ipcsUioInit.svg)
 
 
 ### 6.5.6 ipcsCdevOpen
@@ -8087,7 +7956,7 @@ processing flow
 
 processing flow
 
-![6.5.22 ipcsCdevOpen processing flow](cursor_tmp/flow_svgs/linux_6_4_22_ipcsCdevOpen.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_22_ipcsCdevOpen.svg)
 
 
 ### 6.5.7 ipcsCdevRelease
@@ -8156,7 +8025,7 @@ processing flow
 
 processing flow
 
-![6.5.23 ipcsCdevRelease processing flow](cursor_tmp/flow_svgs/linux_6_4_23_ipcsCdevRelease.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_23_ipcsCdevRelease.svg)
 
 
 ### 6.5.8 ipcsCdevWrite
@@ -8237,7 +8106,7 @@ processing flow
 
 processing flow
 
-![6.5.24 ipcsCdevWrite processing flow](cursor_tmp/flow_svgs/linux_6_4_24_ipcsCdevWrite.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_24_ipcsCdevWrite.svg)
 
 
 ### 6.5.9 ipcsShmUioProbe
@@ -8254,7 +8123,7 @@ processing flow
 </tr>
 <tr>
 <td>函数说明</td>
-<td colspan="4">平台驱动 probe，映射 MSCM 资源并创建设备节点。</td>
+<td colspan="4">平台驱动 probe，映射 核间中断控制器 资源并创建设备节点。</td>
 </tr>
 <tr>
 <td>函数原型</td>
@@ -8300,7 +8169,7 @@ processing flow
 
 processing flow
 
-![6.5.25 ipcsShmUioProbe processing flow](cursor_tmp/flow_svgs/linux_6_4_25_ipcsShmUioProbe.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_25_ipcsShmUioProbe.svg)
 
 
 ### 6.5.10 ipcsShmUioRemove
@@ -8363,7 +8232,7 @@ processing flow
 
 processing flow
 
-![6.5.26 ipcsShmUioRemove processing flow](cursor_tmp/flow_svgs/linux_6_4_26_ipcsShmUioRemove.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_26_ipcsShmUioRemove.svg)
 
 
 ### 6.5.11 ipcsOsMapIntc
@@ -8417,7 +8286,7 @@ processing flow
 
 processing flow
 
-![6.5.27 ipcsOsMapIntc processing flow](cursor_tmp/flow_svgs/linux_6_4_27_ipcsOsMapIntc.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_27_ipcsOsMapIntc.svg)
 
 
 ### 6.5.12 ipcsOsUnmapIntc
@@ -8479,12 +8348,10 @@ processing flow
 
 processing flow
 
-![6.5.28 ipcsOsUnmapIntc processing flow](cursor_tmp/flow_svgs/linux_6_4_28_ipcsOsUnmapIntc.svg)
+![](cursor_tmp/flow_svgs/linux_6_4_28_ipcsOsUnmapIntc.svg)
 
 
-## 6.6 SWU_IPCS_LINUX_OS_CDEV Software Unit Design 软件单元设计
-
-源码：`ipcs/mpu/os_cdev/ipc-os.c`。用户侧 OSAL/HAL **契约代理**，通过字符设备 ioctl/poll/mmap 与 §6.7 内核 Backend 通信；`ipcsHwInit`/`ipcsHwFree` 为空实现（硬件初始化在内核）。
+## 6.6 SWU_IPCS_LINUX_OS_CDEV DESIGN 单元设计
 
 ### 6.6.1 ipcsOsInit
 
@@ -8558,7 +8425,7 @@ processing flow
 
 processing flow
 
-![6.6.1 ipcsOsInit processing flow](cursor_tmp/flow_svgs/linux_6_5_1_ipcsOsInit.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_1_ipcsOsInit.svg)
 
 
 ### 6.6.2 ipcsOsFree
@@ -8620,7 +8487,7 @@ processing flow
 
 processing flow
 
-![6.6.2 ipcsOsFree processing flow](cursor_tmp/flow_svgs/linux_6_5_2_ipcsOsFree.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_2_ipcsOsFree.svg)
 
 
 ### 6.6.3 ipcsOsGetLocalShm
@@ -8683,7 +8550,7 @@ processing flow
 
 processing flow
 
-![6.6.3 ipcsOsGetLocalShm processing flow](cursor_tmp/flow_svgs/linux_6_5_3_ipcsOsGetLocalShm.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_3_ipcsOsGetLocalShm.svg)
 
 
 ### 6.6.4 ipcsOsGetRemoteShm
@@ -8746,7 +8613,7 @@ processing flow
 
 processing flow
 
-![6.6.4 ipcsOsGetRemoteShm processing flow](cursor_tmp/flow_svgs/linux_6_5_4_ipcsOsGetRemoteShm.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_4_ipcsOsGetRemoteShm.svg)
 
 
 ### 6.6.5 ipcsOsPollChannels
@@ -8809,7 +8676,7 @@ processing flow
 
 processing flow
 
-![6.6.5 ipcsOsPollChannels processing flow](cursor_tmp/flow_svgs/linux_6_5_5_ipcsOsPollChannels.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_5_ipcsOsPollChannels.svg)
 
 
 ### 6.6.6 ipcsHwIrqEnable
@@ -8871,7 +8738,7 @@ processing flow
 
 processing flow
 
-![6.6.6 ipcsHwIrqEnable processing flow](cursor_tmp/flow_svgs/linux_6_5_6_ipcsHwIrqEnable.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_6_ipcsHwIrqEnable.svg)
 
 
 ### 6.6.7 ipcsHwIrqDisable
@@ -8933,7 +8800,7 @@ processing flow
 
 processing flow
 
-![6.6.7 ipcsHwIrqDisable processing flow](cursor_tmp/flow_svgs/linux_6_5_7_ipcsHwIrqDisable.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_7_ipcsHwIrqDisable.svg)
 
 
 ### 6.6.8 ipcsHwIrqNotify
@@ -8995,7 +8862,7 @@ processing flow
 
 processing flow
 
-![6.6.8 ipcsHwIrqNotify processing flow](cursor_tmp/flow_svgs/linux_6_5_8_ipcsHwIrqNotify.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_8_ipcsHwIrqNotify.svg)
 
 
 ### 6.6.9 ipcsHwInit
@@ -9012,7 +8879,7 @@ processing flow
 </tr>
 <tr>
 <td>函数说明</td>
-<td colspan="4">初始化 HAL 资源；用户侧为空实现，内核侧映射并配置 MSCM/IRQ。</td>
+<td colspan="4">初始化 HAL 资源；用户侧为空实现，内核侧映射并配置 核间中断控制器/IRQ。</td>
 </tr>
 <tr>
 <td>函数原型</td>
@@ -9064,7 +8931,7 @@ processing flow
 
 processing flow
 
-![6.6.9 ipcsHwInit processing flow](cursor_tmp/flow_svgs/linux_6_5_9_ipcsHwInit.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_9_ipcsHwInit.svg)
 
 
 ### 6.6.10 ipcsHwFree
@@ -9126,12 +8993,10 @@ processing flow
 
 processing flow
 
-![6.6.10 ipcsHwFree processing flow](cursor_tmp/flow_svgs/linux_6_5_10_ipcsHwFree.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_10_ipcsHwFree.svg)
 
 
-## 6.7 SWU_IPCS_LINUX_CDEV_KO Software Unit Design 软件单元设计
-
-源码：`ipcs/mpu/os_kernel/ipc-cdev.c`。CDEV 内核 Backend：字符设备、ioctl、wait queue、ISR 与实例初始化。
+## 6.7 SWU_IPCS_LINUX_CDEV_KO DESIGN 单元设计
 
 ### 6.7.1 ipcsShmHardirq
 
@@ -9199,7 +9064,7 @@ processing flow
 
 processing flow
 
-![6.7.12 ipcsShmHardirq processing flow](cursor_tmp/flow_svgs/linux_6_5_12_ipcsShmHardirq.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_12_ipcsShmHardirq.svg)
 
 
 ### 6.7.2 ipcsOsMapIntc
@@ -9253,7 +9118,7 @@ processing flow
 
 processing flow
 
-![6.7.13 ipcsOsMapIntc processing flow](cursor_tmp/flow_svgs/linux_6_5_13_ipcsOsMapIntc.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_13_ipcsOsMapIntc.svg)
 
 
 ### 6.7.3 ipcsOsUnmapIntc
@@ -9315,7 +9180,7 @@ processing flow
 
 processing flow
 
-![6.7.14 ipcsOsUnmapIntc processing flow](cursor_tmp/flow_svgs/linux_6_5_14_ipcsOsUnmapIntc.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_14_ipcsOsUnmapIntc.svg)
 
 
 ### 6.7.4 ipcsCdevOpen
@@ -9384,7 +9249,7 @@ processing flow
 
 processing flow
 
-![6.7.15 ipcsCdevOpen processing flow](cursor_tmp/flow_svgs/linux_6_5_15_ipcsCdevOpen.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_15_ipcsCdevOpen.svg)
 
 
 ### 6.7.5 ipcsCdevRelease
@@ -9453,7 +9318,7 @@ processing flow
 
 processing flow
 
-![6.7.16 ipcsCdevRelease processing flow](cursor_tmp/flow_svgs/linux_6_5_16_ipcsCdevRelease.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_16_ipcsCdevRelease.svg)
 
 
 ### 6.7.6 ipcsCdevRead
@@ -9534,7 +9399,7 @@ processing flow
 
 processing flow
 
-![6.7.17 ipcsCdevRead processing flow](cursor_tmp/flow_svgs/linux_6_5_17_ipcsCdevRead.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_17_ipcsCdevRead.svg)
 
 
 ### 6.7.7 ipcsCdevOsInit
@@ -9603,7 +9468,7 @@ processing flow
 
 processing flow
 
-![6.7.18 ipcsCdevOsInit processing flow](cursor_tmp/flow_svgs/linux_6_5_18_ipcsCdevOsInit.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_18_ipcsCdevOsInit.svg)
 
 
 ### 6.7.8 ipcsCdevIoctl
@@ -9678,7 +9543,7 @@ processing flow
 
 processing flow
 
-![6.7.19 ipcsCdevIoctl processing flow](cursor_tmp/flow_svgs/linux_6_5_19_ipcsCdevIoctl.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_19_ipcsCdevIoctl.svg)
 
 
 ### 6.7.9 ipcsCdevInit
@@ -9732,7 +9597,7 @@ processing flow
 
 processing flow
 
-![6.7.20 ipcsCdevInit processing flow](cursor_tmp/flow_svgs/linux_6_5_20_ipcsCdevInit.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_20_ipcsCdevInit.svg)
 
 
 ### 6.7.10 ipcsCdevClean
@@ -9785,12 +9650,12 @@ processing flow
 
 processing flow
 
-![6.7.21 ipcsCdevClean processing flow](cursor_tmp/flow_svgs/linux_6_5_21_ipcsCdevClean.svg)
+![](cursor_tmp/flow_svgs/linux_6_5_21_ipcsCdevClean.svg)
 
 
-## 6.8 SWU_IPCS_HAL_LINUX Software Unit Design 软件单元设计
+## 6.8 SWU_IPCS_HAL_LINUX DESIGN 单元设计
 
-Linux 内核侧 HAL，完成 MSCM 映射、核索引解析、IRQ 使能/禁止/通知/清除等硬件操作。
+Linux 内核侧 HAL，完成 核间中断控制器 映射、核索引解析、IRQ 使能/禁止/通知/清除等硬件操作。
 
 ### 6.8.1 ipcsHwGetRxIrq
 
@@ -9806,7 +9671,7 @@ Linux 内核侧 HAL，完成 MSCM 映射、核索引解析、IRQ 使能/禁止/�
 </tr>
 <tr>
 <td>函数说明</td>
-<td colspan="4">返回指定实例使用的 MSCM 接收中断索引。</td>
+<td colspan="4">返回指定实例使用的 核间中断控制器 接收中断索引。</td>
 </tr>
 <tr>
 <td>函数原型</td>
@@ -9852,7 +9717,7 @@ Linux 内核侧 HAL，完成 MSCM 映射、核索引解析、IRQ 使能/禁止/�
 
 processing flow
 
-![6.8.1 ipcsHwGetRxIrq processing flow](cursor_tmp/flow_svgs/linux_6_6_1_ipcsHwGetRxIrq.svg)
+![](cursor_tmp/flow_svgs/linux_6_6_1_ipcsHwGetRxIrq.svg)
 
 
 ### 6.8.2 ipcsHwInit
@@ -9869,7 +9734,7 @@ processing flow
 </tr>
 <tr>
 <td>函数说明</td>
-<td colspan="4">初始化 HAL 资源；用户侧为空实现，内核侧映射并配置 MSCM/IRQ。</td>
+<td colspan="4">初始化 HAL 资源；用户侧为空实现，内核侧映射并配置 核间中断控制器/IRQ。</td>
 </tr>
 <tr>
 <td>函数原型</td>
@@ -9921,7 +9786,7 @@ processing flow
 
 processing flow
 
-![6.8.2 ipcsHwInit processing flow](cursor_tmp/flow_svgs/linux_6_6_2_ipcsHwInit.svg)
+![](cursor_tmp/flow_svgs/linux_6_6_2_ipcsHwInit.svg)
 
 
 ### 6.8.3 _ipcsHwInit
@@ -10014,7 +9879,7 @@ processing flow
 
 processing flow
 
-![6.8.3 _ipcsHwInit processing flow](cursor_tmp/flow_svgs/linux_6_6_3__ipcsHwInit.svg)
+![](cursor_tmp/flow_svgs/linux_6_6_3__ipcsHwInit.svg)
 
 
 ### 6.8.4 ipcsHwFree
@@ -10076,7 +9941,7 @@ processing flow
 
 processing flow
 
-![6.8.4 ipcsHwFree processing flow](cursor_tmp/flow_svgs/linux_6_6_4_ipcsHwFree.svg)
+![](cursor_tmp/flow_svgs/linux_6_6_4_ipcsHwFree.svg)
 
 
 ### 6.8.5 ipcsHwIrqEnable
@@ -10138,7 +10003,7 @@ processing flow
 
 processing flow
 
-![6.8.5 ipcsHwIrqEnable processing flow](cursor_tmp/flow_svgs/linux_6_6_5_ipcsHwIrqEnable.svg)
+![](cursor_tmp/flow_svgs/linux_6_6_5_ipcsHwIrqEnable.svg)
 
 
 ### 6.8.6 ipcsHwIrqDisable
@@ -10200,7 +10065,7 @@ processing flow
 
 processing flow
 
-![6.8.6 ipcsHwIrqDisable processing flow](cursor_tmp/flow_svgs/linux_6_6_6_ipcsHwIrqDisable.svg)
+![](cursor_tmp/flow_svgs/linux_6_6_6_ipcsHwIrqDisable.svg)
 
 
 ### 6.8.7 ipcsHwIrqNotify
@@ -10262,7 +10127,7 @@ processing flow
 
 processing flow
 
-![6.8.7 ipcsHwIrqNotify processing flow](cursor_tmp/flow_svgs/linux_6_6_7_ipcsHwIrqNotify.svg)
+![](cursor_tmp/flow_svgs/linux_6_6_7_ipcsHwIrqNotify.svg)
 
 
 ### 6.8.8 ipcsHwIrqClear
@@ -10324,14 +10189,12 @@ processing flow
 
 processing flow
 
-![6.8.8 ipcsHwIrqClear processing flow](cursor_tmp/flow_svgs/linux_6_6_8_ipcsHwIrqClear.svg)
+![](cursor_tmp/flow_svgs/linux_6_6_8_ipcsHwIrqClear.svg)
 
 
-## 6.9 Dynamic Detailed Design 动态详细设计
+## 6.9 DYNAMIC DETAILED DESIGN 动态详细设计
 
-第 6.3–6.8 节各函数已给出单函数 processing flow（活动图）。本节描述 **跨软件单元** 的动态交互，采用 UML 序列图；纵轴为软件单元 ID（§2.1），用户侧代理、内核 Backend、HAL 使用与 §5.7 相同的配色规则。
-
-| 场景 ID | 场景名称 | 涉及软件单元 | 源码依据 |
+| 场景 ID | 场景名称 | 涉及软件单元 | 设计依据 |
 |---|---|---|---|
 | LIN-S01 | UIO 初始化 | CORE_SHM、LINUX_OS_UIO、LINUX_UIO_KO、HAL_LINUX | `ipcsOsInit`（os_uio）+ `ipcsCdevWrite`/`ipcsUioInit` |
 | LIN-S02 | CDEV 初始化 | CORE_SHM、LINUX_OS_CDEV、LINUX_CDEV_KO、HAL_LINUX | `ipcsOsInit`（os_cdev）+ `ioctl` INIT |
@@ -10346,66 +10209,62 @@ processing flow
 
 sequence diagram
 
-![Linux UIO initialization sequence](cursor_tmp/flow_svgs/linux_seq_uio_init.svg)
+![](cursor_tmp/flow_svgs/linux_seq_uio_init.svg)
 
 ### 6.9.2 CDEV Initialization (LIN-S02) CDEV 初始化
 
 sequence diagram
 
-![Linux CDEV initialization sequence](cursor_tmp/flow_svgs/linux_seq_cdev_init.svg)
+![](cursor_tmp/flow_svgs/linux_seq_cdev_init.svg)
 
 ### 6.9.3 In-Kernel Initialization (LIN-S03) 全内核初始化
 
 sequence diagram
 
-![Linux in-kernel initialization sequence](cursor_tmp/flow_svgs/linux_seq_kernel_init.svg)
+![](cursor_tmp/flow_svgs/linux_seq_kernel_init.svg)
 
 ### 6.9.4 UIO Transmit Notify (LIN-S04) UIO 发送通知
 
 sequence diagram
 
-![Linux UIO transmit notify sequence](cursor_tmp/flow_svgs/linux_seq_uio_tx_notify.svg)
+![](cursor_tmp/flow_svgs/linux_seq_uio_tx_notify.svg)
 
 ### 6.9.5 CDEV Transmit Notify (LIN-S05) CDEV 发送通知
 
 sequence diagram
 
-![Linux CDEV transmit notify sequence](cursor_tmp/flow_svgs/linux_seq_cdev_tx_notify.svg)
+![](cursor_tmp/flow_svgs/linux_seq_cdev_tx_notify.svg)
 
 ### 6.9.6 UIO Receive Wakeup (LIN-S06) UIO 接收唤醒
 
 sequence diagram
 
-![Linux UIO receive wakeup sequence](cursor_tmp/flow_svgs/linux_seq_uio_rx.svg)
+![](cursor_tmp/flow_svgs/linux_seq_uio_rx.svg)
 
 ### 6.9.7 CDEV Receive Wakeup (LIN-S07) CDEV 接收唤醒
 
 sequence diagram
 
-![Linux CDEV receive wakeup sequence](cursor_tmp/flow_svgs/linux_seq_cdev_rx.svg)
+![](cursor_tmp/flow_svgs/linux_seq_cdev_rx.svg)
 
 ### 6.9.8 In-Kernel Receive (LIN-S08) 全内核接收
 
 sequence diagram
 
-![Linux in-kernel receive sequence](cursor_tmp/flow_svgs/linux_seq_kernel_rx.svg)
+![](cursor_tmp/flow_svgs/linux_seq_kernel_rx.svg)
 
-## 6.10 Global Variables 全局变量
-
-本节列出 Linux 部署变体适配层与 HAL 实现侧私有全局变量。通信核心私有数据见 §4.5。UIO/CDEV 用户侧与全内核实现均使用变量名 `priv` 或 `ipc_os_priv`，但类型与源码文件不同，见 §6.11。
+## 6.10 GLOBAL VARIABLES 全局变量
 
 | 全局变量名称 | 全局变量类型 | 全局变量范围 | 全局变量描述 | 全局变量的存储RAM区 |
 |---|---|---|---|---|
-| ipc_os_priv | static struct IPCS_OS_PRIV_TYPE_TYPE | ipcs/mpu/os_uio/ipc-os.c | UIO 用户侧 OSAL 代理私有数据 | 源码未显式指定 |
-| priv | static struct IPCS_OS_PRIV_TYPE | ipcs/mpu/os_cdev/ipc-os.c | CDEV 用户侧 OSAL 代理私有数据 | 源码未显式指定 |
-| priv | static struct IPCS_OS_PRIV_TYPE | ipcs/mpu/os_kernel/ipc-os.c | 全内核 OSAL 实现私有数据 | 源码未显式指定 |
-| ipc_pdev_priv | struct IPCS_PDEV_PRIV_TYPE_TYPE | ipcs/mpu/os_kernel/ipc-uio.c | UIO 内核 Backend 平台设备与 cdev/UIO 实例状态 | 源码未显式指定 |
-| ipc_cdev_priv | struct IPCS_CDEV_PRIV_TYPE_TYPE | ipcs/mpu/os_kernel/ipc-cdev.c | CDEV 内核 Backend 字符设备与 wait queue 状态 | 源码未显式指定 |
-| ipc_hw_priv | static struct IPCS_HW_PRIV_TYPE_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/mpu/hw/c1/ipc-hw.c | 每 instance Linux HAL 私有数据 | 源码未显式指定 |
+| ipc_os_priv | static struct IPCS_OS_PRIV_TYPE_TYPE | ipcs/mpu/os_uio/ipc-os.c | UIO 用户侧 OSAL 代理私有数据 | 编译器/链接器默认 RAM（.bss，未指定 section） |
+| priv | static struct IPCS_OS_PRIV_TYPE | ipcs/mpu/os_cdev/ipc-os.c | CDEV 用户侧 OSAL 代理私有数据 | 编译器/链接器默认 RAM（.bss，未指定 section） |
+| priv | static struct IPCS_OS_PRIV_TYPE | ipcs/mpu/os_kernel/ipc-os.c | 全内核 OSAL 实现私有数据 | 编译器/链接器默认 RAM（.bss，未指定 section） |
+| ipc_pdev_priv | struct IPCS_PDEV_PRIV_TYPE_TYPE | ipcs/mpu/os_kernel/ipc-uio.c | UIO 内核 Backend 平台设备与 cdev/UIO 实例状态 | 编译器/链接器默认 RAM（.bss，未指定 section） |
+| ipc_cdev_priv | struct IPCS_CDEV_PRIV_TYPE_TYPE | ipcs/mpu/os_kernel/ipc-cdev.c | CDEV 内核 Backend 字符设备与 wait queue 状态 | 编译器/链接器默认 RAM（.bss，未指定 section） |
+| ipc_hw_priv | static struct IPCS_HW_PRIV_TYPE_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/mpu/hw/c1/ipc-hw.c | 每 instance Linux HAL 私有数据 | 编译器/链接器默认 RAM（.bss，未指定 section） |
 
-## 6.11 Data Types 类型定义
-
-以下类型定义来自 Linux 部署变体源码。与 §4.6 或 §5.8 同名的结构体/枚举若语义因部署变体不同，在本节按实现分别说明。
+## 6.11 DATA TYPES 类型定义
 
 ### 6.11.1 enum IPCS_STATUS_E（UIO 用户侧）
 
@@ -10581,11 +10440,11 @@ sequence diagram
 | uint8_t | msi_tx_irq | MSI index of inter-core interrupt corresponds to mscm_tx_irq |
 | uint8_t | msi_rx_irq | MSI index of inter-core interrupt corresponds to mscm_rx_irq |
 | uint8_t | spi_index | shared peripheral interrupts index |
-| int | mscm_tx_irq | MSCM inter-core interrupt reserved for shm driver tx |
-| int | mscm_rx_irq | MSCM inter-core interrupt reserved for shm driver rx |
+| int | mscm_tx_irq | 核间中断控制器 inter-core interrupt reserved for shm driver tx |
+| int | mscm_rx_irq | 核间中断控制器 inter-core interrupt reserved for shm driver rx |
 | int | remote_core | index of remote core to trigger the interrupt on |
 | int | local_core | index of the local core targeted by remote |
-| struct IPCS_MSCM_REGS_TYPE * | ipc_mscm | pointer to memory-mapped hardware peripheral MSCM |
+| struct IPCS_MSCM_REGS_TYPE * | ipc_mscm | pointer to memory-mapped hardware peripheral 核间中断控制器 |
 
 ### 6.11.15 enum IPCS_C1_PROCESSOR_IDX_E
 
@@ -10608,7 +10467,7 @@ sequence diagram
 
 ### 6.11.16 struct IPCS_MSCM_REGS_TYPE
 
-定义于 `ipcs/mpu/hw/c1/ipc-hw-platform.h`（MSCM Peripheral Register Structure）。
+定义于 `ipcs/mpu/hw/c1/ipc-hw-platform.h`（核间中断控制器 Peripheral Register Structure）。
 
 | Type | Name | Description |
 |---|---|---|
@@ -10684,43 +10543,41 @@ sequence diagram
 | volatile uint16_t | IRSPRC[IPC_MSCM_IRSPRC_COUNT] | 源码未提供描述 |
 | struct { volatile uint32_t IPC_ISR; volatile uint32_t IPC_IGR; } | IRCPnIRx[IPC_MSCM_CP_COUNT][IPC_MSCM_IRQ_COUNT] | 源码未提供描述 |
 
-# 7 BIDIRECTIONAL TRACEABILITY AND CONSISTENCY 双向追溯与一致性
+# 7 TRACE & CONSISTENCY 双向追溯一致性
 
-## 7.1 Traceability Statement 追溯性策略与声明
+## 7.1 TRACEABILITY STATEMENT 追溯策略声明
 
 本章节建立本模块软件详细设计与上游（软件需求、软件架构）及下游（物理源代码）之间的双向追溯关系，满足 ASPICE SWE.3.BP4 要求。
 
-需求—架构组件分配依据 `ipcs-architecture.pdf` §2.4；架构组件—软件单元映射依据本文档 §2.1–§2.2；单元行为与接口依据 §4–§6。本 SDD 范围见 §1.3；矩阵仅列出在该范围内由 `ipcs/` 源码实现的分配需求（与架构 §2.4 中过程类及集成侧需求不重复展开）。
+需求—架构组件分配依据架构设计规范的章节2.4；架构组件—软件单元映射依据本文档 章节2.1–章节2.2；单元行为与接口依据 章节4–章节6。本矩阵用于证明：已分配至本驱动的架构组件与需求在详细设计单元及物理实现中均有对应实体，并支持变更影响分析。
 
-本矩阵用于证明：已分配至本驱动的架构组件与需求在详细设计单元及源码中均有对应实现，并支持变更影响分析。
-
-## 7.2 Bidirectional Traceability Matrix 双向追溯矩阵
+## 7.2 TRACEABILITY MATRIX 双向追溯矩阵
 
 | 软件需求 ID (SWE.1) | 架构组件 ID (SWE.2) | 本详细设计单元 ID (SWE.3) | 物理源代码实体 (Code) | 追溯关系及设计覆盖说明 |
 | :--- | :--- | :--- | :--- | :--- |
-| IPCS_001 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_UTIL、SWU_IPCS_CORE_QUEUE；§2.1 所列 OSAL/HAL 单元；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-util.c`、`ipc-types.h`；`ipcs/mcu/os/`、`ipcs/mcu/hw/ipc-hw.c`；`ipcs/mpu/` 各实现文件 | 同核/异核点对点双向通信：实例、通道、队列、共享内存映射与核间通知 |
+| IPCS_001 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_UTIL、SWU_IPCS_CORE_QUEUE；章节2.1 所列 OSAL/HAL 单元；Conf 见 章节4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-util.c`、`ipc-types.h`；`ipcs/mcu/os/`、`ipcs/mcu/hw/ipc-hw.c`；`ipcs/mpu/` 各实现文件 | 同核/异核点对点双向通信：实例、通道、队列、共享内存映射与核间通知 |
 | IPCS_002 | Drv_Ipcs_Osal_Cmp | SWU_IPCS_OSAL_AUTOSAR | `ipcs/mcu/os/autosar/ipc-os-autosar.c` | AutoSAR OS 部署下 OSAL 集成边界；安全目标与证据见项目安全工件 |
 | IPCS_003 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Hal_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE、SWU_IPCS_HAL_MCU、SWU_IPCS_HAL_LINUX | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`；`ipcs/mcu/hw/ipc-hw.c`；`ipcs/mpu/hw/c1/ipc-hw.c` | 可移植逻辑在 Core/Queue；平台与字节序相关行为在 HAL |
 | IPCS_005 | Drv_Ipcs_Osal_Cmp | SWU_IPCS_OSAL_AUTOSAR | `ipcs/mcu/os/autosar/ipc-os-autosar.c` | AutoSAR CDD/OS 封装、调度与错误处理 |
 | IPCS_006 | Drv_Ipcs_Osal_Cmp | SWU_IPCS_OSAL_THREADX | `ipcs/mcu/os/threadx/ipc-os-threadx.c` | ThreadX 任务、中断与同步原语映射 |
 | IPCS_010 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c` | 传输路径可观测计数/时间戳（可选编译） |
-| IPCS_012 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp | §2.1 Core/OSAL/HAL 单元 | `ipcs/` 目录下对应单元源文件 | OSAL/HAL 接口可替换实现，便于单元测试 |
-| IPCS_014 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-types.h` | 多通信通道与共享内存布局 |
+| IPCS_012 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp | 章节2.1 Core/OSAL/HAL 单元 | `ipcs/` 目录下对应单元源文件 | OSAL/HAL 接口可替换实现，便于单元测试 |
+| IPCS_014 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE；Conf 见 章节4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-types.h` | 多通信通道与共享内存布局 |
 | IPCS_015 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c` | 单通道内消息顺序保持 |
-| IPCS_016 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-types.h` | 每通道多缓冲池与队列管理 |
-| IPCS_017 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM；§2.1 OSAL 单元；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c`；各 `ipc-os-*.c` | 多 instance 与每核 OSAL 执行及中断亲和 |
+| IPCS_016 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE；Conf 见 章节4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-types.h` | 每通道多缓冲池与队列管理 |
+| IPCS_017 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM；章节2.1 OSAL 单元；Conf 见 章节4.6 | `ipcs/ipcs_cores/ipc-shm.c`；各 `ipc-os-*.c` | 多 instance 与每核 OSAL 执行及中断亲和 |
 | IPCS_018 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c` | 零拷贝：BD/指针传递缓冲区 |
-| IPCS_019 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Osal_Cmp | SWU_IPCS_CORE_SHM；§2.1 OSAL 单元 | `ipcs/ipcs_cores/ipc-shm.c`；各 OSAL 实现文件 | 基于通知的异步接收与回调分发 |
-| IPCS_020 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-types.h`；集成配置 `ipcf_Ip_Cfg*.h` | 通信端内存隔离：布局配置与 Core 边界检查 |
-| IPCS_021 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c` | 非托管通道：`ipcsShmUnmanagedAcquire`/`ipcsShmUnmanagedTx` |
-| IPCS_022 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp | §2.1 所列相关单元 | `ipcs/ipcs_cores/`；OSAL/HAL 源文件 | 虚拟中断与队列状态协调，避免陈旧数据投递 |
+| IPCS_019 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Osal_Cmp | SWU_IPCS_CORE_SHM；章节2.1 OSAL 单元 | `ipcs/ipcs_cores/ipc-shm.c`；各 OSAL 实现文件 | 基于通知的异步接收与回调分发 |
+| IPCS_020 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM；Conf 见 章节4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-types.h`；集成配置 `ipcf_Ip_Cfg*.h` | 通信端内存隔离：布局配置与 Core 边界检查 |
+| IPCS_021 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM；Conf 见 章节4.6 | `ipcs/ipcs_cores/ipc-shm.c` | 非托管通道：`ipcsShmUnmanagedAcquire`/`ipcsShmUnmanagedTx` |
+| IPCS_022 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp | 章节2.1 所列相关单元 | `ipcs/ipcs_cores/`；OSAL/HAL 源文件 | 虚拟中断与队列状态协调，避免陈旧数据投递 |
 | IPCS_023 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c` | 共享内存提交顺序保证；可与 IPCS_039 轮询协同 |
-| IPCS_024 | Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_OSAL_AUTOSAR；Conf 见 §4.6 | `ipcs/mcu/os/autosar/ipc-os-autosar.c`、`ipc-types.h` | 与 AUTOSAR R4.4+ 接口及配置模型对齐 |
-| IPCS_025 | Drv_Ipcs_Conf_Cmp | §4.6 类型定义（无独立 SWU） | `ipcs/ipcs_cores/ipc-types.h`；`ipcf_Ip_Cfg*.h` | 缓冲池数量与大小由集成配置提供 |
-| IPCS_028 | Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Osal_Cmp | SWU_IPCS_HAL_MCU、SWU_IPCS_HAL_LINUX；§2.1 OSAL 单元 | `ipcs/mcu/hw/ipc-hw.c`、`ipcs/mpu/hw/c1/ipc-hw.c`；各 OSAL 文件 | 核间中断作为收发通知 |
+| IPCS_024 | Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_OSAL_AUTOSAR；Conf 见 章节4.6 | `ipcs/mcu/os/autosar/ipc-os-autosar.c`、`ipc-types.h` | 与 AUTOSAR R4.4+ 接口及配置模型对齐 |
+| IPCS_025 | Drv_Ipcs_Conf_Cmp | 章节4.6 类型定义（无独立 SWU） | `ipcs/ipcs_cores/ipc-types.h`；`ipcf_Ip_Cfg*.h` | 缓冲池数量与大小由集成配置提供 |
+| IPCS_028 | Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Osal_Cmp | SWU_IPCS_HAL_MCU、SWU_IPCS_HAL_LINUX；章节2.1 OSAL 单元 | `ipcs/mcu/hw/ipc-hw.c`、`ipcs/mpu/hw/c1/ipc-hw.c`；各 OSAL 文件 | 核间中断作为收发通知 |
 | IPCS_029 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE、SWU_IPCS_CORE_UTIL；OSAL 单元 | `ipcs/ipcs_cores/`；`ipcs/mcu/os/`、`ipcs/mpu/os_kernel/`、`ipcs/mpu/os_uio/`、`ipcs/mpu/os_cdev/` | 静态分配池与队列，无动态堆 |
-| IPCS_031 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-types.h` | 多核多 instance 独立 SHM/IRQ 配置 |
+| IPCS_031 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM；Conf 见 章节4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-types.h` | 多核多 instance 独立 SHM/IRQ 配置 |
 | IPCS_034 | Drv_Ipcs_Core_Cmp | SWU_IPCS_CORE_SHM | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-shm.h` | 公共 API 参数校验 |
 | IPCS_035 | Drv_Ipcs_Core_Cmp | SWU_IPCS_CORE_SHM | `ipcs/ipcs_cores/ipc-shm.c` | managed/unmanaged 与 channel 类型及操作一致性 |
-| IPCS_036 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Linux_Adapt_Cmp、Drv_Ipcs_Conf_Cmp | §2.1 全部软件单元 | `ipcs/` 源码树 | 按部署变体与编译选项裁剪 HW/OS/传输实现 |
-| IPCS_039 | Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp | §2.1 OSAL/HAL 单元 | `ipcsShmPollChannels`（`ipc-shm.c`）；各 OSAL/HAL 文件 | IRQ_NONE 轮询接收路径 |
+| IPCS_036 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Linux_Adapt_Cmp、Drv_Ipcs_Conf_Cmp | 章节2.1 全部软件单元 | `ipcs/` 实现目录 | 按部署变体与编译选项裁剪 HW/OS/传输实现 |
+| IPCS_039 | Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp | 章节2.1 OSAL/HAL 单元 | `ipcsShmPollChannels`（`ipc-shm.c`）；各 OSAL/HAL 文件 | IRQ_NONE 轮询接收路径 |
