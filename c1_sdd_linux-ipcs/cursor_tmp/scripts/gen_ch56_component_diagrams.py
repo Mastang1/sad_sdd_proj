@@ -36,12 +36,12 @@ DIAGRAMS: list[tuple] = [
         "5_2_02",
         "ipcs/mcu/hw/ipc-hw-platform.h",
         [
-            ("S32G399A_M7_COMMON.h", "S32G3XX"),
-            ("S32G399A_SCB.h", "S32G3XX"),
-            ("S32G399A_MSCM.h", "S32G3XX"),
+            ("C1_M7_COMMON.h", "platform"),
+            ("C1_SCB.h", "platform"),
+            ("C1_MSCM.h", "platform"),
         ],
-        "ifdef S32G3XX 时包含平台寄存器头",
-        False,
+        None,
+        True,
     ),
     (
         "5_2_03",

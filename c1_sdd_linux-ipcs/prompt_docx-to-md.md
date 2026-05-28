@@ -62,6 +62,9 @@ L2 Linux：UIO 实现、CDEV 实现、全内核实现
  - 2. 要求：只可修改指定的操作，不要自行修改其他位置
 
 
-# task-12: @md_sdd_0519.md 完善：章节4多个变体的单元、接口之间的依赖关系图
- - 1. 任务：章节3插图修改。因为现有的svg图内容不合适，我已经手动创建四个svg文件在 cursor_tmp\svgs_if_impl路径下。步骤：s1: 删除章节3原始svg图；s2：分别将我创建的四个图插入到3.1、3.3.1、3.3.2、 3.3.3,插入方法根据if_impl_文件名称判断；
+# task-12: 源码修改 和 @md_sdd_0519.md对应符号的同步更新
+ - 0.任务0：修改源码中enum ipc_s32g3xx_processor_idx为 enum ipc_c1_processor_idx
+ - 1. 任务1： 修改源码中所有的结构体类型,把ipc前缀改为ipcs，然后添加后缀_TYPE,最后修改类型名称为大写，例如把 ipc_mscm_regs改为 IPCS_MSCM_REGS_TYPE;
+ - 2. 任务2：修改源码中所有enmu类型名称，把ipc前缀改为ipcs，然后添加后缀_E,最后修改类型名称为大写，例如把 ipc_c1_processor_idx 改为IPCS_C1_PROCESSOR_IDX_E；
+ - 3.任务3：根据代码更新 @md_sdd_0519.md,更新代码中对应的struct 、 enum类型名称的修改，这些集中在标题为 全局变量 和 类型定义 章节
  - 2. 要求：只可修改指定的操作，不要自行修改其他位置；

@@ -27,7 +27,7 @@ RTOS 部署变体在单地址空间内实现 Drv_Ipcs_Osal_Cmp 与 Drv_Ipcs_Hal_
 
 依赖关系：
 
-当定义 S32G3XX 时：S32G399A_M7_COMMON.h、S32G399A_SCB.h、S32G399A_MSCM.h（与 `ipcs/mcu/hw/ipc-hw-platform.h` 一致）
+C1_M7_COMMON.h、C1_SCB.h、C1_MSCM.h（与 `ipcs/mcu/hw/ipc-hw-platform.h` 一致）
 
 ![RTOS ipc-hw-platform.h 头文件依赖](cursor_tmp/files_32_svgs/5_2_02.svg)
 

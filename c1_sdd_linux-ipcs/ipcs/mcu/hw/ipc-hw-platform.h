@@ -19,11 +19,11 @@
 extern "C"{
 #endif
 
-#if defined(S32G3XX)
-#include "S32G399A_M7_COMMON.h"
-#include "S32G399A_SCB.h"
-#include "S32G399A_MSCM.h"
-#endif
+
+#include "C1_M7_COMMON.h"
+#include "C1_SCB.h"
+#include "C1_MSCM.h"
+
 
 /*
  * SOURCE FILE VERSION INFORMATION

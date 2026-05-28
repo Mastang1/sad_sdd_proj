@@ -218,15 +218,14 @@ def main() -> None:
     w(
         "3_2_9",
         """
-title hw/ipc-hw-platform.h — 平台条件头
-component [hw/ipc-hw-platform.h] as P
-component [S32G399A_M7_COMMON.h] as S1 <<S32G3XX>>
-component [S32G399A_SCB.h] as S2 <<S32G3XX>>
-component [S32G399A_MSCM.h] as S3 <<S32G3XX>>
-P ..> S1 : ifdef S32G3XX
-P ..> S2 : ifdef S32G3XX
-P ..> S3 : ifdef S32G3XX
-note bottom of P : 未定义 S32G3XX 则无上述平台寄存器头
+left to right direction
+component [ipcs/mcu/hw/ipc-hw-platform.h] as P
+component [C1_M7_COMMON.h] as S1 <<platform>>
+component [C1_SCB.h] as S2 <<platform>>
+component [C1_MSCM.h] as S3 <<platform>>
+P ..> S1
+P ..> S2
+P ..> S3
 """,
     )
 

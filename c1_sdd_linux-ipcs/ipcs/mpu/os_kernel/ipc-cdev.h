@@ -15,7 +15,7 @@
 #define IPC_CDEV_TYPE		0xA6
 
 /* Generic command */
-enum ipc_shm_cdev_cmd {
+enum IPCS_SHM_CDEV_CMD_E {
 	CMD_SET_INST   = 0x00,
 	CMD_INIT_INST  = 0x01,
 	CMD_DISABLE_RX = 0x02,

@@ -32,50 +32,50 @@ IPCS Driver软件详细设计规范
   - 1.3 Scope范围
   - 1.4 References 参考文件
   - 1.5 Abbreviations缩略语
-- 2 软件单元划分 Software Unit Identification
-  - 2.1 软件单元清单
-  - 2.2 架构组件与软件单元映射
-- 3 分层架构与部署变体设计
-  - 3.1 三层架构与接口契约
-  - 3.2 RTOS 部署变体
-  - 3.3 Linux 部署变体
-  - 3.3.1 UIO 实现
-  - 3.3.2 CDEV 实现
-  - 3.3.3 全内核实现
-  - 3.4 OSAL/HAL 实现位置对照
-- 4 公共详细设计（跨部署变体共享）
-  - 4.1 Definition定义
-  - 4.2 Files
-  - 4.3 External Interfaces外部接口
+- 2 SOFTWARE UNIT IDENTIFICATION 软件单元划分
+  - 2.1 Software Unit List 软件单元清单
+  - 2.2 Architecture Component to Software Unit Mapping 架构组件与软件单元映射
+- 3 LAYERED ARCHITECTURE AND DEPLOYMENT VARIANTS 分层架构与部署变体设计
+  - 3.1 SHM / OSAL / HAL Interface Contract 三层接口契约
+  - 3.2 RTOS Deployment Variant RTOS 部署变体
+  - 3.3 Linux Deployment Variants Linux 部署变体
+  - 3.3.1 UIO Implementation UIO 实现
+  - 3.3.2 CDEV Implementation CDEV 实现
+  - 3.3.3 In-Kernel Implementation 全内核实现
+  - 3.4 OSAL/HAL Implementation Mapping OSAL/HAL 实现对照
+- 4 COMMON SOFTWARE UNIT DETAILED DESIGN 公共软件单元详细设计
+  - 4.1 Definition and Scope 定义与范围
+  - 4.2 File Structure 文件结构
+  - 4.3 External Interfaces 外部接口
   - 4.4 Internal Functions 内部函数
-  - 4.5 Global variants 全局变量
-  - 4.6 Data Structure 类型定义
+  - 4.5 Global Variables 全局变量
+  - 4.6 Data Types 类型定义
   - 4.7 Dynamic Detailed Design 动态详细设计
-- 5 RTOS 部署变体详细设计
-  - 5.1 Definition定义
-  - 5.2 Files
-  - 5.3 SWU_IPCS_OSAL_AUTOSAR 软件单元设计
-  - 5.4 SWU_IPCS_OSAL_FREERTOS 软件单元设计
-  - 5.5 SWU_IPCS_OSAL_THREADX 软件单元设计
-  - 5.6 SWU_IPCS_HAL_MCU 软件单元设计
-  - 5.7 Global variants 全局变量
-  - 5.8 Data Structure 类型定义
-  - 5.9 RTOS 动态详细设计
-- 6 Linux 部署变体详细设计
-  - 6.1 Definition定义
-  - 6.2 Files
-  - 6.3 SWU_IPCS_LINUX_OS_KERN 软件单元设计
-  - 6.4 SWU_IPCS_LINUX_OS_UIO 软件单元设计
-  - 6.5 SWU_IPCS_LINUX_UIO_KO 软件单元设计
-  - 6.6 SWU_IPCS_LINUX_OS_CDEV 软件单元设计
-  - 6.7 SWU_IPCS_LINUX_CDEV_KO 软件单元设计
-  - 6.8 Linux HAL 函数设计
-  - 6.9 Linux 关键场景流程
-  - 6.10 Global variants 全局变量
-  - 6.11 Data Structure 类型定义
-- 7 双向追溯与一致性 (Bidirectional Traceability and Consistency)
-  - 7.1 追溯性策略与声明
-  - 7.2 需求-架构-设计-代码 双向追溯矩阵
+- 5 RTOS DEPLOYMENT VARIANT DETAILED DESIGN RTOS 部署变体详细设计
+  - 5.1 Definition and Scope 定义与范围
+  - 5.2 File Structure 文件结构
+  - 5.3 SWU_IPCS_OSAL_AUTOSAR Software Unit Design 软件单元设计
+  - 5.4 SWU_IPCS_OSAL_FREERTOS Software Unit Design 软件单元设计
+  - 5.5 SWU_IPCS_OSAL_THREADX Software Unit Design 软件单元设计
+  - 5.6 SWU_IPCS_HAL_MCU Software Unit Design 软件单元设计
+  - 5.7 Global Variables 全局变量
+  - 5.8 Data Types 类型定义
+  - 5.9 Dynamic Detailed Design 动态详细设计
+- 6 LINUX DEPLOYMENT VARIANT DETAILED DESIGN Linux 部署变体详细设计
+  - 6.1 Definition and Scope 定义与范围
+  - 6.2 File Structure 文件结构
+  - 6.3 SWU_IPCS_LINUX_OS_KERN Software Unit Design 软件单元设计
+  - 6.4 SWU_IPCS_LINUX_OS_UIO Software Unit Design 软件单元设计
+  - 6.5 SWU_IPCS_LINUX_UIO_KO Software Unit Design 软件单元设计
+  - 6.6 SWU_IPCS_LINUX_OS_CDEV Software Unit Design 软件单元设计
+  - 6.7 SWU_IPCS_LINUX_CDEV_KO Software Unit Design 软件单元设计
+  - 6.8 SWU_IPCS_HAL_LINUX Software Unit Design 软件单元设计
+  - 6.9 Dynamic Detailed Design 动态详细设计
+  - 6.10 Global Variables 全局变量
+  - 6.11 Data Types 类型定义
+- 7 BIDIRECTIONAL TRACEABILITY AND CONSISTENCY 双向追溯与一致性
+  - 7.1 Traceability Statement 追溯性策略与声明
+  - 7.2 Bidirectional Traceability Matrix 双向追溯矩阵
 
 # 1 INTRODUCTION简介
 
@@ -106,7 +106,7 @@ IPCS Driver软件详细设计规范
 | 1 | Automotive SPICE® Process Assessment Model, SWE.3 Software Detailed Design and Unit Construction | 4.0 | 2023 | VDA | Release |
 | 2 | IPCS Driver 软件架构设计 ipcs-architecture.pdf | 1.0 | 2026.4.16 | 倘亚朋 | 待评审 |
 | 3 | reference.md 详细设计文档模板 | N/A | N/A | N/A | 模板输入 |
-| 4 | ipcs/ IPCF Shared Memory Driver for Real-Time Operating Systems 源码 | SW 4.0.1 | 2023 | NXP | 源码输入 |
+| 4 | ipcs/ IPCF Shared Memory Driver for Real-Time Operating Systems 源码 | SW 4.0.1 | 2023 | Star-Gather | 源码输入 |
 
 ## 1.5 Abbreviations缩略语
 
@@ -139,11 +139,11 @@ IPCS Driver软件详细设计规范
 | In-Kernel | 全内核实现 |
 | CDEV | Character Device 实现 |
 
-# 2 软件单元划分 Software Unit Identification
+# 2 SOFTWARE UNIT IDENTIFICATION 软件单元划分
 
 本章只定义软件单元及其与软件架构组件的映射关系。架构基线见参考文献 [2] `ipcs-architecture.pdf`；分层与部署变体设计见第 3 章；函数级详细设计见第 4–6 章。
 
-## 2.1 软件单元清单
+## 2.1 Software Unit List 软件单元清单
 
 软件单元按可编译源码文件（`.c`）划分。头文件作为单元接口或类型规格，在 §4.2 Files 及函数设计表「函数声明文件」中描述，不单独编号为 SWU。
 
@@ -163,7 +163,7 @@ IPCS Driver软件详细设计规范
 | SWU_IPCS_LINUX_UIO_KO | ipcs/mpu/os_kernel/ipc-uio.c | UIO 内核 Backend |
 | SWU_IPCS_LINUX_CDEV_KO | ipcs/mpu/os_kernel/ipc-cdev.c | CDEV 内核 Backend |
 
-## 2.2 架构组件与软件单元映射
+## 2.2 Architecture Component to Software Unit Mapping 架构组件与软件单元映射
 
 | 架构组件 ID | SW-Unit-ID | 适用范围 |
 |---|---|---|
@@ -176,9 +176,9 @@ IPCS Driver软件详细设计规范
 
 第 4 章及以下函数说明表中的「软件单元 ID」引用本章；「对应软件架构 ID」引用 `ipcs-architecture.pdf` 中的架构组件 ID。
 
-# 3 分层架构与部署变体设计
+# 3 LAYERED ARCHITECTURE AND DEPLOYMENT VARIANTS 分层架构与部署变体设计
 
-## 3.1 SHM / OSAL / HAL 三层接口契约
+## 3.1 SHM / OSAL / HAL Interface Contract 三层接口契约
 
 IPCS 采用 SHM、OSAL、HAL 三层结构。SHM 层位于 `ipcs/ipcs_cores`，只通过固定函数原型调用 OSAL 与 HAL；不同部署变体不得改变这些接口契约。
 
@@ -192,7 +192,7 @@ IPCS 采用 SHM、OSAL、HAL 三层结构。SHM 层位于 `ipcs/ipcs_cores`，�
 
 ![变体部署接口设计约束](cursor_tmp/svgs_if_impl/if_impl_cores.svg)
 
-## 3.2 RTOS 部署变体
+## 3.2 RTOS Deployment Variant RTOS 部署变体
 
 RTOS 部署变体包括 FreeRTOS、ThreadX、AUTOSAR OS 三种实现。Baremetal 源码存在于 `ipcs/mcu/os/baremetal`，但不纳入本文档详细设计范围。
 
@@ -206,11 +206,11 @@ RTOS 部署变体中，Core 调用 `ipcsOs*` 与 `ipcsHw*` 时直接进入 OSAL/
 
 ![RTOS变体三种实现关系图](cursor_tmp/svgs_if_impl/if_impl_rtos.svg)
 
-## 3.3 Linux 部署变体
+## 3.3 Linux Deployment Variants Linux 部署变体
 
 Linux 部署变体包括 UIO、CDEV、全内核三种实现。`ipcs-architecture.pdf` 中的 `Drv_Ipcs_Linux_Adapt_Cmp` 是逻辑组件；详细设计按源码进一步说明其用户侧与内核侧职责。
 
-### 3.3.1 UIO 实现
+### 3.3.1 UIO Implementation UIO 实现
 
 UIO 实现由用户库代理、UIO 内核 Backend、Linux HAL 三部分组成。
 
@@ -222,7 +222,7 @@ UIO 实现由用户库代理、UIO 内核 Backend、Linux HAL 三部分组成。
 
 用户侧 `ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify` 通过 `ipcsSendUioCmd` 写 UIO fd 转发命令；`ipcsHwInit`、`ipcsHwFree` 是空实现，源码注释说明初始化和释放由内核 UIO 模块处理。
 
-### 3.3.1.1 User–Kernel 适配接口（IF_LinuxAdapt_UIO）
+### 3.3.1.1 User-Kernel Adaptation Interface (IF_LinuxAdapt_UIO) User-Kernel 适配接口
 
 Core 仍只依赖 §3.1 的 `IF_OSAbst` / `IF_HWAbst`。UIO 变体中，用户侧 `SWU_IPCS_LINUX_OS_UIO` 对上层**呈现**这两套接口；跨地址空间实现则经 **`IF_LinuxAdapt_UIO`** 由 `SWU_IPCS_LINUX_UIO_KO` 完成。该接口属于 `Drv_Ipcs_Linux_Adapt_Cmp` 内部分配接口，不是新的架构层。
 
@@ -249,7 +249,7 @@ UIO 变体采用 **Init 通道 + Runtime 通道** 双通道模型：
 
 ![Linux部署变体UIO实现关系图](cursor_tmp/svgs_if_impl/if_impl_uio.svg)
 
-### 3.3.2 CDEV 实现
+### 3.3.2 CDEV Implementation CDEV 实现
 
 CDEV 实现由用户库代理、字符设备 Backend、Linux HAL 三部分组成。
 
@@ -261,7 +261,7 @@ CDEV 实现由用户库代理、字符设备 Backend、Linux HAL 三部分组成
 
 用户侧 `ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify` 使用 `IPC_CDEV_CMD_*` ioctl 转发到内核；`ipcsHwInit`、`ipcsHwFree` 是空实现，源码注释说明由内核模块处理。
 
-### 3.3.2.1 User–Kernel 适配接口（IF_LinuxAdapt_CDEV）
+### 3.3.2.1 User-Kernel Adaptation Interface (IF_LinuxAdapt_CDEV) User-Kernel 适配接口
 
 与 UIO 变体相同，Core 只依赖 `IF_OSAbst` / `IF_HWAbst`；用户侧 `SWU_IPCS_LINUX_OS_CDEV` 对外呈现上述契约，跨域实现经 **`IF_LinuxAdapt_CDEV`** 由 `SWU_IPCS_LINUX_CDEV_KO` 完成。接口定义见 `ipcs/mpu/os_kernel/ipc-cdev.h`（用户态与内核态共用）。
 
@@ -280,7 +280,7 @@ CDEV 变体经单一字符设备 **`/dev/ipc-shm-cdev`** 承载全部适配操�
 
 ![Linux部署变体CDEV实现关系图](cursor_tmp/svgs_if_impl/if_impl_cdev.svg)
 
-### 3.3.3 全内核实现
+### 3.3.3 In-Kernel Implementation 全内核实现
 
 全内核实现不使用用户侧代理。Core、OSAL、HAL 均在内核模块中运行，形态与 RTOS 部署变体一致。
 
@@ -293,29 +293,18 @@ CDEV 变体经单一字符设备 **`/dev/ipc-shm-cdev`** 承载全部适配操�
 
 ![Linux部署变体in-kernel实现关系图](cursor_tmp/svgs_if_impl/if_impl_kern.svg)
 
-## 3.4 OSAL/HAL 实现位置对照
 
-| 接口 | RTOS 部署变体 | Linux UIO 实现 | Linux CDEV 实现 | Linux 全内核实现 |
-|---|---|---|---|---|
-| `ipcsOsInit` / `ipcsOsFree` | `mcu/os/*/ipc-os-*.c` | 用户侧 `os_uio/ipc-os.c` + 内核 `ipc-uio.c` | 用户侧 `os_cdev/ipc-os.c` + 内核 `ipc-cdev.c` | `os_kernel/ipc-os.c` |
-| `ipcsOsGetLocalShm` / `ipcsOsGetRemoteShm` | `mcu/os/*/ipc-os-*.c` | 用户侧 `/dev/mem` mmap | 用户侧 mmap | `os_kernel/ipc-os.c` |
-| `ipcsOsPollChannels` | `mcu/os/*/ipc-os-*.c` | 用户 RX 线程，内核 UIO 事件唤醒 | 用户 poll / wait，内核字符设备唤醒 | `os_kernel/ipc-os.c` |
-| `ipcsHwInit` / `ipcsHwFree` | `mcu/hw/ipc-hw.c` | 用户侧空实现，真实处理在内核 | 用户侧空实现，真实处理在内核 | `mpu/hw/c1/ipc-hw.c` |
-| `ipcsHwIrqEnable` / `ipcsHwIrqDisable` / `ipcsHwIrqNotify` | `mcu/hw/ipc-hw.c` | 用户侧 UIO write 代理，内核 HAL 执行 | 用户侧 ioctl 代理，内核 HAL 执行 | `mpu/hw/c1/ipc-hw.c` |
-| `ipcsHwFlushCache*` | `mcu/hw/ipc-hw.c` | Linux HAL / 内核路径 | Linux HAL / 内核路径 | `mpu/hw/c1/ipc-hw.c` |
+# 4 COMMON SOFTWARE UNIT DETAILED DESIGN 公共软件单元详细设计
 
-
-# 4 公共详细设计（跨部署变体共享）
-
-## 4.1 Definition定义
+## 4.1 Definition and Scope 定义与范围
 
 IPCS Driver 是面向同一 SoC 内不同处理核心的 shared memory 通信驱动。公共部分（ipcs/ipcs_cores）实现 IPCF Shared Memory 协议核心，支持 managed/unmanaged channel、中断通知与 polling、多 instance/channel。
 
 本章描述跨部署变体共享的 Core、Queue、配置类型（SHM 层）。分层与部署变体见第 3 章；RTOS 实现见第 5 章；Linux 实现见第 6 章。
 
-## 4.2 Files
+## 4.2 File Structure 文件结构
 
-### 4.2.1 文件列表
+### 4.2.1 File List 文件列表
 
 | 组件 | 文件 |
 |---|---|
@@ -412,7 +401,7 @@ ipc-shm.h, ipc-util.h（与 ipcs/ipcs_cores/ipc-util.c 中 #include 一致）
 
 ![image7.png](cursor_tmp/files_32_svgs/3_2_8.svg)
 
-## 4.3 External Interfaces外部接口
+## 4.3 External Interfaces 外部接口
 
 本节严格按照 reference.md 的函数说明表格格式描述外部接口。按照任务要求，只有 ipcs/ipcs/ipcs_cores/ipc-shm.c 中的非静态接口为对外接口。
 
@@ -2683,7 +2672,7 @@ processing flow
 ![image39.png](cursor_tmp/flow_svgs/3_4_23.svg)
 
 
-## 4.5 Global variants 全局变量
+## 4.5 Global Variables 全局变量
 
 本节仅列出 ipcs/ipcs_cores 内通信核心私有数据。RTOS/Linux 实现侧私有数据见第 5、6 章。
 
@@ -2691,7 +2680,7 @@ processing flow
 |---|---|---|---|---|
 | ipc_shm_priv_data | static struct IPCS_SHM_PRIV_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/ipcs_cores/ipc-shm.c | IPCS shm private data | 源码未显式指定 |
 
-## 4.6 Data Structure 类型定义
+## 4.6 Data Types 类型定义
 
 ### 4.6.1 struct IPCS_RING_TYPE
 
@@ -2919,7 +2908,7 @@ processing flow
 | CORE-S04 | Unmanaged 收发 | CORE_SHM、HAL | `ipcsShmUnmanagedTx` / 对端 `tx_count` 比对 |
 | CORE-S05 | 中断与轮询 | CORE_SHM、OSAL、HAL | IRQ 路径 vs `ipcsShmPollChannels` |
 
-### 4.7.1 初始化流程（CORE-S01）
+### 4.7.1 Initialization Sequence (CORE-S01) 初始化流程
 
 按架构：应用调用 ipcsShmInit → 逐 instance 调用 HAL 初始化、OSAL 初始化、channel 初始化（具体 HAL/OSAL 实现见第 4/5 章）。
 
@@ -2927,7 +2916,7 @@ sequence diagram
 
 ![Core initialization sequence](cursor_tmp/flow_svgs/core_seq_init.svg)
 
-### 4.7.2 Managed 发送流程（CORE-S02）
+### 4.7.2 Managed Transmit Sequence (CORE-S02) Managed 发送流程
 
 ipcsShmAcquireBuf → 填充数据 → ipcsShmTx → queue push BD → HAL 通知远端。
 
@@ -2935,7 +2924,7 @@ sequence diagram
 
 ![Core managed transmit sequence](cursor_tmp/flow_svgs/core_seq_tx_managed.svg)
 
-### 4.7.3 Managed 接收与释放流程（CORE-S03）
+### 4.7.3 Managed Receive and Release Sequence (CORE-S03) Managed 接收与释放流程
 
 OSAL 触发 ipcsShmRx → ipcsChannelRx → 应用回调 → ipcsShmReleaseBuf。
 
@@ -2943,7 +2932,7 @@ sequence diagram
 
 ![Core managed receive and release sequence](cursor_tmp/flow_svgs/core_seq_rx_managed.svg)
 
-### 4.7.4 Unmanaged 发送与接收流程（CORE-S04）
+### 4.7.4 Unmanaged Sequence (CORE-S04) Unmanaged 收发流程
 
 ipcsShmUnmanagedAcquire / ipcsShmUnmanagedTx；接收侧检查 tx_count。
 
@@ -2951,7 +2940,7 @@ sequence diagram
 
 ![Core unmanaged sequence](cursor_tmp/flow_svgs/core_seq_unmanaged.svg)
 
-### 4.7.5 中断与轮询流程（CORE-S05）
+### 4.7.5 Interrupt and Polling Sequence (CORE-S05) 中断与轮询流程
 
 OSAL 注册 hardirq/softirq 或 polling（ipcsShmPollChannels）；Core 按预算分发 channel。
 
@@ -2959,17 +2948,17 @@ sequence diagram
 
 ![Core IRQ and polling sequence](cursor_tmp/flow_svgs/core_seq_irq_poll.svg)
 
-# 5 RTOS 部署变体详细设计
+# 5 RTOS DEPLOYMENT VARIANT DETAILED DESIGN RTOS 部署变体详细设计
 
-## 5.1 Definition定义
+## 5.1 Definition and Scope 定义与范围
 
 RTOS 部署变体在单地址空间内实现 Drv_Ipcs_Osal_Cmp 与 Drv_Ipcs_Hal_Cmp：OS 实现三选一（FreeRTOS、ThreadX、AUTOSAR OS），HAL 位于 `ipcs/mcu/hw/` 并由三种 OS 实现共用。通信核心仍使用第 4 章 `ipcs/ipcs_cores` 与 `ipc-shm.h` 对外 API。
 
 本章描述 RTOS 侧 OSAL/HAL 源文件与头文件依赖；函数级设计见 §5.3–§5.6；全局变量与私有类型见 §5.7–§5.8。Baremetal 源码存在于 `ipcs/mcu/os/baremetal/`，不纳入本文档范围（见 §1.3）。
 
-## 5.2 Files
+## 5.2 File Structure 文件结构
 
-### 5.2.1 文件列表
+### 5.2.1 File List 文件列表
 
 | 组件 | 文件 |
 |---|---|
@@ -2990,7 +2979,7 @@ RTOS 部署变体在单地址空间内实现 Drv_Ipcs_Osal_Cmp 与 Drv_Ipcs_Hal_
 
 依赖关系：
 
-当定义 S32G3XX 时：S32G399A_M7_COMMON.h、S32G399A_SCB.h、S32G399A_MSCM.h（与 `ipcs/mcu/hw/ipc-hw-platform.h` 一致）
+C1_M7_COMMON.h、C1_SCB.h、C1_MSCM.h（与 `ipcs/mcu/hw/ipc-hw-platform.h` 一致）
 
 ![RTOS ipc-hw-platform.h 头文件依赖](cursor_tmp/files_32_svgs/5_2_02.svg)
 
@@ -3077,7 +3066,7 @@ ipc-shm.h、ipc-os.h、ipc-hw.h、tx_api.h、tx_event_flags.h（与 `ipcs/mcu/os
 构建描述文件，无 C 头文件 #include 依赖图。
 
 
-## 5.3 SWU_IPCS_OSAL_AUTOSAR 软件单元设计
+## 5.3 SWU_IPCS_OSAL_AUTOSAR Software Unit Design 软件单元设计
 
 ### 4.4.41 ipcsOsInit
 
@@ -3601,7 +3590,7 @@ processing flow
 | struct IPCS_OS_PRIV_INSTANCE_TYPE | id[IPC_SHM_MAX_INSTANCES] | 源码未提供描述 |
 | sint32 | task_is_initialized | flag to know if the softirq task is initialized |
 
-## 5.4 SWU_IPCS_OSAL_FREERTOS 软件单元设计
+## 5.4 SWU_IPCS_OSAL_FREERTOS Software Unit Design 软件单元设计
 
 ### 4.4.49 ipcsOsInit
 
@@ -4126,7 +4115,7 @@ processing flow
 | TaskHandle_t | softirq_handle | rx task handle used by the ISR to notify the rx task |
 | sint32 | task_is_initialized | flag to know if the softirq task is initialized |
 
-## 5.5 SWU_IPCS_OSAL_THREADX 软件单元设计
+## 5.5 SWU_IPCS_OSAL_THREADX Software Unit Design 软件单元设计
 
 ### 4.4.56 ipcsOsInit
 
@@ -4585,7 +4574,7 @@ processing flow
 | TX_THREAD | soft_irq_handle | rx softirq thread handle |
 | sint32 | task_is_initialized | flag to know if the softirq task is initialized |
 
-## 5.6 SWU_IPCS_HAL_MCU 软件单元设计
+## 5.6 SWU_IPCS_HAL_MCU Software Unit Design 软件单元设计
 
 本节严格按照 reference.md 的内部函数表格格式描述内部函数。除 3.3 中列出的 9 个对外接口之外，其余源码函数、跨组件调用接口和 OS task 单元均作为内部接口。
 
@@ -5667,7 +5656,7 @@ processing flow
 
 ![image64.png](cursor_tmp/flow_svgs/3_4_40.svg)
 
-## 5.7 Global variants 全局变量
+## 5.7 Global Variables 全局变量
 
 本节列出 RTOS 部署变体 OSAL/HAL 实现侧私有全局变量。通信核心私有数据见 §4.5。同名变量 `ipc_os_priv` 在三套 OS 实现中类型不同，见 §5.8。
 
@@ -5678,7 +5667,7 @@ processing flow
 | ipc_os_priv | static struct（见 §5.8.7） | ipcs/mcu/os/threadx/ipc-os-threadx.c | ThreadX 实现私有数据 | 源码未显式指定 |
 | ipc_hw_priv | static struct IPCS_HW_PRIV_TYPE_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/mcu/hw/ipc-hw.c | 每 instance 平台 HAL 私有数据 | 源码未显式指定 |
 
-## 5.8 Data Structure 类型定义
+## 5.8 Data Types 类型定义
 
 以下类型定义来自 RTOS 部署变体 OSAL/HAL 源码。与 §4.6 同名的结构体（如配置相关类型）不在此重复；此处仅列出实现侧私有类型。同名 `struct IPCS_OS_PRIV_INSTANCE_TYPE` / `struct IPCS_OS_PRIV_TYPE_TYPE` 按 OS 实现分别说明。
 
@@ -5811,7 +5800,7 @@ processing flow
 |---|---|---|
 | IPCS_MSCM_IRCP_IR_TYPE | IRCPnIRx[IPC_MSCM_CPX_COUNT][IPC_MSCM_MSI_COUNT] | memory-mapped MSCM interrupt router register array |
 
-## 5.9 RTOS 动态详细设计
+## 5.9 Dynamic Detailed Design 动态详细设计
 
 RTOS 部署变体与 Linux 部署变体共用 **SHM / OSAL / HAL 三层固定接口契约**（`ipc-shm.h`、`ipc-os.h`、`ipc-hw.h`；架构见 §3.1）。Core 层通过同一组 `ipcsOs*`、`ipcsHw*` 原型调用 OSAL 与 HAL；FreeRTOS、ThreadX、AUTOSAR OS 三套实现及共用 `SWU_IPCS_HAL_MCU` **不改变** 该边界。因此，与 §4.7 重复的跨单元 UML 序列图不在本节再次展开。
 
@@ -5834,17 +5823,17 @@ RTOS 部署变体与 Linux 部署变体共用 **SHM / OSAL / HAL 三层固定接
 跨单元流程的 UML 序列图见 **§4.7.1–§4.7.5**（`cursor_tmp/flow_svgs/core_seq_*.svg`）。RTOS 读者在理解 §4.7 抽象参与者后，结合本节上表与 §5.3–§5.6 函数活动图即可完成动态设计追溯。
 
 
-# 6 Linux 部署变体详细设计
+# 6 LINUX DEPLOYMENT VARIANT DETAILED DESIGN Linux 部署变体详细设计
 
-## 6.1 Definition定义
+## 6.1 Definition and Scope 定义与范围
 
 Linux 部署变体通过 `ipcs/mpu` 实现 Drv_Ipcs_Linux_Adapt_Cmp 与 Drv_Ipcs_Hal_Cmp：UIO、CDEV 为用户侧代理加内核 Backend；全内核形态将 OSAL 与 HAL 均置于内核模块（见 §3.3）。通信核心仍使用第 4 章 `ipcs/ipcs_cores`。
 
 本章描述 Linux 侧源文件与头文件依赖；单元函数设计见 §6.3–§6.10。
 
-## 6.2 Files
+## 6.2 File Structure 文件结构
 
-### 6.2.1 文件列表
+### 6.2.1 File List 文件列表
 
 | 组件 | 文件 |
 |---|---|
@@ -5862,7 +5851,7 @@ Linux 部署变体通过 `ipcs/mpu` 实现 Drv_Ipcs_Linux_Adapt_Cmp 与 Drv_Ipcs
 | Drv_Ipcs_Hal_Cmp | ipcs/mpu/hw/c1/ipc-hw-platform.h |
 | Drv_Ipcs_Hal_Cmp | ipcs/mpu/hw/ipc-hw.h |
 
-### 6.2.2 ipc-os.c（UIO 用户侧）
+### 6.2.2 ipc-os.c (UIO User Proxy) UIO 用户侧代理
 
 描述：
 
@@ -5874,7 +5863,7 @@ fcntl.h、unistd.h、stdio.h、sys/mman.h、sys/syscall.h、pthread.h、stdlib.h
 
 ![Linux UIO ipc-os.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_02.svg)
 
-### 6.2.3 ipc-os.h（UIO 用户侧）
+### 6.2.3 ipc-os.h (UIO User Proxy) UIO 用户侧头文件
 
 描述：
 
@@ -5886,7 +5875,7 @@ errno.h、stdint.h、stdbool.h、string.h、stdio.h；无 ipcs 内其他头文�
 
 ![Linux UIO ipc-os.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_03.svg)
 
-### 6.2.4 ipc-os.c（CDEV 用户侧）
+### 6.2.4 ipc-os.c (CDEV User Proxy) CDEV 用户侧代理
 
 描述：
 
@@ -5898,7 +5887,7 @@ fcntl.h、unistd.h、stdio.h、sys/mman.h、sys/syscall.h、sys/ioctl.h、pthrea
 
 ![Linux CDEV ipc-os.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_04.svg)
 
-### 6.2.5 ipc-os.h（CDEV 用户侧）
+### 6.2.5 ipc-os.h (CDEV User Proxy) CDEV 用户侧头文件
 
 描述：
 
@@ -5910,7 +5899,7 @@ errno.h、stdint.h、stdbool.h、string.h、stdio.h；无 ipcs 内其他头文�
 
 ![Linux CDEV ipc-os.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_05.svg)
 
-### 6.2.6 ipc-os.c（全内核 OSAL）
+### 6.2.6 ipc-os.c (In-Kernel OSAL) 全内核 OSAL
 
 描述：
 
@@ -5922,7 +5911,7 @@ linux/ioport.h、linux/io.h、linux/interrupt.h、linux/of_irq.h、linux/of_addr
 
 ![Linux 全内核 ipc-os.c 头文件依赖](cursor_tmp/files_32_svgs/6_2_06.svg)
 
-### 6.2.7 ipc-os.h（全内核 OSAL）
+### 6.2.7 ipc-os.h (In-Kernel OSAL) 全内核 OSAL 头文件
 
 描述：
 
@@ -6019,7 +6008,7 @@ linux/io.h、ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-hw-platform.h（与 `ipcs/mpu
 ![Linux ipc-hw.h 头文件依赖](cursor_tmp/files_32_svgs/6_2_14.svg)
 
 
-## 6.3 SWU_IPCS_LINUX_OS_KERN 软件单元设计
+## 6.3 SWU_IPCS_LINUX_OS_KERN Software Unit Design 软件单元设计
 
 源码：`ipcs/mpu/os_kernel/ipc-os.c`。全内核部署变体**无用户侧代理**，OSAL 仅内核侧实现；HAL 见 §6.8。
 
@@ -6704,7 +6693,7 @@ processing flow
 ![6.3.11 shm_mod_exit processing flow](cursor_tmp/flow_svgs/linux_6_3_11_shm_mod_exit.svg)
 
 
-## 6.4 SWU_IPCS_LINUX_OS_UIO 软件单元设计
+## 6.4 SWU_IPCS_LINUX_OS_UIO Software Unit Design 软件单元设计
 
 源码：`ipcs/mpu/os_uio/ipc-os.c`。用户侧 OSAL/HAL **契约代理**（`ipcsOs*`、`ipcsHw*` 同名符号），通过 UIO fd、`/dev/mem`、pthread 转发至 §6.5 内核 Backend；**不**直接操作 MSCM 硬件。
 
@@ -7689,7 +7678,7 @@ processing flow
 ![6.4.15 ipcsHwFree processing flow](cursor_tmp/flow_svgs/linux_6_4_15_ipcsHwFree.svg)
 
 
-## 6.5 SWU_IPCS_LINUX_UIO_KO 软件单元设计
+## 6.5 SWU_IPCS_LINUX_UIO_KO Software Unit Design 软件单元设计
 
 源码：`ipcs/mpu/os_kernel/ipc-uio.c`。UIO 内核 Backend：UIO 设备注册、中断处理、向用户态传递事件；与 §6.8 HAL 协同完成硬件 IRQ。
 
@@ -8493,7 +8482,7 @@ processing flow
 ![6.5.28 ipcsOsUnmapIntc processing flow](cursor_tmp/flow_svgs/linux_6_4_28_ipcsOsUnmapIntc.svg)
 
 
-## 6.6 SWU_IPCS_LINUX_OS_CDEV 软件单元设计
+## 6.6 SWU_IPCS_LINUX_OS_CDEV Software Unit Design 软件单元设计
 
 源码：`ipcs/mpu/os_cdev/ipc-os.c`。用户侧 OSAL/HAL **契约代理**，通过字符设备 ioctl/poll/mmap 与 §6.7 内核 Backend 通信；`ipcsHwInit`/`ipcsHwFree` 为空实现（硬件初始化在内核）。
 
@@ -9140,7 +9129,7 @@ processing flow
 ![6.6.10 ipcsHwFree processing flow](cursor_tmp/flow_svgs/linux_6_5_10_ipcsHwFree.svg)
 
 
-## 6.7 SWU_IPCS_LINUX_CDEV_KO 软件单元设计
+## 6.7 SWU_IPCS_LINUX_CDEV_KO Software Unit Design 软件单元设计
 
 源码：`ipcs/mpu/os_kernel/ipc-cdev.c`。CDEV 内核 Backend：字符设备、ioctl、wait queue、ISR 与实例初始化。
 
@@ -9799,7 +9788,7 @@ processing flow
 ![6.7.21 ipcsCdevClean processing flow](cursor_tmp/flow_svgs/linux_6_5_21_ipcsCdevClean.svg)
 
 
-## 6.8 Linux HAL 函数设计
+## 6.8 SWU_IPCS_HAL_LINUX Software Unit Design 软件单元设计
 
 Linux 内核侧 HAL，完成 MSCM 映射、核索引解析、IRQ 使能/禁止/通知/清除等硬件操作。
 
@@ -10338,7 +10327,7 @@ processing flow
 ![6.8.8 ipcsHwIrqClear processing flow](cursor_tmp/flow_svgs/linux_6_6_8_ipcsHwIrqClear.svg)
 
 
-## 6.9 Linux 关键场景流程
+## 6.9 Dynamic Detailed Design 动态详细设计
 
 第 6.3–6.8 节各函数已给出单函数 processing flow（活动图）。本节描述 **跨软件单元** 的动态交互，采用 UML 序列图；纵轴为软件单元 ID（§2.1），用户侧代理、内核 Backend、HAL 使用与 §5.7 相同的配色规则。
 
@@ -10353,55 +10342,55 @@ processing flow
 | LIN-S07 | CDEV 接收唤醒 | HAL_LINUX、LINUX_CDEV_KO、LINUX_OS_CDEV、CORE_SHM | `ipcsShmHardirq` + `wait_queue` |
 | LIN-S08 | 全内核接收 | HAL_LINUX、LINUX_OS_KERN、CORE_SHM | `ipcsShmHardirq` + tasklet |
 
-### 6.9.1 UIO 初始化（LIN-S01）
+### 6.9.1 UIO Initialization (LIN-S01) UIO 初始化
 
 sequence diagram
 
 ![Linux UIO initialization sequence](cursor_tmp/flow_svgs/linux_seq_uio_init.svg)
 
-### 6.9.2 CDEV 初始化（LIN-S02）
+### 6.9.2 CDEV Initialization (LIN-S02) CDEV 初始化
 
 sequence diagram
 
 ![Linux CDEV initialization sequence](cursor_tmp/flow_svgs/linux_seq_cdev_init.svg)
 
-### 6.9.3 全内核初始化（LIN-S03）
+### 6.9.3 In-Kernel Initialization (LIN-S03) 全内核初始化
 
 sequence diagram
 
 ![Linux in-kernel initialization sequence](cursor_tmp/flow_svgs/linux_seq_kernel_init.svg)
 
-### 6.9.4 UIO 发送通知（LIN-S04）
+### 6.9.4 UIO Transmit Notify (LIN-S04) UIO 发送通知
 
 sequence diagram
 
 ![Linux UIO transmit notify sequence](cursor_tmp/flow_svgs/linux_seq_uio_tx_notify.svg)
 
-### 6.9.5 CDEV 发送通知（LIN-S05）
+### 6.9.5 CDEV Transmit Notify (LIN-S05) CDEV 发送通知
 
 sequence diagram
 
 ![Linux CDEV transmit notify sequence](cursor_tmp/flow_svgs/linux_seq_cdev_tx_notify.svg)
 
-### 6.9.6 UIO 接收唤醒（LIN-S06）
+### 6.9.6 UIO Receive Wakeup (LIN-S06) UIO 接收唤醒
 
 sequence diagram
 
 ![Linux UIO receive wakeup sequence](cursor_tmp/flow_svgs/linux_seq_uio_rx.svg)
 
-### 6.9.7 CDEV 接收唤醒（LIN-S07）
+### 6.9.7 CDEV Receive Wakeup (LIN-S07) CDEV 接收唤醒
 
 sequence diagram
 
 ![Linux CDEV receive wakeup sequence](cursor_tmp/flow_svgs/linux_seq_cdev_rx.svg)
 
-### 6.9.8 全内核接收（LIN-S08）
+### 6.9.8 In-Kernel Receive (LIN-S08) 全内核接收
 
 sequence diagram
 
 ![Linux in-kernel receive sequence](cursor_tmp/flow_svgs/linux_seq_kernel_rx.svg)
 
-## 6.10 Global variants 全局变量
+## 6.10 Global Variables 全局变量
 
 本节列出 Linux 部署变体适配层与 HAL 实现侧私有全局变量。通信核心私有数据见 §4.5。UIO/CDEV 用户侧与全内核实现均使用变量名 `priv` 或 `ipc_os_priv`，但类型与源码文件不同，见 §6.11。
 
@@ -10414,11 +10403,11 @@ sequence diagram
 | ipc_cdev_priv | struct IPCS_CDEV_PRIV_TYPE_TYPE | ipcs/mpu/os_kernel/ipc-cdev.c | CDEV 内核 Backend 字符设备与 wait queue 状态 | 源码未显式指定 |
 | ipc_hw_priv | static struct IPCS_HW_PRIV_TYPE_TYPE [IPC_SHM_MAX_INSTANCES] | ipcs/mpu/hw/c1/ipc-hw.c | 每 instance Linux HAL 私有数据 | 源码未显式指定 |
 
-## 6.11 Data Structure 类型定义
+## 6.11 Data Types 类型定义
 
 以下类型定义来自 Linux 部署变体源码。与 §4.6 或 §5.8 同名的结构体/枚举若语义因部署变体不同，在本节按实现分别说明。
 
-### 6.11.1 enum ipc_status（UIO 用户侧）
+### 6.11.1 enum IPCS_STATUS_E（UIO 用户侧）
 
 定义于 `ipcs/mpu/os_uio/ipc-os.c`。
 
@@ -10427,7 +10416,7 @@ sequence diagram
 | IPC_STATUS_CLEAR | 0 |
 | IPC_STATUS_SET | 1 |
 
-### 6.11.2 enum ipc_status（CDEV 用户侧）
+### 6.11.2 enum IPCS_STATUS_E（CDEV 用户侧）
 
 定义于 `ipcs/mpu/os_cdev/ipc-os.c`（枚举名与 UIO 实现相同，取值一致）。
 
@@ -10598,7 +10587,7 @@ sequence diagram
 | int | local_core | index of the local core targeted by remote |
 | struct IPCS_MSCM_REGS_TYPE * | ipc_mscm | pointer to memory-mapped hardware peripheral MSCM |
 
-### 6.11.15 enum ipc_s32g3xx_processor_idx
+### 6.11.15 enum IPCS_C1_PROCESSOR_IDX_E
 
 定义于 `ipcs/mpu/hw/c1/ipc-hw-platform.h`。
 
@@ -10695,9 +10684,9 @@ sequence diagram
 | volatile uint16_t | IRSPRC[IPC_MSCM_IRSPRC_COUNT] | 源码未提供描述 |
 | struct { volatile uint32_t IPC_ISR; volatile uint32_t IPC_IGR; } | IRCPnIRx[IPC_MSCM_CP_COUNT][IPC_MSCM_IRQ_COUNT] | 源码未提供描述 |
 
-# 7 双向追溯与一致性 (Bidirectional Traceability and Consistency)
+# 7 BIDIRECTIONAL TRACEABILITY AND CONSISTENCY 双向追溯与一致性
 
-## 7.1 追溯性策略与声明 (Traceability Statement)
+## 7.1 Traceability Statement 追溯性策略与声明
 
 本章节建立本模块软件详细设计与上游（软件需求、软件架构）及下游（物理源代码）之间的双向追溯关系，满足 ASPICE SWE.3.BP4 要求。
 
@@ -10705,7 +10694,7 @@ sequence diagram
 
 本矩阵用于证明：已分配至本驱动的架构组件与需求在详细设计单元及源码中均有对应实现，并支持变更影响分析。
 
-## 7.2 需求-架构-设计-代码 双向追溯矩阵 (Bidirectional Traceability Matrix)
+## 7.2 Bidirectional Traceability Matrix 双向追溯矩阵
 
 | 软件需求 ID (SWE.1) | 架构组件 ID (SWE.2) | 本详细设计单元 ID (SWE.3) | 物理源代码实体 (Code) | 追溯关系及设计覆盖说明 |
 | :--- | :--- | :--- | :--- | :--- |

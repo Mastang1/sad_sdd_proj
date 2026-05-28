@@ -6,8 +6,8 @@
 #ifndef IPC_HW_PLATFORM_H
 #define IPC_HW_PLATFORM_H
 
-/* S32g3xx Processor IDs */
-enum ipc_s32g3xx_processor_idx {
+/* C1 Processor IDs */
+enum IPCS_C1_PROCESSOR_IDX_E {
 	IPC_A53_0 = 0,  /* ARM Cortex-A53 cluster 0 core 0 */
 	IPC_A53_1 = 1,  /* ARM Cortex-A53 cluster 1 core 1 */
 	IPC_A53_2 = 2,  /* ARM Cortex-A53 cluster 1 core 0 */

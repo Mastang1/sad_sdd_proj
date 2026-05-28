@@ -14,12 +14,12 @@ skinparam note {
   BackgroundColor #FFF8E8
   BorderColor #B89968
 }
-component [ipc-hw-platform.h] as SRC
-component [S32G399A_M7_COMMON.h] as H0 <<S32G3XX>>
-component [S32G399A_SCB.h] as H1 <<S32G3XX>>
-component [S32G399A_MSCM.h] as H2 <<S32G3XX>>
+left to right direction
+component [ipcs/mcu/hw/ipc-hw-platform.h] as SRC
+component [C1_M7_COMMON.h] as H0 <<platform>>
+component [C1_SCB.h] as H1 <<platform>>
+component [C1_MSCM.h] as H2 <<platform>>
 SRC ..> H0
 SRC ..> H1
 SRC ..> H2
-note bottom of SRC : ifdef S32G3XX 时包含平台寄存器头
 @enduml

@@ -37,7 +37,7 @@
 #define delete_module(name, flags) \
 	syscall(__NR_delete_module, name, flags)
 
-enum ipc_status {
+enum IPCS_STATUS_E {
 	IPC_STATUS_CLEAR = 0,
 	IPC_STATUS_SET = 1,
 };

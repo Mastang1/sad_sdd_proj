@@ -1,16 +1,16 @@
 === MD / DOCX consistency report ===
 
-Markdown headings (h1-h4): 293
-DOCX Heading 1-4 paragraphs: 293
+Markdown headings (h1-h4): 292
+DOCX Heading 1-4 paragraphs: 292
 
-Markdown pipe tables (blocks): 84
+Markdown pipe tables (blocks): 83
 Markdown HTML function tables: 138
 DOCX HTML-style function tables (5+ cols): 138
-DOCX tables (total): 223
+DOCX tables (total): 222
 
 Markdown image refs: 183
 DOCX inline images (blips): 183
-DOCX word/media extensions: {'.png': 176, '.svg': 219, '.emf': 3}
+DOCX word/media extensions: {'.png': 176, '.svg': 220, '.emf': 3}
 DOCX body SVG (svgBlip): 183
 
 SVG aspect ratios (viewBox vs DOCX): 183/183 OK
@@ -33,4 +33,4 @@ Function subsections (### x.y.z name) in MD: 243
 
 --- RESULT: PASS (no ERROR) ---
 
-DOCX paragraphs total: 1001
+DOCX paragraphs total: 1000
