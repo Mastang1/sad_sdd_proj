@@ -4,11 +4,29 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title ipcsShmSoftirq FreeRTOS
 start
-:(void) ulTaskNotifyTake(pdTRUE,portMAX_DELAY);;
-:Foreach outer loop waits on notification then processes instances guarded by ipc-os-freertos.c;
-note right
-  inner do-while calls rx_cb and taskYIELD until work below budget,re-enable MSCM interrupts
-  then block again on ulTaskNotifyTake
-end note
+:(void) ulTaskNotifyTake(pdTRUE, portMAX_DELAY);;
+while (forever?) is (yes)
+  :i = 0;
+  while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+    if ((state==DISABLED)||(msg_received==MSG_NOT_RECEIVED)||(rx_irq==IPC_IRQ_NONE)?) then (yes)
+    else (no)
+      repeat
+        :work = ipc_os_priv.rx_cb(i, IPC_SOFTIRQ_BUDGET);;
+        :taskYIELD();;
+      repeat while (work >= IPC_SOFTIRQ_BUDGET?) is (yes)
+      :id[i].msg_received = MSG_NOT_RECEIVED;;
+    endif
+    :i++;
+  endwhile (no)
+  :i = 0;
+  while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+    if (state != DISABLED?) then (yes)
+      :ipcsHwIrqEnable(i);;
+    else (no)
+    endif
+    :i++;
+  endwhile (no)
+  :(void) ulTaskNotifyTake(pdTRUE, portMAX_DELAY);;
+endwhile (no)
 stop
 @enduml

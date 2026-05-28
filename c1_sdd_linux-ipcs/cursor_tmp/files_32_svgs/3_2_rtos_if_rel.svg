@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="640" viewBox="0 0 520 640">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><polygon points="0,0 8,4 0,8" fill="#5C4033"/></marker></defs>
+<rect width="100%" height="100%" fill="#FFFCF5"/>
+<rect x="228.0" y="12" width="64.0" height="36.0" rx="3" ry="3" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.8"/>
+<text x="260.0" y="34" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#000">APP</text>
+<circle cx="260.0" cy="72" r="7" fill="#F1F1F1" stroke="#181818" stroke-width="0.8"/>
+<text x="260.0" y="96" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#000">IF_AppSvc</text>
+<rect x="170" y="130" width="180" height="48" rx="3" ry="3" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.8"/>
+<rect x="332" y="135" width="12" height="8" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.6"/>
+<text x="260.0" y="152" text-anchor="middle" font-family="sans-serif" font-size="10" font-style="italic" fill="#000">&lt;&lt;Implement&gt;&gt;</text>
+<text x="260.0" y="168" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#000">SWU_IPCS_CORE_SHM</text>
+<rect x="170" y="210" width="180" height="48" rx="3" ry="3" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.8"/>
+<rect x="332" y="215" width="12" height="8" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.6"/>
+<text x="260.0" y="232" text-anchor="middle" font-family="sans-serif" font-size="10" font-style="italic" fill="#000">&lt;&lt;Implement&gt;&gt;</text>
+<text x="260.0" y="248" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#000">SWU_IPCS_CORE_QUEUE</text>
+<circle cx="150" cy="310" r="7" fill="#F1F1F1" stroke="#181818" stroke-width="0.8"/>
+<text x="150" y="334" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#000">IF_OSAbst</text>
+<circle cx="390" cy="310" r="7" fill="#F1F1F1" stroke="#181818" stroke-width="0.8"/>
+<text x="390" y="334" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#000">IF_HWAbst</text>
+<rect x="20" y="400" width="150" height="48" rx="3" ry="3" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.8"/>
+<rect x="152" y="405" width="12" height="8" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.6"/>
+<text x="95.0" y="422" text-anchor="middle" font-family="sans-serif" font-size="10" font-style="italic" fill="#000">&lt;&lt;Implement&gt;&gt;</text>
+<text x="95.0" y="438" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#000">SWU_IPCS_OSAL_AUTOSAR</text>
+<rect x="185" y="400" width="150" height="48" rx="3" ry="3" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.8"/>
+<rect x="317" y="405" width="12" height="8" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.6"/>
+<text x="260.0" y="422" text-anchor="middle" font-family="sans-serif" font-size="10" font-style="italic" fill="#000">&lt;&lt;Implement&gt;&gt;</text>
+<text x="260.0" y="438" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#000">SWU_IPCS_OSAL_FREERTOS</text>
+<rect x="350" y="400" width="150" height="48" rx="3" ry="3" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.8"/>
+<rect x="482" y="405" width="12" height="8" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.6"/>
+<text x="425.0" y="422" text-anchor="middle" font-family="sans-serif" font-size="10" font-style="italic" fill="#000">&lt;&lt;Implement&gt;&gt;</text>
+<text x="425.0" y="438" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#000">SWU_IPCS_OSAL_THREADX</text>
+<rect x="310" y="520" width="160" height="48" rx="3" ry="3" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.8"/>
+<rect x="452" y="525" width="12" height="8" fill="#F5E6CC" stroke="#8B7355" stroke-width="0.6"/>
+<text x="390.0" y="542" text-anchor="middle" font-family="sans-serif" font-size="10" font-style="italic" fill="#000">&lt;&lt;Implement&gt;&gt;</text>
+<text x="390.0" y="558" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#000">SWU_IPCS_HAL_MCU</text>
+<path d="M260.0,48.0 L260.0,65" fill="none" stroke="#5C4033" stroke-width="1.1" marker-end="url(#arrow)"/>
+<path d="M260.0,130 L240,130 L240,79 L240.0,79" fill="none" stroke="#5C4033" stroke-width="1.1" marker-end="url(#arrow)"/>
+<path d="M260.0,210 L260.0,154.0" fill="none" stroke="#5C4033" stroke-width="1.1" marker-end="url(#arrow)"/>
+<path d="M260.0,178 L120,178 L120,303 L150,303" fill="none" stroke="#5C4033" stroke-width="1.1" marker-end="url(#arrow)"/>
+<path d="M260.0,178 L450,178 L450,303 L390,303" fill="none" stroke="#5C4033" stroke-width="1.1" marker-end="url(#arrow)"/>
+<path d="M95.0,400 L95,400 L95,317 L150,317" fill="none" stroke="#5C4033" stroke-width="1.1" marker-end="url(#arrow)"/>
+<path d="M260.0,400 L260,400 L260,317 L150,317" fill="none" stroke="#5C4033" stroke-width="1.1" marker-end="url(#arrow)"/>
+<path d="M425.0,400 L425,400 L425,317 L150,317" fill="none" stroke="#5C4033" stroke-width="1.1" marker-end="url(#arrow)"/>
+<path d="M390.0,520 L390,317" fill="none" stroke="#5C4033" stroke-width="1.1" marker-end="url(#arrow)"/>
+<path d="M260.0,448 L470,448 L470,317 L390,317" fill="none" stroke="#5C4033" stroke-width="1.1" marker-end="url(#arrow)"/>
+</svg>

@@ -2,12 +2,22 @@
 !pragma layout smetana
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
-title ipcsOsInit baremetal
+title ipcsOsInit FreeRTOS
 start
 :err=-IPC_SHM_E_INVAL;;
 if (rx_cb != NULL?) then (yes)
-  :store cfg addresses state rx_cb irq num;;
-  :err = IPC_SHM_E_OK;;
+  :save shm state rx_cb irq/msg flags;;
+  if ((rx_irq==IPC_IRQ_NONE)||(task_is_initialized!=0)?) then (yes)
+    :err = IPC_SHM_E_OK;;
+  else (no)
+    :os_status = xTaskCreate(ipcsShmSoftirq,...);;
+    if (os_status != pdPASS?) then (yes)
+      :err=-IPC_SHM_E_NOMEM;;
+    else (no)
+      :task_is_initialized=1;;
+      :err = IPC_SHM_E_OK;;
+    endif
+  endif
 endif
 :return err;
 stop

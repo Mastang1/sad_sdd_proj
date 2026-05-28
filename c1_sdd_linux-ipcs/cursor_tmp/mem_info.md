@@ -7,13 +7,13 @@
 
 | 项 | 值 |
 |----|-----|
-| updated | 2026-05-20 (task-8) |
-| validate | PASS — 179 svg / 138 HTML 表 / viewBox 179/179 |
+| updated | 2026-05-28 (task-12 ch3 interface rel) |
+| validate | PASS — 182 svg / 138 HTML 表 / viewBox 182/182 |
 
 ## 当前焦点
 
+- §3.1–§3.3 接口关系组件图已生成（4 SVG）；真源 `gen_ch3_interface_rel_diagrams.py`。
 - SDD 工具链已文档化；新 Session 先读本文件 + `SDD_TOOLCHAIN.md` + §2.1 门禁。
-- Linux Init 活动图：优先管线 A（`linux_ch6_flows.py`），勿批量 `regenerate_processing_flows`。
 
 ## 稳定决策
 
@@ -35,9 +35,7 @@
 
 ## 上轮增量
 
-- 新增 `SDD_TOOLCHAIN.md`、Project Skill、`sdd_preflight.py`；`.cursorrules` §2.1 脚本执行门禁。
-- 已修 6 个 Init 流程（`linux_6_3_3/6_4_5/6_4_21/6_5_1/6_5_18/6_5_20`）并同步 `final_sdd.docx`。
-- task-9：§5.1–5.2、§6.1–6.2 对齐 §4；20 张组件依赖 SVG；`verify_ch56_files` PASS；已同步 docx。
+- task-12：§3.1 增「接口符号」列；§3.2/§3.3 插入 4 张 IF_AppSvc/IF_OSAbst/IF_HWAbst 组件关系 SVG；`final_sdd.docx`/`final.pdf` 已同步。
 
 ## 禁踩坑
 

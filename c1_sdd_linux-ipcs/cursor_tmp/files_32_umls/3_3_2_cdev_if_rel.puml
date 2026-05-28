@@ -1,0 +1,50 @@
+@startuml
+!pragma layout elk
+top to bottom direction
+skinparam backgroundColor #FFFCF5
+skinparam component {
+  BackgroundColor #F5E6CC
+  BorderColor #8B7355
+  FontSize 10
+}
+skinparam package {
+  BackgroundColor #FAF0E0
+  BorderColor #A08060
+}
+skinparam arrowColor #5C4033
+() "IF_AppSvc" as IF_APP
+
+package "User Space" {
+  () "IF_OSAbst" as IF_OS
+  () "IF_HWAbst" as IF_HW
+  component "SWU_IPCS_CORE_SHM" as CORE_SHM <<Implement>>
+  component "SWU_IPCS_CORE_QUEUE" as CORE_Q <<Implement>>
+  component "SWU_IPCS_LINUX_OS_CDEV" as OS_CDEV <<Implement>>
+}
+
+package "Kernel Space" {
+  component "SWU_IPCS_LINUX_CDEV_KO" as CDEV_KO <<Implement>>
+  component "SWU_IPCS_HAL_LINUX" as HAL <<Implement>>
+}
+
+component "APP" as APP
+
+APP -down-> IF_APP
+CORE_SHM -up-> IF_APP
+CORE_Q -up-> CORE_SHM
+CORE_SHM -down-> IF_OS
+CORE_SHM -down-> IF_HW
+OS_CDEV -up-> IF_OS
+OS_CDEV -up-> IF_HW
+OS_CDEV -down-> CDEV_KO
+CDEV_KO -down-> HAL
+
+APP -[hidden]down- IF_APP
+IF_APP -[hidden]down- CORE_SHM
+CORE_Q -[hidden]left- CORE_SHM
+CORE_SHM -[hidden]down- IF_OS
+IF_OS -[hidden]right- IF_HW
+IF_OS -[hidden]down- OS_CDEV
+OS_CDEV -[hidden]down- CDEV_KO
+CDEV_KO -[hidden]down- HAL
+@enduml

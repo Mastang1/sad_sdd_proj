@@ -4,9 +4,15 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title ipcsHwFlushCache static
 start
-:Only compiled when IPC_D_CACHE_ENABLE is defined;;
-:MCAL_DATA_INSTRUCTION_SYNC barriers;;
-:loop invalidate D-cache lines stepping IPC_DCACHE_LINE_SIZE until size consumed;;
-:barriers again;
+if (IPC_D_CACHE_ENABLE defined?) then (yes)
+  :MCAL_DATA_SYNC_BARRIER(); MCAL_INSTRUCTION_SYNC_BARRIER();;
+  repeat
+    :S32_SCB->DCCIMVAC = data_addr_tmp;;
+    :data_addr_tmp += IPC_DCACHE_LINE_SIZE;;
+    :data_size_tmp -= IPC_DCACHE_LINE_SIZE;;
+  repeat while (data_size_tmp > 0?) is (yes)
+  :MCAL_DATA_SYNC_BARRIER(); MCAL_INSTRUCTION_SYNC_BARRIER();;
+else (no)
+endif
 stop
 @enduml

@@ -828,10 +828,16 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "ipcsHwFlushCache static",
         """
         start
-        :Only compiled when IPC_D_CACHE_ENABLE is defined;;
-        :MCAL_DATA_INSTRUCTION_SYNC barriers;;
-        :loop invalidate D-cache lines stepping IPC_DCACHE_LINE_SIZE until size consumed;;
-        :barriers again;
+        if (IPC_D_CACHE_ENABLE defined?) then (yes)
+          :MCAL_DATA_SYNC_BARRIER(); MCAL_INSTRUCTION_SYNC_BARRIER();;
+          repeat
+            :S32_SCB->DCCIMVAC = data_addr_tmp;;
+            :data_addr_tmp += IPC_DCACHE_LINE_SIZE;;
+            :data_size_tmp -= IPC_DCACHE_LINE_SIZE;;
+          repeat while (data_size_tmp > 0?) is (yes)
+          :MCAL_DATA_SYNC_BARRIER(); MCAL_INSTRUCTION_SYNC_BARRIER();;
+        else (no)
+        endif
         stop
         """,
     )
@@ -917,10 +923,38 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "TASK ipcsShmSoftirq autosar",
         """
         start
-        :Endless Os task per TASK(ipcsShmSoftirq) in ipc-os-autosar.c;
-        :WaitEvent then GetEvent; OS_FREE path yields ClearEvent+TerminateTask;
-        :Per-instance guarded path calls rx_cb with Schedule until work below budget; msg_received reset;
-        :ClearEvent RX and re-arm IRQ via ipcsHwIrqClear and EnableInterruptSource per instance;
+        while (forever?) is (yes)
+          :os_status = WaitEvent(IPC_EVENT_RX_IRQ | IPC_EVENT_OS_FREE);;
+          :os_status = GetEvent(ipcsShmSoftirq, \&event);;
+          if ((event \& IPC_EVENT_OS_FREE) != 0?) then (yes)
+            :os_status = ClearEvent(IPC_EVENT_OS_FREE);;
+            :os_status = TerminateTask();;
+            stop
+          else (no)
+          endif
+          :i = 0;
+          while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+            if ((state==DISABLED)||(msg_received==MSG_NOT_RECEIVED)||(rx_irq==IPC_IRQ_NONE)?) then (yes)
+            else (no)
+              repeat
+                :work = ipc_os_priv.rx_cb(i, IPC_SOFTIRQ_BUDGET);;
+                :os_status = Schedule();;
+              repeat while (work >= IPC_SOFTIRQ_BUDGET?) is (yes)
+              :id[i].msg_received = MSG_NOT_RECEIVED;;
+            endif
+            :i++;
+          endwhile (no)
+          :os_status = ClearEvent(IPC_EVENT_RX_IRQ);;
+          :i = 0;
+          while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+            if ((state != DISABLED) \&\& (rx_irq != IPC_IRQ_NONE)?) then (yes)
+              :ipcsHwIrqClear(i);;
+              :os_status = EnableInterruptSource(isr_id_handler, TRUE);;
+            else (no)
+            endif
+            :i++;
+          endwhile (no)
+        endwhile (no)
         stop
         """,
     )
@@ -989,16 +1023,26 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         """,
     )
 
-    # --- os/baremetal/ipc-os-baremetal.c ---
+    # --- §5.4 FreeRTOS (md refs 3_4_49..55; baremetal out of doc scope) ---
     W(
         "3_4_49",
-        "ipcsOsInit baremetal",
+        "ipcsOsInit FreeRTOS",
         """
         start
         :err=-IPC_SHM_E_INVAL;;
         if (rx_cb != NULL?) then (yes)
-          :store cfg addresses state rx_cb irq num;;
-          :err = IPC_SHM_E_OK;;
+          :save shm state rx_cb irq/msg flags;;
+          if ((rx_irq==IPC_IRQ_NONE)||(task_is_initialized!=0)?) then (yes)
+            :err = IPC_SHM_E_OK;;
+          else (no)
+            :os_status = xTaskCreate(ipcsShmSoftirq,...);;
+            if (os_status != pdPASS?) then (yes)
+              :err=-IPC_SHM_E_NOMEM;;
+            else (no)
+              :task_is_initialized=1;;
+              :err = IPC_SHM_E_OK;;
+            endif
+          endif
         endif
         :return err;
         stop
@@ -1006,38 +1050,60 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
     )
     W(
         "3_4_50",
-        "ipcsOsFree baremetal",
+        "ipcsOsFree FreeRTOS",
         """
         start
-        :rx_cb=NULL; state=DISABLED; ipcsHwIrqDisable(instance);;
+        :HwIrqDisable(instance);;
+        :rx_cb=NULL; state=DISABLED;;
+        if (rx_irq != IPC_IRQ_NONE?) then (yes)
+          if (task_is_initialized!=0?) then (yes)
+            :vTaskDelete(softirq_handle);;
+            :task_is_initialized=0;;
+          endif
+        endif
         stop
         """,
     )
     W(
         "3_4_51",
-        "ipcsShmHardirq baremetal",
+        "ipcsShmHardirq FreeRTOS",
         """
         start
-        :Pass1 — disable and clear each active instance (ipc-os-baremetal.c);
-        :Pass2 — rx_cb spin per instance when IRQ not IPC_IRQ_NONE;
-        :Pass3 — re-enable notifications for active instances;
+        :higher_prio_task_woken = pdFALSE;;
+        :task_critical_status_from_isr = taskENTER_CRITICAL_FROM_ISR();;
+        :i = 0;
+        while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+          if (id[i].state == DISABLED?) then (yes)
+          else (no)
+            :ipcsHwIrqDisable(i);;
+            :ipcsHwIrqClear(i);;
+            :id[i].msg_received = MSG_IS_RECEIVED;;
+          endif
+          :i++;
+        endwhile (no)
+        :vTaskNotifyGiveFromISR(softirq_handle, \&higher_prio_task_woken);;
+        :taskEXIT_CRITICAL_FROM_ISR(task_critical_status_from_isr);;
+        :portYIELD_FROM_ISR(higher_prio_task_woken);;
         stop
         """,
     )
     W(
         "3_4_52",
-        "ipcsShmHardirqInstance baremetal",
+        "ipcsShmHardirqInstance FreeRTOS",
         """
         start
-        if (state!=DISABLED?) then (yes)
-          :HwDisable; HwClear;;
-          if (rx_irq != NONE?) then (yes)
-            repeat
-              :work=rx_cb(instance,budget);;
-            repeat while (work>=budget?)
-            :HwEnable(instance);;
+        :higher_prio_task_woken = pdFALSE;;
+        :task_critical_status_from_isr = taskENTER_CRITICAL_FROM_ISR();;
+        if (id[instance].state != DISABLED?) then (yes)
+          :ipcsHwIrqDisable(instance);;
+          :ipcsHwIrqClear(instance);;
+          if (msg_received == MSG_NOT_RECEIVED?) then (yes)
+            :msg_received = MSG_IS_RECEIVED;;
           endif
+          :vTaskNotifyGiveFromISR(softirq_handle, \&higher_prio_task_woken);;
         endif
+        :taskEXIT_CRITICAL_FROM_ISR(task_critical_status_from_isr);;
+        :portYIELD_FROM_ISR(higher_prio_task_woken);;
         stop
         """,
     )
@@ -1123,12 +1189,30 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "ipcsShmSoftirq FreeRTOS",
         """
         start
-        :(void) ulTaskNotifyTake(pdTRUE,portMAX_DELAY);;
-        :Foreach outer loop waits on notification then processes instances guarded by ipc-os-freertos.c;
-        note right
-          inner do-while calls rx_cb and taskYIELD until work below budget,re-enable MSCM interrupts
-          then block again on ulTaskNotifyTake
-        end note
+        :(void) ulTaskNotifyTake(pdTRUE, portMAX_DELAY);;
+        while (forever?) is (yes)
+          :i = 0;
+          while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+            if ((state==DISABLED)||(msg_received==MSG_NOT_RECEIVED)||(rx_irq==IPC_IRQ_NONE)?) then (yes)
+            else (no)
+              repeat
+                :work = ipc_os_priv.rx_cb(i, IPC_SOFTIRQ_BUDGET);;
+                :taskYIELD();;
+              repeat while (work >= IPC_SOFTIRQ_BUDGET?) is (yes)
+              :id[i].msg_received = MSG_NOT_RECEIVED;;
+            endif
+            :i++;
+          endwhile (no)
+          :i = 0;
+          while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+            if (state != DISABLED?) then (yes)
+              :ipcsHwIrqEnable(i);;
+            else (no)
+            endif
+            :i++;
+          endwhile (no)
+          :(void) ulTaskNotifyTake(pdTRUE, portMAX_DELAY);;
+        endwhile (no)
         stop
         """,
     )

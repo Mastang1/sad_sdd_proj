@@ -145,20 +145,18 @@ IPCS Driver软件详细设计规范
 
 ## 2.1 软件单元清单
 
-软件单元按源码文件或稳定接口头文件划分。
+软件单元按可编译源码文件（`.c`）划分。头文件作为单元接口或类型规格，在 §4.2 Files 及函数设计表「函数声明文件」中描述，不单独编号为 SWU。
 
 | SW-Unit-ID | 源码文件 | 说明 |
 |---|---|---|
 | SWU_IPCS_CORE_SHM | ipcs/ipcs_cores/ipc-shm.c | SHM Core，实现实例、通道、发送接收主流程 |
 | SWU_IPCS_CORE_QUEUE | ipcs/ipcs_cores/ipc-queue.c | 环形队列实现 |
 | SWU_IPCS_CORE_UTIL | ipcs/ipcs_cores/ipc-util.c | Core 工具函数 |
-| SWU_IPCS_CORE_TYPES | ipcs/ipcs_cores/ipc-types.h | 公共类型、配置结构、BD 类型 |
 | SWU_IPCS_HAL_MCU | ipcs/mcu/hw/ipc-hw.c | RTOS 部署变体 HAL 实现 |
 | SWU_IPCS_HAL_LINUX | ipcs/mpu/hw/c1/ipc-hw.c | Linux 内核侧 HAL 实现 |
 | SWU_IPCS_OSAL_AUTOSAR | ipcs/mcu/os/autosar/ipc-os-autosar.c | AUTOSAR OS 实现 |
 | SWU_IPCS_OSAL_FREERTOS | ipcs/mcu/os/freertos/ipc-os-freertos.c | FreeRTOS 实现 |
 | SWU_IPCS_OSAL_THREADX | ipcs/mcu/os/threadx/ipc-os-threadx.c | ThreadX 实现 |
-| SWU_IPCS_OSAL_HDR | ipcs/mcu/os/ipc-os.h | RTOS OSAL 接口声明 |
 | SWU_IPCS_LINUX_OS_UIO | ipcs/mpu/os_uio/ipc-os.c | UIO 用户侧 OSAL/HAL 契约代理 |
 | SWU_IPCS_LINUX_OS_CDEV | ipcs/mpu/os_cdev/ipc-os.c | CDEV 用户侧 OSAL/HAL 契约代理 |
 | SWU_IPCS_LINUX_OS_KERN | ipcs/mpu/os_kernel/ipc-os.c | Linux 全内核 OSAL 实现 |
@@ -171,7 +169,7 @@ IPCS Driver软件详细设计规范
 |---|---|---|
 | Drv_Ipcs_Core_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_UTIL | 全部部署变体 |
 | Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_QUEUE | 全部部署变体 |
-| Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_TYPES、工程配置 `ipcf_Ip_Cfg*.h` | 全部部署变体 |
+| Drv_Ipcs_Conf_Cmp | 无独立 SWU；公共类型见 §4.6（`ipc-types.h`），工程配置见 `ipcf_Ip_Cfg*.h` | 全部部署变体 |
 | Drv_Ipcs_Osal_Cmp | SWU_IPCS_OSAL_AUTOSAR、SWU_IPCS_OSAL_FREERTOS、SWU_IPCS_OSAL_THREADX、SWU_IPCS_LINUX_OS_KERN | RTOS 各 OS 实现、Linux 全内核实现 |
 | Drv_Ipcs_Hal_Cmp | SWU_IPCS_HAL_MCU、SWU_IPCS_HAL_LINUX | RTOS HAL、Linux 内核 HAL |
 | Drv_Ipcs_Linux_Adapt_Cmp | SWU_IPCS_LINUX_OS_UIO、SWU_IPCS_LINUX_OS_CDEV、SWU_IPCS_LINUX_OS_KERN、SWU_IPCS_LINUX_UIO_KO、SWU_IPCS_LINUX_CDEV_KO、SWU_IPCS_HAL_LINUX | Linux 部署变体 |
@@ -184,13 +182,15 @@ IPCS Driver软件详细设计规范
 
 IPCS 采用 SHM、OSAL、HAL 三层结构。SHM 层位于 `ipcs/ipcs_cores`，只通过固定函数原型调用 OSAL 与 HAL；不同部署变体不得改变这些接口契约。
 
-| 层 | 架构组件 | 接口文件 | 关键接口 | 设计约束 |
-|---|---|---|---|---|
-| SHM | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | `ipc-shm.h`、`ipc-queue.h` | `ipcsShmInit`、`ipcsShmTx`、`ipcsShmPollChannels` | 对上提供应用接口，对下只依赖 OSAL/HAL 契约 |
-| OSAL | Drv_Ipcs_Osal_Cmp | `ipc-os.h` 或同名 Linux 用户侧符号 | `ipcsOsInit`、`ipcsOsGetLocalShm`、`ipcsOsPollChannels` | 提供共享内存映射、收包调度与中断上下文联结 |
-| HAL | Drv_Ipcs_Hal_Cmp | `ipc-hw.h` | `ipcsHwInit`、`ipcsHwIrqNotify`、`ipcsHwIrqEnable` | 提供 MSCM/IRQ、缓存与平台核索引操作 |
+| 层 | 架构组件 | 接口符号 | 接口文件 | 关键接口 | 设计约束 |
+|---|---|---|---|---|---|
+| SHM | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | IF_AppSvc | `ipc-shm.h`、`ipc-queue.h` | `ipcsShmInit`、`ipcsShmTx`、`ipcsShmPollChannels` | 对上提供应用接口，对下只依赖 OSAL/HAL 契约 |
+| OSAL | Drv_Ipcs_Osal_Cmp | IF_OSAbst | `ipc-os.h` 或同名 Linux 用户侧符号 | `ipcsOsInit`、`ipcsOsGetLocalShm`、`ipcsOsPollChannels` | 提供共享内存映射、收包调度与中断上下文联结 |
+| HAL | Drv_Ipcs_Hal_Cmp | IF_HWAbst | `ipc-hw.h` | `ipcsHwInit`、`ipcsHwIrqNotify`、`ipcsHwIrqEnable` | 提供 MSCM/IRQ、缓存与平台核索引操作 |
 
 该契约保证 `ipcs_cores` 可在 RTOS、Linux UIO、Linux CDEV、Linux 全内核实现间复用。
+
+![变体部署接口设计约束](cursor_tmp/svgs_if_impl/if_impl_cores.svg)
 
 ## 3.2 RTOS 部署变体
 
@@ -203,6 +203,8 @@ RTOS 部署变体包括 FreeRTOS、ThreadX、AUTOSAR OS 三种实现。Baremetal
 | AUTOSAR OS 实现 | `ipcs/mcu/os/autosar/ipc-os-autosar.c` | `ipcs/mcu/hw/ipc-hw.c` | SHM、OSAL、HAL 位于同一地址空间 |
 
 RTOS 部署变体中，Core 调用 `ipcsOs*` 与 `ipcsHw*` 时直接进入 OSAL/HAL 实现，不存在用户侧代理或内核 Backend。
+
+![RTOS变体三种实现关系图](cursor_tmp/svgs_if_impl/if_impl_rtos.svg)
 
 ## 3.3 Linux 部署变体
 
@@ -220,6 +222,8 @@ UIO 实现由用户库代理、UIO 内核 Backend、Linux HAL 三部分组成。
 
 用户侧 `ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify` 通过 `ipcsSendUioCmd` 写 UIO fd 转发命令；`ipcsHwInit`、`ipcsHwFree` 是空实现，源码注释说明初始化和释放由内核 UIO 模块处理。
 
+![Linux部署变体UIO实现关系图](cursor_tmp/svgs_if_impl/if_impl_uio.svg)
+
 ### 3.3.2 CDEV 实现
 
 CDEV 实现由用户库代理、字符设备 Backend、Linux HAL 三部分组成。
@@ -232,6 +236,8 @@ CDEV 实现由用户库代理、字符设备 Backend、Linux HAL 三部分组成
 
 用户侧 `ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify` 使用 `IPC_CDEV_CMD_*` ioctl 转发到内核；`ipcsHwInit`、`ipcsHwFree` 是空实现，源码注释说明由内核模块处理。
 
+![Linux部署变体CDEV实现关系图](cursor_tmp/svgs_if_impl/if_impl_cdev.svg)
+
 ### 3.3.3 全内核实现
 
 全内核实现不使用用户侧代理。Core、OSAL、HAL 均在内核模块中运行，形态与 RTOS 部署变体一致。
@@ -242,6 +248,8 @@ CDEV 实现由用户库代理、字符设备 Backend、Linux HAL 三部分组成
 | HAL | `ipcs/mpu/hw/c1/ipc-hw.c` | 实现 `ipcsHwInit`、`ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify`、`ipcsHwIrqClear` 等硬件操作 |
 
 `ipcs/mpu/os_kernel/ipc-os.c` 使用 tasklet 进行延迟收包处理，`ipcs/mpu/hw/c1/ipc-hw.c` 负责映射 MSCM 并访问中断相关寄存器。
+
+![Linux部署变体in-kernel实现关系图](cursor_tmp/svgs_if_impl/if_impl_kern.svg)
 
 ## 3.4 OSAL/HAL 实现位置对照
 
@@ -5763,47 +5771,25 @@ processing flow
 
 ## 5.9 RTOS 动态详细设计
 
-第 4 章各函数已给出单函数 processing flow（活动图）。本节描述 **跨软件单元** 的动态交互，采用 UML 序列图；纵轴生命线为软件单元 ID（见 §2.1），颜色与分层一致：Core/Queue 为浅蓝、OSAL 为浅绿、HAL 为淡卡其、远端核为浅紫。
+RTOS 部署变体与 Linux 部署变体共用 **SHM / OSAL / HAL 三层固定接口契约**（`ipc-shm.h`、`ipc-os.h`、`ipc-hw.h`；架构见 §3.1）。Core 层通过同一组 `ipcsOs*`、`ipcsHw*` 原型调用 OSAL 与 HAL；FreeRTOS、ThreadX、AUTOSAR OS 三套实现及共用 `SWU_IPCS_HAL_MCU` **不改变** 该边界。因此，与 §4.7 重复的跨单元 UML 序列图不在本节再次展开。
 
-| 场景 ID | 场景名称 | 涉及软件单元 | 源码依据 |
-|---|---|---|---|
-| RTOS-S01 | 初始化 | CORE_SHM、HAL_MCU、OSAL_THREADX、CORE_QUEUE | `ipcsShmInit` → `ipcsHwInit` → `ipcsOsInit` → `ipcsShmInitChannels` |
-| RTOS-S02 | Managed 发送 | CORE_SHM、CORE_QUEUE、HAL_MCU | `ipcsShmTx` → `ipcsQueuePush` → `ipcsHwIrqNotify` |
-| RTOS-S03 | Managed 接收 | HAL_MCU、OSAL_THREADX、CORE_SHM、CORE_QUEUE | `ipcsShmHardIrq` → softirq → `ipcsShmRx` |
-| RTOS-S04 | Unmanaged 收发 | CORE_SHM、HAL_MCU | `ipcsShmUnmanagedTx` / 对端 `tx_count` 比对 |
-| RTOS-S05 | 中断与轮询 | CORE_SHM、OSAL_THREADX、HAL_MCU | IRQ 路径 vs `ipcsShmPollChannels` |
+| 设计层次 | 文档位置 | 内容 |
+|---|---|---|
+| 单元内部动态行为 | §5.3–§5.6 各函数 `processing flow`（活动图） | 各 OSAL/HAL 函数体内的分支、错误处理及 OS 原语差异（如 ThreadX event flags、FreeRTOS task、AUTOSAR `ActivateTask`） |
+| 跨单元逻辑数据路径 | **§4.7 Dynamic Detailed Design**（CORE-S01–CORE-S05） | Core + Queue 与抽象 `Drv_Ipcs_Osal_Cmp` / `Drv_Ipcs_Hal_Cmp` 的交互序列；RTOS 侧将抽象参与者替换为 §2.1 所列具体 SWU 即可 |
+| RTOS 静态私有数据 | §5.7–§5.8 | 各实现 `ipc_os_priv`、`ipc_hw_priv` 及私有结构体 |
 
-> 以下 OSAL 交互以 **ThreadX 实现**（`SWU_IPCS_OSAL_THREADX`）为例；FreeRTOS、AUTOSAR OS 实现与 Core/HAL 的契约相同，仅 OS 原语不同。
+**与 §4.7 场景对应关系**（逻辑等价，仅 SWU 具名不同）：
 
-### 5.9.1 初始化（RTOS-S01）
+| §4.7 场景 | RTOS 涉及 SWU（示例） |
+|---|---|
+| CORE-S01 初始化 | `SWU_IPCS_CORE_SHM`、`SWU_IPCS_HAL_MCU`、所选 OSAL（§5.3/5.4/5.5）、`SWU_IPCS_CORE_QUEUE` |
+| CORE-S02 Managed 发送 | `SWU_IPCS_CORE_SHM`、`SWU_IPCS_CORE_QUEUE`、`SWU_IPCS_HAL_MCU` |
+| CORE-S03 Managed 接收与释放 | OSAL、`SWU_IPCS_CORE_SHM`、`SWU_IPCS_CORE_QUEUE` |
+| CORE-S04 Unmanaged 收发 | `SWU_IPCS_CORE_SHM`、`SWU_IPCS_HAL_MCU` |
+| CORE-S05 中断与轮询 | OSAL、`SWU_IPCS_CORE_SHM`、`SWU_IPCS_HAL_MCU` |
 
-sequence diagram
-
-![RTOS initialization sequence](cursor_tmp/flow_svgs/rtos_seq_init.svg)
-
-### 5.9.2 Managed 发送（RTOS-S02）
-
-sequence diagram
-
-![RTOS managed transmit sequence](cursor_tmp/flow_svgs/rtos_seq_tx_managed.svg)
-
-### 5.9.3 Managed 接收（RTOS-S03）
-
-sequence diagram
-
-![RTOS managed receive sequence](cursor_tmp/flow_svgs/rtos_seq_rx_managed.svg)
-
-### 5.9.4 Unmanaged 收发（RTOS-S04）
-
-sequence diagram
-
-![RTOS unmanaged sequence](cursor_tmp/flow_svgs/rtos_seq_unmanaged.svg)
-
-### 5.9.5 中断与轮询（RTOS-S05）
-
-sequence diagram
-
-![RTOS IRQ and polling sequence](cursor_tmp/flow_svgs/rtos_seq_irq_poll.svg)
+跨单元流程的 UML 序列图见 **§4.7.1–§4.7.5**（`cursor_tmp/flow_svgs/core_seq_*.svg`）。RTOS 读者在理解 §4.7 抽象参与者后，结合本节上表与 §5.3–§5.6 函数活动图即可完成动态设计追溯。
 
 
 # 6 Linux 部署变体详细设计
@@ -6042,11 +6028,11 @@ linux/io.h、ipc-shm.h、ipc-os.h、ipc-hw.h、ipc-hw-platform.h（与 `ipcs/mpu
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6111,11 +6097,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6186,11 +6172,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6248,11 +6234,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6311,11 +6297,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6374,11 +6360,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6428,11 +6414,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6490,11 +6476,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6553,11 +6539,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6607,11 +6593,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6661,11 +6647,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6734,11 +6720,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6803,11 +6789,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6872,11 +6858,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -6935,11 +6921,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -7010,11 +6996,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -7072,11 +7058,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -7135,11 +7121,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -7198,11 +7184,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -7261,11 +7247,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -7329,11 +7315,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -7391,11 +7377,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -7453,11 +7439,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -7515,11 +7501,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -7584,11 +7570,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -7646,11 +7632,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_uio/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_uio/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -7719,11 +7705,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.h</td>
 </tr>
 </tbody>
 </table>
@@ -7788,11 +7774,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.h</td>
 </tr>
 </tbody>
 </table>
@@ -7857,11 +7843,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.h</td>
 </tr>
 </tbody>
 </table>
@@ -7926,11 +7912,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.h</td>
 </tr>
 </tbody>
 </table>
@@ -7989,11 +7975,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.h</td>
 </tr>
 </tbody>
 </table>
@@ -8058,11 +8044,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.h</td>
 </tr>
 </tbody>
 </table>
@@ -8127,11 +8113,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.h</td>
 </tr>
 </tbody>
 </table>
@@ -8208,11 +8194,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.h</td>
 </tr>
 </tbody>
 </table>
@@ -8271,11 +8257,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.h</td>
 </tr>
 </tbody>
 </table>
@@ -8334,11 +8320,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.h</td>
 </tr>
 </tbody>
 </table>
@@ -8388,11 +8374,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.h</td>
 </tr>
 </tbody>
 </table>
@@ -8450,11 +8436,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-uio.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-uio.h</td>
 </tr>
 </tbody>
 </table>
@@ -8529,11 +8515,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -8591,11 +8577,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -8654,11 +8640,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -8717,11 +8703,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -8780,11 +8766,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -8842,11 +8828,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -8904,11 +8890,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -8966,11 +8952,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -9035,11 +9021,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -9097,11 +9083,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.c`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_cdev/ipc-os.h`</td>
+<td colspan="4">ipcs/mpu/os_cdev/ipc-os.h</td>
 </tr>
 </tbody>
 </table>
@@ -9170,11 +9156,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.h</td>
 </tr>
 </tbody>
 </table>
@@ -9224,11 +9210,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.h</td>
 </tr>
 </tbody>
 </table>
@@ -9286,11 +9272,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.h</td>
 </tr>
 </tbody>
 </table>
@@ -9355,11 +9341,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.h</td>
 </tr>
 </tbody>
 </table>
@@ -9424,11 +9410,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.h</td>
 </tr>
 </tbody>
 </table>
@@ -9505,11 +9491,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.h</td>
 </tr>
 </tbody>
 </table>
@@ -9574,11 +9560,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.h</td>
 </tr>
 </tbody>
 </table>
@@ -9649,11 +9635,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.h</td>
 </tr>
 </tbody>
 </table>
@@ -9703,11 +9689,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.h</td>
 </tr>
 </tbody>
 </table>
@@ -9756,11 +9742,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.c`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/os_kernel/ipc-cdev.h`</td>
+<td colspan="4">ipcs/mpu/os_kernel/ipc-cdev.h</td>
 </tr>
 </tbody>
 </table>
@@ -9823,11 +9809,11 @@ Linux 内核侧 HAL，完成 MSCM 映射、核索引解析、IRQ 使能/禁止/�
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+<td colspan="4">ipcs/mpu/hw/c1/ipc-hw.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+<td colspan="4">ipcs/mpu/hw/ipc-hw.h</td>
 </tr>
 </tbody>
 </table>
@@ -9892,11 +9878,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+<td colspan="4">ipcs/mpu/hw/c1/ipc-hw.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+<td colspan="4">ipcs/mpu/hw/ipc-hw.h</td>
 </tr>
 </tbody>
 </table>
@@ -9985,11 +9971,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+<td colspan="4">ipcs/mpu/hw/c1/ipc-hw.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+<td colspan="4">ipcs/mpu/hw/ipc-hw.h</td>
 </tr>
 </tbody>
 </table>
@@ -10047,11 +10033,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+<td colspan="4">ipcs/mpu/hw/c1/ipc-hw.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+<td colspan="4">ipcs/mpu/hw/ipc-hw.h</td>
 </tr>
 </tbody>
 </table>
@@ -10109,11 +10095,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+<td colspan="4">ipcs/mpu/hw/c1/ipc-hw.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+<td colspan="4">ipcs/mpu/hw/ipc-hw.h</td>
 </tr>
 </tbody>
 </table>
@@ -10171,11 +10157,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+<td colspan="4">ipcs/mpu/hw/c1/ipc-hw.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+<td colspan="4">ipcs/mpu/hw/ipc-hw.h</td>
 </tr>
 </tbody>
 </table>
@@ -10233,11 +10219,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+<td colspan="4">ipcs/mpu/hw/c1/ipc-hw.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+<td colspan="4">ipcs/mpu/hw/ipc-hw.h</td>
 </tr>
 </tbody>
 </table>
@@ -10295,11 +10281,11 @@ processing flow
 </tr>
 <tr>
 <td>函数定义文件</td>
-<td colspan="4">`ipcs/mpu/hw/c1/ipc-hw.c`</td>
+<td colspan="4">ipcs/mpu/hw/c1/ipc-hw.c</td>
 </tr>
 <tr>
 <td>函数声明文件</td>
-<td colspan="4">`ipcs/mpu/hw/ipc-hw.h`</td>
+<td colspan="4">ipcs/mpu/hw/ipc-hw.h</td>
 </tr>
 </tbody>
 </table>
@@ -10681,28 +10667,28 @@ sequence diagram
 
 | 软件需求 ID (SWE.1) | 架构组件 ID (SWE.2) | 本详细设计单元 ID (SWE.3) | 物理源代码实体 (Code) | 追溯关系及设计覆盖说明 |
 | :--- | :--- | :--- | :--- | :--- |
-| IPCS_001 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_UTIL、SWU_IPCS_CORE_QUEUE、SWU_IPCS_CORE_TYPES；§2.1 所列 OSAL/HAL 单元 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-util.c`、`ipc-types.h`；`ipcs/mcu/os/`、`ipcs/mcu/hw/ipc-hw.c`；`ipcs/mpu/` 各实现文件 | 同核/异核点对点双向通信：实例、通道、队列、共享内存映射与核间通知 |
+| IPCS_001 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_UTIL、SWU_IPCS_CORE_QUEUE；§2.1 所列 OSAL/HAL 单元；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-util.c`、`ipc-types.h`；`ipcs/mcu/os/`、`ipcs/mcu/hw/ipc-hw.c`；`ipcs/mpu/` 各实现文件 | 同核/异核点对点双向通信：实例、通道、队列、共享内存映射与核间通知 |
 | IPCS_002 | Drv_Ipcs_Osal_Cmp | SWU_IPCS_OSAL_AUTOSAR | `ipcs/mcu/os/autosar/ipc-os-autosar.c` | AutoSAR OS 部署下 OSAL 集成边界；安全目标与证据见项目安全工件 |
 | IPCS_003 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Hal_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE、SWU_IPCS_HAL_MCU、SWU_IPCS_HAL_LINUX | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`；`ipcs/mcu/hw/ipc-hw.c`；`ipcs/mpu/hw/c1/ipc-hw.c` | 可移植逻辑在 Core/Queue；平台与字节序相关行为在 HAL |
 | IPCS_005 | Drv_Ipcs_Osal_Cmp | SWU_IPCS_OSAL_AUTOSAR | `ipcs/mcu/os/autosar/ipc-os-autosar.c` | AutoSAR CDD/OS 封装、调度与错误处理 |
 | IPCS_006 | Drv_Ipcs_Osal_Cmp | SWU_IPCS_OSAL_THREADX | `ipcs/mcu/os/threadx/ipc-os-threadx.c` | ThreadX 任务、中断与同步原语映射 |
 | IPCS_010 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c` | 传输路径可观测计数/时间戳（可选编译） |
 | IPCS_012 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp | §2.1 Core/OSAL/HAL 单元 | `ipcs/` 目录下对应单元源文件 | OSAL/HAL 接口可替换实现，便于单元测试 |
-| IPCS_014 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE、SWU_IPCS_CORE_TYPES | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-types.h` | 多通信通道与共享内存布局 |
+| IPCS_014 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-types.h` | 多通信通道与共享内存布局 |
 | IPCS_015 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c` | 单通道内消息顺序保持 |
-| IPCS_016 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE、SWU_IPCS_CORE_TYPES | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-types.h` | 每通道多缓冲池与队列管理 |
-| IPCS_017 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_TYPES；§2.1 OSAL 单元 | `ipcs/ipcs_cores/ipc-shm.c`；各 `ipc-os-*.c` | 多 instance 与每核 OSAL 执行及中断亲和 |
+| IPCS_016 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-types.h` | 每通道多缓冲池与队列管理 |
+| IPCS_017 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM；§2.1 OSAL 单元；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c`；各 `ipc-os-*.c` | 多 instance 与每核 OSAL 执行及中断亲和 |
 | IPCS_018 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c` | 零拷贝：BD/指针传递缓冲区 |
 | IPCS_019 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Osal_Cmp | SWU_IPCS_CORE_SHM；§2.1 OSAL 单元 | `ipcs/ipcs_cores/ipc-shm.c`；各 OSAL 实现文件 | 基于通知的异步接收与回调分发 |
-| IPCS_020 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_TYPES | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-types.h`；集成配置 `ipcf_Ip_Cfg*.h` | 通信端内存隔离：布局配置与 Core 边界检查 |
-| IPCS_021 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_TYPES | `ipcs/ipcs_cores/ipc-shm.c` | 非托管通道：`ipcsShmUnmanagedAcquire`/`ipcsShmUnmanagedTx` |
+| IPCS_020 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-types.h`；集成配置 `ipcf_Ip_Cfg*.h` | 通信端内存隔离：布局配置与 Core 边界检查 |
+| IPCS_021 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c` | 非托管通道：`ipcsShmUnmanagedAcquire`/`ipcsShmUnmanagedTx` |
 | IPCS_022 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp | §2.1 所列相关单元 | `ipcs/ipcs_cores/`；OSAL/HAL 源文件 | 虚拟中断与队列状态协调，避免陈旧数据投递 |
 | IPCS_023 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c` | 共享内存提交顺序保证；可与 IPCS_039 轮询协同 |
-| IPCS_024 | Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_OSAL_AUTOSAR、SWU_IPCS_CORE_TYPES | `ipcs/mcu/os/autosar/ipc-os-autosar.c`、`ipc-types.h` | 与 AUTOSAR R4.4+ 接口及配置模型对齐 |
-| IPCS_025 | Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_TYPES | `ipcs/ipcs_cores/ipc-types.h`；`ipcf_Ip_Cfg*.h` | 缓冲池数量与大小由集成配置提供 |
+| IPCS_024 | Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_OSAL_AUTOSAR；Conf 见 §4.6 | `ipcs/mcu/os/autosar/ipc-os-autosar.c`、`ipc-types.h` | 与 AUTOSAR R4.4+ 接口及配置模型对齐 |
+| IPCS_025 | Drv_Ipcs_Conf_Cmp | §4.6 类型定义（无独立 SWU） | `ipcs/ipcs_cores/ipc-types.h`；`ipcf_Ip_Cfg*.h` | 缓冲池数量与大小由集成配置提供 |
 | IPCS_028 | Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Osal_Cmp | SWU_IPCS_HAL_MCU、SWU_IPCS_HAL_LINUX；§2.1 OSAL 单元 | `ipcs/mcu/hw/ipc-hw.c`、`ipcs/mpu/hw/c1/ipc-hw.c`；各 OSAL 文件 | 核间中断作为收发通知 |
 | IPCS_029 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_QUEUE、SWU_IPCS_CORE_UTIL；OSAL 单元 | `ipcs/ipcs_cores/`；`ipcs/mcu/os/`、`ipcs/mpu/os_kernel/`、`ipcs/mpu/os_uio/`、`ipcs/mpu/os_cdev/` | 静态分配池与队列，无动态堆 |
-| IPCS_031 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_TYPES | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-types.h` | 多核多 instance 独立 SHM/IRQ 配置 |
+| IPCS_031 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM；Conf 见 §4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-types.h` | 多核多 instance 独立 SHM/IRQ 配置 |
 | IPCS_034 | Drv_Ipcs_Core_Cmp | SWU_IPCS_CORE_SHM | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-shm.h` | 公共 API 参数校验 |
 | IPCS_035 | Drv_Ipcs_Core_Cmp | SWU_IPCS_CORE_SHM | `ipcs/ipcs_cores/ipc-shm.c` | managed/unmanaged 与 channel 类型及操作一致性 |
 | IPCS_036 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Linux_Adapt_Cmp、Drv_Ipcs_Conf_Cmp | §2.1 全部软件单元 | `ipcs/` 源码树 | 按部署变体与编译选项裁剪 HW/OS/传输实现 |

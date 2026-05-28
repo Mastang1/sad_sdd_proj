@@ -2,16 +2,19 @@
 !pragma layout smetana
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
-title ipcsShmHardirqInstance baremetal
+title ipcsShmHardirqInstance FreeRTOS
 start
-if (state!=DISABLED?) then (yes)
-  :HwDisable; HwClear;;
-  if (rx_irq != NONE?) then (yes)
-    repeat
-      :work=rx_cb(instance,budget);;
-    repeat while (work>=budget?)
-    :HwEnable(instance);;
+:higher_prio_task_woken = pdFALSE;;
+:task_critical_status_from_isr = taskENTER_CRITICAL_FROM_ISR();;
+if (id[instance].state != DISABLED?) then (yes)
+  :ipcsHwIrqDisable(instance);;
+  :ipcsHwIrqClear(instance);;
+  if (msg_received == MSG_NOT_RECEIVED?) then (yes)
+    :msg_received = MSG_IS_RECEIVED;;
   endif
+  :vTaskNotifyGiveFromISR(softirq_handle, &higher_prio_task_woken);;
 endif
+:taskEXIT_CRITICAL_FROM_ISR(task_critical_status_from_isr);;
+:portYIELD_FROM_ISR(higher_prio_task_woken);;
 stop
 @enduml

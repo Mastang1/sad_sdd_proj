@@ -2,10 +2,22 @@
 !pragma layout smetana
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
-title ipcsShmHardirq baremetal
+title ipcsShmHardirq FreeRTOS
 start
-:Pass1 — disable and clear each active instance (ipc-os-baremetal.c);
-:Pass2 — rx_cb spin per instance when IRQ not IPC_IRQ_NONE;
-:Pass3 — re-enable notifications for active instances;
+:higher_prio_task_woken = pdFALSE;;
+:task_critical_status_from_isr = taskENTER_CRITICAL_FROM_ISR();;
+:i = 0;
+while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+  if (id[i].state == DISABLED?) then (yes)
+  else (no)
+    :ipcsHwIrqDisable(i);;
+    :ipcsHwIrqClear(i);;
+    :id[i].msg_received = MSG_IS_RECEIVED;;
+  endif
+  :i++;
+endwhile (no)
+:vTaskNotifyGiveFromISR(softirq_handle, &higher_prio_task_woken);;
+:taskEXIT_CRITICAL_FROM_ISR(task_critical_status_from_isr);;
+:portYIELD_FROM_ISR(higher_prio_task_woken);;
 stop
 @enduml
