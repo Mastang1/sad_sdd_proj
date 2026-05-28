@@ -1,19 +1,19 @@
 === MD / DOCX consistency report ===
 
-Markdown headings (h1-h4): 291
-DOCX Heading 1-4 paragraphs: 291
+Markdown headings (h1-h4): 293
+DOCX Heading 1-4 paragraphs: 293
 
-Markdown pipe tables (blocks): 81
+Markdown pipe tables (blocks): 84
 Markdown HTML function tables: 138
 DOCX HTML-style function tables (5+ cols): 138
-DOCX tables (total): 220
+DOCX tables (total): 223
 
-Markdown image refs: 182
-DOCX inline images (blips): 182
-DOCX word/media extensions: {'.png': 176, '.svg': 218, '.emf': 3}
-DOCX body SVG (svgBlip): 182
+Markdown image refs: 183
+DOCX inline images (blips): 183
+DOCX word/media extensions: {'.png': 176, '.svg': 219, '.emf': 3}
+DOCX body SVG (svgBlip): 183
 
-SVG aspect ratios (viewBox vs DOCX): 182/182 OK
+SVG aspect ratios (viewBox vs DOCX): 183/183 OK
 
 SWU IDs in MD: 13
 SWU IDs in DOCX: 13
@@ -33,4 +33,4 @@ Function subsections (### x.y.z name) in MD: 243
 
 --- RESULT: PASS (no ERROR) ---
 
-DOCX paragraphs total: 989
+DOCX paragraphs total: 1001

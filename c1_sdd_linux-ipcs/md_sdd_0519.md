@@ -222,6 +222,31 @@ UIO 实现由用户库代理、UIO 内核 Backend、Linux HAL 三部分组成。
 
 用户侧 `ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify` 通过 `ipcsSendUioCmd` 写 UIO fd 转发命令；`ipcsHwInit`、`ipcsHwFree` 是空实现，源码注释说明初始化和释放由内核 UIO 模块处理。
 
+### 3.3.1.1 User–Kernel 适配接口（IF_LinuxAdapt_UIO）
+
+Core 仍只依赖 §3.1 的 `IF_OSAbst` / `IF_HWAbst`。UIO 变体中，用户侧 `SWU_IPCS_LINUX_OS_UIO` 对上层**呈现**这两套接口；跨地址空间实现则经 **`IF_LinuxAdapt_UIO`** 由 `SWU_IPCS_LINUX_UIO_KO` 完成。该接口属于 `Drv_Ipcs_Linux_Adapt_Cmp` 内部分配接口，不是新的架构层。
+
+共享内存映射（`ipcsOsGetLocalShm` / `ipcsOsGetRemoteShm`）经 `/dev/mem` 完成，**不经过**本适配接口。本文档不展开 VFS、系统调用、UIO 子系统内部实现；仅定义 User Adapt SWU 与 Kernel Adapt SWU 之间的操作契约（定义见 `ipcs/mpu/os_kernel/ipc-uio.h`）。
+
+UIO 变体采用 **Init 通道 + Runtime 通道** 双通道模型：
+
+| 通道 | 用户节点 | 内核处理 | 用途 |
+|---|---|---|---|
+| Init | `/dev/ipc-cdev-uio`（write） | `ipc-uio.c` → `ipcsUioInit()` | 传递 `{instance, IPCS_SHM_CFG_TYPE}`，触发 `ipcsHwInit` 与 UIO 设备注册 |
+| Runtime | `/dev/uioN`（write / read） | `ipcsShmUioIrqcontrol()` / `ipcsShmUioHandler()` | HW 中断控制与 RX 事件通知 |
+
+适配操作与架构接口映射如下：
+
+| 适配操作 | 方向 | 载荷 / 命令 | 用户侧入口 | 内核侧处理 | 映射架构接口 |
+|---|---|---|---|---|---|
+| `UIO_INIT_INSTANCE` | User → Kernel | `struct IPCS_UIO_CDEV_DATA_TYPE` | `ipcsOsInit` 内 write Init 通道 | `ipcsCdevWrite` → `ipcsUioInit` | `IF_OSAbst` 初始化（内核段）；`IF_HWAbst` 初始化 |
+| `UIO_HW_DISABLE` | User → Kernel | `IPC_UIO_DISABLE_CMD`（0x0001） | `ipcsHwIrqDisable` | `ipcsShmUioIrqcontrol` → `ipcsHwIrqDisable` | `IF_HWAbst` |
+| `UIO_HW_ENABLE` | User → Kernel | `IPC_UIO_ENABLE_CMD`（0x0002） | `ipcsHwIrqEnable` | `ipcsShmUioIrqcontrol` → `ipcsHwIrqEnable` | `IF_HWAbst` |
+| `UIO_HW_TRIGGER` | User → Kernel | `IPC_UIO_TRIGGER_CMD`（0x0003） | `ipcsHwIrqNotify` | `ipcsShmUioIrqcontrol` → `ipcsHwIrqNotify` | `IF_HWAbst` |
+| `UIO_RX_EVENT` | Kernel → User | UIO 事件计数（read 返回） | `ipcsShmSoftirq` 线程 read Runtime 通道 | hardirq → `ipcsShmUioHandler` → UIO 框架唤醒 | `IF_OSAbst` 收包调度（`rx_cb`） |
+
+收包路径：硬件 IRQ → 内核 `ipcsShmUioHandler`（清中断）→ UIO 事件 → 用户线程 `read` 返回 → 调用 `rx_cb` → 再次 `ipcsHwIrqEnable`。动态交互详见 §6.7 UIO 序列图。
+
 ![Linux部署变体UIO实现关系图](cursor_tmp/svgs_if_impl/if_impl_uio.svg)
 
 ### 3.3.2 CDEV 实现
@@ -235,6 +260,23 @@ CDEV 实现由用户库代理、字符设备 Backend、Linux HAL 三部分组成
 | 内核 HAL | `ipcs/mpu/hw/c1/ipc-hw.c` | 执行 MSCM 与 IRQ 相关真实硬件操作 |
 
 用户侧 `ipcsHwIrqEnable`、`ipcsHwIrqDisable`、`ipcsHwIrqNotify` 使用 `IPC_CDEV_CMD_*` ioctl 转发到内核；`ipcsHwInit`、`ipcsHwFree` 是空实现，源码注释说明由内核模块处理。
+
+### 3.3.2.1 User–Kernel 适配接口（IF_LinuxAdapt_CDEV）
+
+与 UIO 变体相同，Core 只依赖 `IF_OSAbst` / `IF_HWAbst`；用户侧 `SWU_IPCS_LINUX_OS_CDEV` 对外呈现上述契约，跨域实现经 **`IF_LinuxAdapt_CDEV`** 由 `SWU_IPCS_LINUX_CDEV_KO` 完成。接口定义见 `ipcs/mpu/os_kernel/ipc-cdev.h`（用户态与内核态共用）。
+
+CDEV 变体经单一字符设备 **`/dev/ipc-shm-cdev`** 承载全部适配操作（ioctl 控制 + read 收包唤醒）。共享内存仍经 `/dev/mem` mmap，不经过本接口。VFS、系统调用等 Linux 通用机制本文档从略。
+
+| 适配操作 | 方向 | ioctl 宏 / 载荷 | 用户侧入口 | 内核侧处理 | 映射架构接口 |
+|---|---|---|---|---|---|
+| `CDEV_SET_INSTANCE` | User → Kernel | `IPC_CDEV_CMD_SET_INSTANCE`（instance） | `ipcsOsInit` 前置步骤 | `ipcsCdevIoctl` 记录 target instance | `IF_OSAbst` 初始化（上下文） |
+| `CDEV_INIT_INSTANCE` | User → Kernel | `IPC_CDEV_CMD_INIT_INSTANCE`（`IPCS_SHM_CFG_TYPE*`） | `ipcsOsInit` | `ipcsCdevOsInit` → `ipcsHwInit` + `request_irq` | `IF_OSAbst` 初始化（内核段）；`IF_HWAbst` 初始化 |
+| `CDEV_HW_DISABLE` | User → Kernel | `IPC_CDEV_CMD_DISABLE_RX_IRQ`（instance） | `ipcsHwIrqDisable` | `ipcsCdevIoctl` → `ipcsHwIrqDisable` | `IF_HWAbst` |
+| `CDEV_HW_ENABLE` | User → Kernel | `IPC_CDEV_CMD_ENABLE_RX_IRQ`（instance） | `ipcsHwIrqEnable` | `ipcsCdevIoctl` → `ipcsHwIrqEnable` | `IF_HWAbst` |
+| `CDEV_HW_TRIGGER` | User → Kernel | `IPC_CDEV_CMD_TRIGGER_TX_IRQ`（instance） | `ipcsHwIrqNotify` | `ipcsCdevIoctl` → `ipcsHwIrqNotify` | `IF_HWAbst` |
+| `CDEV_RX_EVENT` | Kernel → User | read 阻塞返回（wait queue 唤醒） | `ipcsShmSoftirq` 线程 read | hardirq → `wake_up_interruptible` | `IF_OSAbst` 收包调度（`rx_cb`） |
+
+与 UIO 变体对比：CDEV 不依赖 Linux UIO 框架；Init 与 HW 控制均通过自定义 ioctl 完成；RX 通知经内核 wait queue + 用户 read，而非 UIO event read。动态交互详见 §6.7 CDEV 序列图。
 
 ![Linux部署变体CDEV实现关系图](cursor_tmp/svgs_if_impl/if_impl_cdev.svg)
 
