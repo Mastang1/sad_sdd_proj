@@ -55,7 +55,9 @@ python cursor_tmp/scripts/sdd_preflight.py --md-svg
 | `format_docx_py/scenario_sequence_flows.py` | 生成 §5.7/§6.9 序列图 puml | 跨单元场景序列图 | Python 常量 → `*_seq_*.puml` | — | 覆盖 seq puml | 是 |
 | `format_docx_py/render_scenario_sequences.py` | 仅渲染序列图 SVG | 序列图变更后 | `*_seq_*.puml` → svg | plantuml | 覆盖 seq svg | 是 |
 | `scripts/gen_section32_component_diagrams.py` | §3.2 组件图 | 头文件依赖图 | → `files_32_*` | — | 覆盖 §3.2 图 | 是 |
-| `format_docx_py/md0519_to_final_sdd.py` | MD→DOCX 主入口 | **管线 C** 交付 | `md_sdd_0519.md` → `final_sdd.docx` | MD+SVG 就绪 | 覆盖 docx | 是 |
+| `format_refer/format_refer.docx` | Word 版式/页眉页脚模板 | 管线 C 套用 | — | 勿删 | — |
+| `format_docx_py/apply_format_refer.py` | 中间态正文合并进模板 + HF 校验 | 被 md0519 调用 | body docx + 模板 → docx | 模板存在 | 覆盖 docx HF | 是 |
+| `format_docx_py/md0519_to_final_sdd.py` | MD→DOCX 主入口 | **管线 C** 交付 | `md_sdd_0519.md` → `final_sdd.docx` | MD+SVG+模板 | 覆盖 docx | 是 |
 | `format_docx_py/format_final_sdd.py` | TF 版式、插图比例、删占位 | 被 md0519 调用 | docx | — | 改版式 | 是 |
 | `format_docx_py/html_table_utils.py` | HTML 函数表剥离/后插入 | 被 md0519 调用 | md html → docx 表 | — | 改表 | 是 |
 | `format_docx_py/validate_md_docx_consistency.py` | MD/DOCX 一致性 + viewBox | **管线 C 必跑** | md+docx → report | docx 已生成 | 只读 | 是 |

@@ -10,7 +10,7 @@ DOCX tables (total): 210
 
 Markdown image refs: 183
 DOCX inline images (blips): 183
-DOCX word/media extensions: {'.png': 180, '.svg': 180}
+DOCX word/media extensions: {'.emf': 7, '.png': 1, '.svg': 180}
 DOCX body SVG (svgBlip): 183
 
 SVG aspect ratios (viewBox vs DOCX): 183/183 OK

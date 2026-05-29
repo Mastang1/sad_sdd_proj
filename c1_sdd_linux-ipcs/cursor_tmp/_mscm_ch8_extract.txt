@@ -1,0 +1,7109 @@
+
+=== PAGE 6 ===
+FSC Correctable Errors Threshold (SCCETH)...................................................................................... 244
+FSC Latent Fault (SCLF0)..................................................................................................................... 245
+FSC Mission Fault (SCMF0)..................................................................................................................246
+FSC Correctable Error Threshold Fault (SCCETHF0)...........................................................................247
+Chapter 8 Miscellaneous System Control Module (MSCM)...............................249
+8.1 Introduction............................................................................................................................249
+8.1.1 Features..................................................................................................................................249
+8.2 Core configuration registers and partitioning.........................................................................249
+8.3 Shared peripheral interrupt (SPI) routing...............................................................................251
+8.4 MSCM register descriptions.................................................................................................. 251
+8.4.1 MSCM memory map............................................................................................................... 251
+8.4.2 Processor X Type (CPXTYPE)............................................................................................... 265
+8.4.3 Processor X Number (CPXNUM)............................................................................................266
+8.4.4 Processor X Revision (CPXREV)............................................................................................268
+8.4.5 Processor X Configuration 0 (CPXCFG0)...............................................................................269
+8.4.6 Processor X Configuration 1 (CPXCFG1)...............................................................................271
+8.4.7 Processor X Configuration 2 (CPXCFG2)...............................................................................272
+8.4.8 Processor X Configuration 3 (CPXCFG3)...............................................................................274
+8.4.9 Processor Type (CP0TYPE - CP11TYPE)..............................................................................276
+8.4.10 Processor Number (CP0NUM - CP11NUM)......................................................................... 277
+8.4.11 Processor Count (CP0REV - CP11REV).............................................................................. 279
+8.4.12 Processor Configuration 0 (CP0CFG0 - CP11CFG0)...........................................................280
+8.4.13 Processor Configuration 1 (CP0CFG1 - CP11CFG1)...........................................................282
+8.4.14 Processor Configuration 2 (CP0CFG2 - CP11CFG2)...........................................................284
+8.4.15 Processor Configuration 3 (CP0CFG3 - CP11CFG3)...........................................................286
+8.4.16 Interrupt Router Configuration (IRCPCFG)........................................................................... 288
+8.4.17 Interrupt Router Nonmaskable Interrupt Control (IRNMIC)...................................................290
+8.4.18 Interrupt Router Shared Peripheral Routing Control (IRSPRC0 - IRSPRC239)................... 292
+8.4.19 Interrupt Router CPa Interruptb Status (IRCP0ISR0 - IRCP11ISR13)..................................293
+8.4.20 Interrupt Router CPa Interruptb Generation (IRCP0IGR0 - IRCP11IGR13)......................... 301
+8.4.21 Interrupt Router CPa Interruptb Status (IRCP0ISR3 - IRCP11ISR4)....................................307
+8.4.22 Interrupt Router CPn Interruptx Generation (IRCP0IGR3 - IRCP11IGR3)........................... 310
+8.4.23 Interrupt Router CPn Interruptx Generation (IRCP0IGR4 - IRCP11IGR4)........................... 312
+8.5 Functional description............................................................................................................314
+8.5.1 Register and field structure for CPn........................................................................................314
+Core-to-core MSIs..................................................................................................................................314
+PCIe-to-core MSIs................................................................................................................................. 315
+8.5.2 Interrupt steering and semaphores......................................................................................... 315
+Interrupt handling overview....................................................................................................................315
+MSCM interrupt router functional description.........................................................................................316
+Chapter 9 Miscellaneous Control Module (MCM)..............................................317
+9.1 Introduction............................................................................................................................317
+9.1.1 Features..................................................................................................................................317
+9.2 Memory map/register descriptions........................................................................................ 317
+9.2.1 MCM register descriptions...................................................................................................... 317
+MCM memory map................................................................................................................................ 317
+SoC-defined Platform Revision (PLREV)...............................................................................................318
+Processor Core Type (PCT).................................................................................................................. 318
+Core Platform Control (CPCR)...............................................................................................................319
+Interrupt Status and Control (ISCR).......................................................................................................320
+Local Memory Descriptor 0 (LMEM_DESC_0).......................................................................................323
+NXP Semiconductors
+Contents
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+6 / 5072
+
+=== PAGE 95 ===
+Chapter 1
+About This Manual
+1.1 Audience
+This reference manual (RM) is intended for system software, hardware developers, and applications programmers who need to 
+develop products using this chip. It assumes that its users understand operating systems, microprocessor system design, and 
+basic principles of software and hardware.
+1.2 Organization
+The first three chapters of the manual provide the detailed introduction to S32G3xx chip. The remaining chapters are grouped 
+in functional categories that detail particular areas of functionality. Each grouping includes chapters that provide a technical 
+description of individual modules as shown below:
+• System Modules
+— Arm Modules
+— Network-on-Chip (NoC)
+— Ncore
+— Miscellaneous System Control Module (MSCM)
+— A53 Cluster General Purpose Registers (A53_GPR)
+— CORTEXM7 Cluster General Purpose Registers(CM7_GPR)
+— Enhanced Direct Memory Access (eDMA)
+— DMA CRC Module (DMA_CRC)
+— Direct Memory Access Multiplexer (DMAMUX)
+— Extended Resource Domain Controller (XRDC)
+— System Integration Unit Lite2 (SIUL2)
+— Semaphores2 (SEMA42)
+— System Resource Controller
+— Standby General Purpose Registers (STDBY GPR)
+— Register Protection (REG_PROT)
+— Wakeup Unit (WKPU)
+• Clocking
+— Clocking chapter
+— Clock Generation Module (MC_CGM)
+— Digital Frequency Synthesizer (DFS)
+— Dual PLL Digital Interface (PLLDIG)
+— Fast Crystal Oscillator Digital Controller (FXOSC)
+• Reset and Boot
+— Reset chapter
+— Reset Generation Module (MC_RGM)
+— Boot chapter
+NXP Semiconductors
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+95 / 5072
+
+=== PAGE 107 ===
+Table 5. Functional categories and associated module names (continued)
+Module categories
+Module names or abbreviations
+• DMA CRC
+• Direct Memory Access Multiplexer (DMAMUX)
+• Extended Resource Domain Controller (XRDC)
+• Enhanced Direct Memory Access (eDMA)
+• Miscellaneous System Control Module (MSCM)
+• Ncore
+• Semaphores2 (SEMA42)
+• System Integration Unit Lite2 (SIUL2)
+• System NoC
+• Wakeup Unit (WKPU)
+Clocking
+• Clock Generation Module (MC_CGM)
+• Digital Frequency Synthesizer (DFS)
+• Dual PLL Digital Interface (PLLDIG)
+• Fast Internal RC Oscillator Digital Interface (FIRC)
+• Fast Crystal Oscillator Digital Controller (FXOSC)
+• Phase-Locked Loop (PLL) for Aurora
+• Slow Internal RC Oscillator (SIRC)
+Reset and boot
+• Reset Generation Module (MC_RGM)
+Power management
+• Mode Entry Module (MC_ME)
+• Power Control Unit (MC_PCU)
+• Power Management Controller (PMC)
+• Supply Presence Detector (SPD)
+Memories and memory interfaces
+• DDR DRAM CTRL
+• DDR DRAM PHY
+• External flash memory interface
+• On-the-Fly AES Decryption module (OTFAD)
+• Quad Serial Peripheral Interface (QuadSPI)
+• System RAM (SRAM)
+• Ultra Secured Digital Host Controller (uSDHC)
+Timer
+• FlexTimer module (FTM)
+• Periodic Interrupt Timer (PIT)
+• Real Time Clock (RTC)
+Table continues on the next page...
+NXP Semiconductors
+Introduction
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+107 / 5072
+
+=== PAGE 249 ===
+Chapter 8
+Miscellaneous System Control Module (MSCM)
+8.1 Introduction
+MSCM contains CPU configuration and on-chip memory controller registers.
+8.1.1 Features
+• Availability of software-accessible processor core configuration information
+• Interrupt router control registers
+• Message-based interrupt configuration and management registers
+8.2 Core configuration registers and partitioning
+Read-only core configuration registers contain data that defines the core setup for this chip. You can access these registers using 
+32-bit read references. Other access sizes and attempted write accesses terminate with an error.
+The core configuration portion of the MSCM programming model map is organized based on the logical core number, and not on 
+any type of physical port number. The following table shows how the configuration is partitioned.
+Table 16. Core configuration registers and partitioning
+Offset address 
+range
+Purpose
+0h–18h
+This address range corresponds to registers that define the generic core configuration information for core 
+processor X (CPX). The Cortex-M7 and Cortex-A53 cores on the chip can access CPX registers by using 
+either User or Privileged mode.
+Reads by non-core bus masters (including the debugger) are treated as read-as-zero (RAZ) accesses. Write 
+attempts are not permitted and terminate with a system bus error.
+20h–38h
+This address range corresponds to registers that define the configuration information for core processor 
+0 (CP0).
+A bus master can access these registers in either User or Privileged mode. Write attempts are not permitted 
+and terminate with a system bus error.
+40h–58h
+This address range corresponds to registers that define the configuration information for core processor 
+1 (CP1).
+A bus master can access these registers in either User or Privileged mode. Write attempts are not permitted 
+and terminate with a system bus error.
+60h–78h
+This address range corresponds to registers that define the configuration information for core processor 
+2 (CP2).
+A bus master can access these registers in either User or Privileged mode. Write attempts are not permitted 
+and terminate with a system bus error.
+80h–98h
+This address range corresponds to registers that define the configuration information for core processor 
+3 (CP3).
+Table continues on the next page...
+NXP Semiconductors
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+249 / 5072
+
+=== PAGE 250 ===
+Table 16. Core configuration registers and partitioning (continued)
+Offset address 
+range
+Purpose
+A bus master can access these registers in either User or Privileged mode. Write attempts are not permitted 
+and terminate with an error.
+A0h–B8h
+This address range corresponds to registers that define the configuration information for core processor 
+4 (CP4).
+A bus master can access these registers in either User or Privileged mode. Write attempts are not permitted 
+and terminate with an error.
+C0h–D8h
+This address range corresponds to registers that define the configuration information for core processor 
+5 (CP5).
+A bus master can access these registers in either User or Privileged mode. Write attempts are not permitted 
+and terminate with an error.
+E0h–F8h
+This address range corresponds to registers that define the configuration information for core processor 
+6 (CP6).
+A bus master can access these registers in either User or Privileged mode. Write attempts are not permitted 
+and terminate with an error.
+100h–118h
+This address range corresponds to registers that define the configuration information for core processor 
+7 (CP7).
+A bus master can access these registers in either User or Privileged mode. Write attempts are not permitted 
+and terminate with an error.
+120h–138h
+This address range corresponds to registers that define the configuration information for core processor 
+8 (CP8).
+A bus master can access these registers in either User or Privileged mode. Write attempts are not permitted 
+and terminate with an error.
+140h–158h
+This address range corresponds to registers that define the configuration information for core processor 
+9 (CP9).
+A bus master can access these registers in either User or Privileged mode. Write attempts are not permitted 
+and terminate with an error.
+160h–178h
+This address range corresponds to registers that define the configuration information for core processor 
+10 (CP10).
+A bus master can access these registers in either User or Privileged mode. Write attempts are not permitted 
+and terminate with an error.
+180h–198h
+This address range corresponds to registers that define the configuration information for core processor 
+11 (CP11).
+A bus master can access these registers in either User or Privileged mode. Write attempts are not permitted 
+and terminate with an error.
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+250 / 5072
+
+=== PAGE 251 ===
+ 
+• Attempted accesses to reserved locations are not permitted and terminate with an error. Debugger 
+accesses referred to in this document are accesses from the system MEM-AP and not the core accesses 
+through debugger.
+• eDMA cannot write to MSCM registers using the Cortex-A53 or Cortex-M7 core master IDs, when the master 
+ID replication feature is enabled for eDMA.
+  NOTE  
+8.3 Shared peripheral interrupt (SPI) routing
+The SPI router portion of MSCM provides a set of memory-mapped registers defining the interrupt routing for all SPIs on this chip.
+8.4 MSCM register descriptions
+8.4.1 MSCM memory map
+MSCM base address: 4019_8000h
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+0h
+Processor X Type (CPXTYPE)
+32
+R
+See section
+4h
+Processor X Number (CPXNUM)
+32
+R
+See section
+8h
+Processor X Revision (CPXREV)
+32
+R
+See section
+Ch
+Processor X Configuration 0 (CPXCFG0)
+32
+R
+See section
+10h
+Processor X Configuration 1 (CPXCFG1)
+32
+R
+See section
+14h
+Processor X Configuration 2 (CPXCFG2)
+32
+R
+See section
+18h
+Processor X Configuration 3 (CPXCFG3)
+32
+R
+See section
+20h
+Processor Type (CP0TYPE)
+32
+R
+4135_3330h
+24h
+Processor Number (CP0NUM)
+32
+R
+0000_0000h
+28h
+Processor Count (CP0REV)
+32
+R
+0000_0004h
+2Ch
+Processor Configuration 0 (CP0CFG0)
+32
+R
+0702_0704h
+30h
+Processor Configuration 1 (CP0CFG1)
+32
+R
+0000_000Bh
+34h
+Processor Configuration 2 (CP0CFG2)
+32
+R
+0000_0000h
+38h
+Processor Configuration 3 (CP0CFG3)
+32
+R
+0000_0017h
+40h
+Processor Type (CP1TYPE)
+32
+R
+4135_3331h
+44h
+Processor Number (CP1NUM)
+32
+R
+0000_0001h
+48h
+Processor Count (CP1REV)
+32
+R
+0000_0004h
+4Ch
+Processor Configuration 0 (CP1CFG0)
+32
+R
+0702_0704h
+50h
+Processor Configuration 1 (CP1CFG1)
+32
+R
+0000_000Bh
+54h
+Processor Configuration 2 (CP1CFG2)
+32
+R
+0000_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+251 / 5072
+
+=== PAGE 252 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+58h
+Processor Configuration 3 (CP1CFG3)
+32
+R
+0000_0017h
+60h
+Processor Type (CP2TYPE)
+32
+R
+4135_3332h
+64h
+Processor Number (CP2NUM)
+32
+R
+0000_0002h
+68h
+Processor Count (CP2REV)
+32
+R
+0000_0004h
+6Ch
+Processor Configuration 0 (CP2CFG0)
+32
+R
+0702_0704h
+70h
+Processor Configuration 1 (CP2CFG1)
+32
+R
+0000_000Bh
+74h
+Processor Configuration 2 (CP2CFG2)
+32
+R
+0000_0000h
+78h
+Processor Configuration 3 (CP2CFG3)
+32
+R
+0000_0017h
+80h
+Processor Type (CP3TYPE)
+32
+R
+4135_3333h
+84h
+Processor Number (CP3NUM)
+32
+R
+0000_0003h
+88h
+Processor Count (CP3REV)
+32
+R
+0000_0004h
+8Ch
+Processor Configuration 0 (CP3CFG0)
+32
+R
+0702_0704h
+90h
+Processor Configuration 1 (CP3CFG1)
+32
+R
+0000_000Bh
+94h
+Processor Configuration 2 (CP3CFG2)
+32
+R
+0000_0000h
+98h
+Processor Configuration 3 (CP3CFG3)
+32
+R
+0000_0017h
+A0h
+Processor Type (CP4TYPE)
+32
+R
+434D_3730h
+A4h
+Processor Number (CP4NUM)
+32
+R
+0000_0004h
+A8h
+Processor Count (CP4REV)
+32
+R
+0000_0011h
+ACh
+Processor Configuration 0 (CP4CFG0)
+32
+R
+0702_0704h
+B0h
+Processor Configuration 1 (CP4CFG1)
+32
+R
+0000_000Bh
+B4h
+Processor Configuration 2 (CP4CFG2)
+32
+R
+0800_0000h
+B8h
+Processor Configuration 3 (CP4CFG3)
+32
+R
+0000_000Bh
+C0h
+Processor Type (CP5TYPE)
+32
+R
+434D_3731h
+C4h
+Processor Number (CP5NUM)
+32
+R
+0000_0005h
+C8h
+Processor Count (CP5REV)
+32
+R
+0000_0011h
+CCh
+Processor Configuration 0 (CP5CFG0)
+32
+R
+0702_0704h
+D0h
+Processor Configuration 1 (CP5CFG1)
+32
+R
+0000_000Bh
+D4h
+Processor Configuration 2 (CP5CFG2)
+32
+R
+0800_0000h
+D8h
+Processor Configuration 3 (CP5CFG3)
+32
+R
+0000_000Bh
+E0h
+Processor Type (CP6TYPE)
+32
+R
+434D_3732h
+E4h
+Processor Number (CP6NUM)
+32
+R
+0000_0006h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+252 / 5072
+
+=== PAGE 253 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+E8h
+Processor Count (CP6REV)
+32
+R
+0000_0011h
+ECh
+Processor Configuration 0 (CP6CFG0)
+32
+R
+0702_0704h
+F0h
+Processor Configuration 1 (CP6CFG1)
+32
+R
+0000_000Bh
+F4h
+Processor Configuration 2 (CP6CFG2)
+32
+R
+0800_0000h
+F8h
+Processor Configuration 3 (CP6CFG3)
+32
+R
+0000_000Bh
+100h
+Processor Type (CP7TYPE)
+32
+R
+434D_3733h
+104h
+Processor Number (CP7NUM)
+32
+R
+0000_0007h
+108h
+Processor Count (CP7REV)
+32
+R
+0000_0011h
+10Ch
+Processor Configuration 0 (CP7CFG0)
+32
+R
+0702_0704h
+110h
+Processor Configuration 1 (CP7CFG1)
+32
+R
+0000_0000h
+114h
+Processor Configuration 2 (CP7CFG2)
+32
+R
+0800_0000h
+118h
+Processor Configuration 3 (CP7CFG3)
+32
+R
+0000_000Bh
+120h
+Processor Type (CP8TYPE)
+32
+R
+4135_3334h
+124h
+Processor Number (CP8NUM)
+32
+R
+0000_0008h
+128h
+Processor Count (CP8REV)
+32
+R
+0000_0004h
+12Ch
+Processor Configuration 0 (CP8CFG0)
+32
+R
+0702_0704h
+130h
+Processor Configuration 1 (CP8CFG1)
+32
+R
+0C10_0000h
+134h
+Processor Configuration 2 (CP8CFG2)
+32
+R
+0000_0000h
+138h
+Processor Configuration 3 (CP8CFG3)
+32
+R
+0000_0017h
+140h
+Processor Type (CP9TYPE)
+32
+R
+4135_3335h
+144h
+Processor Number (CP9NUM)
+32
+R
+0000_0009h
+148h
+Processor Count (CP9REV)
+32
+R
+0000_0004h
+14Ch
+Processor Configuration 0 (CP9CFG0)
+32
+R
+0702_0704h
+150h
+Processor Configuration 1 (CP9CFG1)
+32
+R
+0C10_0000h
+154h
+Processor Configuration 2 (CP9CFG2)
+32
+R
+0000_0000h
+158h
+Processor Configuration 3 (CP9CFG3)
+32
+R
+0000_0017h
+160h
+Processor Type (CP10TYPE)
+32
+R
+4135_3336h
+164h
+Processor Number (CP10NUM)
+32
+R
+0000_000Ah
+168h
+Processor Count (CP10REV)
+32
+R
+0000_0004h
+16Ch
+Processor Configuration 0 (CP10CFG0)
+32
+R
+0702_0704h
+170h
+Processor Configuration 1 (CP10CFG1)
+32
+R
+0C10_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+253 / 5072
+
+=== PAGE 254 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+174h
+Processor Configuration 2 (CP10CFG2)
+32
+R
+0000_0000h
+178h
+Processor Configuration 3 (CP10CFG3)
+32
+R
+0000_0017h
+180h
+Processor Type (CP11TYPE)
+32
+R
+4135_3337h
+184h
+Processor Number (CP11NUM)
+32
+R
+0000_000Bh
+188h
+Processor Count (CP11REV)
+32
+R
+0000_0004h
+18Ch
+Processor Configuration 0 (CP11CFG0)
+32
+R
+0702_0704h
+190h
+Processor Configuration 1 (CP11CFG1)
+32
+R
+0C10_0000h
+194h
+Processor Configuration 2 (CP11CFG2)
+32
+R
+0000_0000h
+198h
+Processor Configuration 3 (CP11CFG3)
+32
+R
+0000_0017h
+400h
+Interrupt Router Configuration (IRCPCFG)
+32
+RW
+0000_0000h
+800h
+Interrupt Router Nonmaskable Interrupt Control (IRNMIC)
+32
+RW
+0000_0000h
+880h - A5Eh
+Interrupt Router Shared Peripheral Routing Control (IRSPRC0 - 
+IRSPRC239)
+16
+RW
+001Fh
+A60h
+Interrupt Router CP0 Interrupt0 Status (IRCP0ISR0)
+32
+RW
+0000_0000h
+A64h
+Interrupt Router CP0 Interrupt0 Generation (IRCP0IGR0)
+32
+RW
+0000_0000h
+A68h
+Interrupt Router CP0 Interrupt1 Status (IRCP0ISR1)
+32
+RW
+0000_0000h
+A6Ch
+Interrupt Router CP0 Interrupt1 Generation (IRCP0IGR1)
+32
+RW
+0000_0000h
+A70h
+Interrupt Router CP0 Interrupt2 Status (IRCP0ISR2)
+32
+RW
+0000_0000h
+A74h
+Interrupt Router CP0 Interrupt2 Generation (IRCP0IGR2)
+32
+RW
+0000_0000h
+A78h
+Interrupt Router CP0 Interrupt3 Status (IRCP0ISR3)
+32
+RW
+0000_0000h
+A7Ch
+Interrupt Router CPn Interruptx Generation (IRCP0IGR3)
+32
+RW
+0000_0000h
+A80h
+Interrupt Router CP0 Interrupt4 Status (IRCP0ISR4)
+32
+RW
+0000_0000h
+A84h
+Interrupt Router CPn Interruptx Generation (IRCP0IGR4)
+32
+RW
+0000_0000h
+A88h
+Interrupt Router CP0 Interrupt5 Status (IRCP0ISR5)
+32
+RW
+0000_0000h
+A8Ch
+Interrupt Router CP0 Interrupt5 Generation (IRCP0IGR5)
+32
+RW
+0000_0000h
+A90h
+Interrupt Router CP0 Interrupt6 Status (IRCP0ISR6)
+32
+RW
+0000_0000h
+A94h
+Interrupt Router CP0 Interrupt6 Generation (IRCP0IGR6)
+32
+RW
+0000_0000h
+A98h
+Interrupt Router CP0 Interrupt7 Status (IRCP0ISR7)
+32
+RW
+0000_0000h
+A9Ch
+Interrupt Router CP0 Interrupt7 Generation (IRCP0IGR7)
+32
+RW
+0000_0000h
+AA0h
+Interrupt Router CP0 Interrupt8 Status (IRCP0ISR8)
+32
+RW
+0000_0000h
+AA4h
+Interrupt Router CP0 Interrupt8 Generation (IRCP0IGR8)
+32
+RW
+0000_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+254 / 5072
+
+=== PAGE 255 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+AA8h
+Interrupt Router CP0 Interrupt9 Status (IRCP0ISR9)
+32
+RW
+0000_0000h
+AACh
+Interrupt Router CP0 Interrupt9 Generation (IRCP0IGR9)
+32
+RW
+0000_0000h
+AB0h
+Interrupt Router CP0 Interrupt10 Status (IRCP0ISR10)
+32
+RW
+0000_0000h
+AB4h
+Interrupt Router CP0 Interrupt10 Generation (IRCP0IGR10)
+32
+RW
+0000_0000h
+AB8h
+Interrupt Router CP0 Interrupt11 Status (IRCP0ISR11)
+32
+RW
+0000_0000h
+ABCh
+Interrupt Router CP0 Interrupt11 Generation (IRCP0IGR11)
+32
+RW
+0000_0000h
+AC0h
+Interrupt Router CP0 Interrupt12 Status (IRCP0ISR12)
+32
+RW
+0000_0000h
+AC4h
+Interrupt Router CP0 Interrupt12 Generation (IRCP0IGR12)
+32
+RW
+0000_0000h
+AC8h
+Interrupt Router CP0 Interrupt13 Status (IRCP0ISR13)
+32
+RW
+0000_0000h
+ACCh
+Interrupt Router CP0 Interrupt13 Generation (IRCP0IGR13)
+32
+RW
+0000_0000h
+AD0h
+Interrupt Router CP1 Interrupt0 Status (IRCP1ISR0)
+32
+RW
+0000_0000h
+AD4h
+Interrupt Router CP1 Interrupt0 Generation (IRCP1IGR0)
+32
+RW
+0000_0000h
+AD8h
+Interrupt Router CP1 Interrupt1 Status (IRCP1ISR1)
+32
+RW
+0000_0000h
+ADCh
+Interrupt Router CP1 Interrupt1 Generation (IRCP1IGR1)
+32
+RW
+0000_0000h
+AE0h
+Interrupt Router CP1 Interrupt2 Status (IRCP1ISR2)
+32
+RW
+0000_0000h
+AE4h
+Interrupt Router CP1 Interrupt2 Generation (IRCP1IGR2)
+32
+RW
+0000_0000h
+AE8h
+Interrupt Router CP1 Interrupt3 Status (IRCP1ISR3)
+32
+RW
+0000_0000h
+AECh
+Interrupt Router CPn Interruptx Generation (IRCP1IGR3)
+32
+RW
+0000_0000h
+AF0h
+Interrupt Router CP1 Interrupt4 Status (IRCP1ISR4)
+32
+RW
+0000_0000h
+AF4h
+Interrupt Router CPn Interruptx Generation (IRCP1IGR4)
+32
+RW
+0000_0000h
+AF8h
+Interrupt Router CP1 Interrupt5 Status (IRCP1ISR5)
+32
+RW
+0000_0000h
+AFCh
+Interrupt Router CP1 Interrupt5 Generation (IRCP1IGR5)
+32
+RW
+0000_0000h
+B00h
+Interrupt Router CP1 Interrupt6 Status (IRCP1ISR6)
+32
+RW
+0000_0000h
+B04h
+Interrupt Router CP1 Interrupt6 Generation (IRCP1IGR6)
+32
+RW
+0000_0000h
+B08h
+Interrupt Router CP1 Interrupt7 Status (IRCP1ISR7)
+32
+RW
+0000_0000h
+B0Ch
+Interrupt Router CP1 Interrupt7 Generation (IRCP1IGR7)
+32
+RW
+0000_0000h
+B10h
+Interrupt Router CP1 Interrupt8 Status (IRCP1ISR8)
+32
+RW
+0000_0000h
+B14h
+Interrupt Router CP1 Interrupt8 Generation (IRCP1IGR8)
+32
+RW
+0000_0000h
+B18h
+Interrupt Router CP1 Interrupt9 Status (IRCP1ISR9)
+32
+RW
+0000_0000h
+B1Ch
+Interrupt Router CP1 Interrupt9 Generation (IRCP1IGR9)
+32
+RW
+0000_0000h
+B20h
+Interrupt Router CP1 Interrupt10 Status (IRCP1ISR10)
+32
+RW
+0000_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+255 / 5072
+
+=== PAGE 256 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+B24h
+Interrupt Router CP1 Interrupt10 Generation (IRCP1IGR10)
+32
+RW
+0000_0000h
+B28h
+Interrupt Router CP1 Interrupt11 Status (IRCP1ISR11)
+32
+RW
+0000_0000h
+B2Ch
+Interrupt Router CP1 Interrupt11 Generation (IRCP1IGR11)
+32
+RW
+0000_0000h
+B30h
+Interrupt Router CP1 Interrupt12 Status (IRCP1ISR12)
+32
+RW
+0000_0000h
+B34h
+Interrupt Router CP1 Interrupt12 Generation (IRCP1IGR12)
+32
+RW
+0000_0000h
+B38h
+Interrupt Router CP1 Interrupt13 Status (IRCP1ISR13)
+32
+RW
+0000_0000h
+B3Ch
+Interrupt Router CP1 Interrupt13 Generation (IRCP1IGR13)
+32
+RW
+0000_0000h
+B40h
+Interrupt Router CP2 Interrupt0 Status (IRCP2ISR0)
+32
+RW
+0000_0000h
+B44h
+Interrupt Router CP2 Interrupt0 Generation (IRCP2IGR0)
+32
+RW
+0000_0000h
+B48h
+Interrupt Router CP2 Interrupt1 Status (IRCP2ISR1)
+32
+RW
+0000_0000h
+B4Ch
+Interrupt Router CP2 Interrupt1 Generation (IRCP2IGR1)
+32
+RW
+0000_0000h
+B50h
+Interrupt Router CP2 Interrupt2 Status (IRCP2ISR2)
+32
+RW
+0000_0000h
+B54h
+Interrupt Router CP2 Interrupt2 Generation (IRCP2IGR2)
+32
+RW
+0000_0000h
+B58h
+Interrupt Router CP2 Interrupt3 Status (IRCP2ISR3)
+32
+RW
+0000_0000h
+B5Ch
+Interrupt Router CPn Interruptx Generation (IRCP2IGR3)
+32
+RW
+0000_0000h
+B60h
+Interrupt Router CP2 Interrupt4 Status (IRCP2ISR4)
+32
+RW
+0000_0000h
+B64h
+Interrupt Router CPn Interruptx Generation (IRCP2IGR4)
+32
+RW
+0000_0000h
+B68h
+Interrupt Router CP2 Interrupt5 Status (IRCP2ISR5)
+32
+RW
+0000_0000h
+B6Ch
+Interrupt Router CP2 Interrupt5 Generation (IRCP2IGR5)
+32
+RW
+0000_0000h
+B70h
+Interrupt Router CP2 Interrupt6 Status (IRCP2ISR6)
+32
+RW
+0000_0000h
+B74h
+Interrupt Router CP2 Interrupt6 Generation (IRCP2IGR6)
+32
+RW
+0000_0000h
+B78h
+Interrupt Router CP2 Interrupt7 Status (IRCP2ISR7)
+32
+RW
+0000_0000h
+B7Ch
+Interrupt Router CP2 Interrupt7 Generation (IRCP2IGR7)
+32
+RW
+0000_0000h
+B80h
+Interrupt Router CP2 Interrupt8 Status (IRCP2ISR8)
+32
+RW
+0000_0000h
+B84h
+Interrupt Router CP2 Interrupt8 Generation (IRCP2IGR8)
+32
+RW
+0000_0000h
+B88h
+Interrupt Router CP2 Interrupt9 Status (IRCP2ISR9)
+32
+RW
+0000_0000h
+B8Ch
+Interrupt Router CP2 Interrupt9 Generation (IRCP2IGR9)
+32
+RW
+0000_0000h
+B90h
+Interrupt Router CP2 Interrupt10 Status (IRCP2ISR10)
+32
+RW
+0000_0000h
+B94h
+Interrupt Router CP2 Interrupt10 Generation (IRCP2IGR10)
+32
+RW
+0000_0000h
+B98h
+Interrupt Router CP2 Interrupt11 Status (IRCP2ISR11)
+32
+RW
+0000_0000h
+B9Ch
+Interrupt Router CP2 Interrupt11 Generation (IRCP2IGR11)
+32
+RW
+0000_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+256 / 5072
+
+=== PAGE 257 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+BA0h
+Interrupt Router CP2 Interrupt12 Status (IRCP2ISR12)
+32
+RW
+0000_0000h
+BA4h
+Interrupt Router CP2 Interrupt12 Generation (IRCP2IGR12)
+32
+RW
+0000_0000h
+BA8h
+Interrupt Router CP2 Interrupt13 Status (IRCP2ISR13)
+32
+RW
+0000_0000h
+BACh
+Interrupt Router CP2 Interrupt13 Generation (IRCP2IGR13)
+32
+RW
+0000_0000h
+BB0h
+Interrupt Router CP3 Interrupt0 Status (IRCP3ISR0)
+32
+RW
+0000_0000h
+BB4h
+Interrupt Router CP3 Interrupt0 Generation (IRCP3IGR0)
+32
+RW
+0000_0000h
+BB8h
+Interrupt Router CP3 Interrupt1 Status (IRCP3ISR1)
+32
+RW
+0000_0000h
+BBCh
+Interrupt Router CP3 Interrupt1 Generation (IRCP3IGR1)
+32
+RW
+0000_0000h
+BC0h
+Interrupt Router CP3 Interrupt2 Status (IRCP3ISR2)
+32
+RW
+0000_0000h
+BC4h
+Interrupt Router CP3 Interrupt2 Generation (IRCP3IGR2)
+32
+RW
+0000_0000h
+BC8h
+Interrupt Router CP3 Interrupt3 Status (IRCP3ISR3)
+32
+RW
+0000_0000h
+BCCh
+Interrupt Router CPn Interruptx Generation (IRCP3IGR3)
+32
+RW
+0000_0000h
+BD0h
+Interrupt Router CP3 Interrupt4 Status (IRCP3ISR4)
+32
+RW
+0000_0000h
+BD4h
+Interrupt Router CPn Interruptx Generation (IRCP3IGR4)
+32
+RW
+0000_0000h
+BD8h
+Interrupt Router CP3 Interrupt5 Status (IRCP3ISR5)
+32
+RW
+0000_0000h
+BDCh
+Interrupt Router CP3 Interrupt5 Generation (IRCP3IGR5)
+32
+RW
+0000_0000h
+BE0h
+Interrupt Router CP3 Interrupt6 Status (IRCP3ISR6)
+32
+RW
+0000_0000h
+BE4h
+Interrupt Router CP3 Interrupt6 Generation (IRCP3IGR6)
+32
+RW
+0000_0000h
+BE8h
+Interrupt Router CP3 Interrupt7 Status (IRCP3ISR7)
+32
+RW
+0000_0000h
+BECh
+Interrupt Router CP3 Interrupt7 Generation (IRCP3IGR7)
+32
+RW
+0000_0000h
+BF0h
+Interrupt Router CP3 Interrupt8 Status (IRCP3ISR8)
+32
+RW
+0000_0000h
+BF4h
+Interrupt Router CP3 Interrupt8 Generation (IRCP3IGR8)
+32
+RW
+0000_0000h
+BF8h
+Interrupt Router CP3 Interrupt9 Status (IRCP3ISR9)
+32
+RW
+0000_0000h
+BFCh
+Interrupt Router CP3 Interrupt9 Generation (IRCP3IGR9)
+32
+RW
+0000_0000h
+C00h
+Interrupt Router CP3 Interrupt10 Status (IRCP3ISR10)
+32
+RW
+0000_0000h
+C04h
+Interrupt Router CP3 Interrupt10 Generation (IRCP3IGR10)
+32
+RW
+0000_0000h
+C08h
+Interrupt Router CP3 Interrupt11 Status (IRCP3ISR11)
+32
+RW
+0000_0000h
+C0Ch
+Interrupt Router CP3 Interrupt11 Generation (IRCP3IGR11)
+32
+RW
+0000_0000h
+C10h
+Interrupt Router CP3 Interrupt12 Status (IRCP3ISR12)
+32
+RW
+0000_0000h
+C14h
+Interrupt Router CP3 Interrupt12 Generation (IRCP3IGR12)
+32
+RW
+0000_0000h
+C18h
+Interrupt Router CP3 Interrupt13 Status (IRCP3ISR13)
+32
+RW
+0000_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+257 / 5072
+
+=== PAGE 258 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+C1Ch
+Interrupt Router CP3 Interrupt13 Generation (IRCP3IGR13)
+32
+RW
+0000_0000h
+C20h
+Interrupt Router CP4 Interrupt0 Status (IRCP4ISR0)
+32
+RW
+0000_0000h
+C24h
+Interrupt Router CP4 Interrupt0 Generation (IRCP4IGR0)
+32
+RW
+0000_0000h
+C28h
+Interrupt Router CP4 Interrupt1 Status (IRCP4ISR1)
+32
+RW
+0000_0000h
+C2Ch
+Interrupt Router CP4 Interrupt1 Generation (IRCP4IGR1)
+32
+RW
+0000_0000h
+C30h
+Interrupt Router CP4 Interrupt2 Status (IRCP4ISR2)
+32
+RW
+0000_0000h
+C34h
+Interrupt Router CP4 Interrupt2 Generation (IRCP4IGR2)
+32
+RW
+0000_0000h
+C38h
+Interrupt Router CP4 Interrupt3 Status (IRCP4ISR3)
+32
+RW
+0000_0000h
+C3Ch
+Interrupt Router CPn Interruptx Generation (IRCP4IGR3)
+32
+RW
+0000_0000h
+C40h
+Interrupt Router CP4 Interrupt4 Status (IRCP4ISR4)
+32
+RW
+0000_0000h
+C44h
+Interrupt Router CPn Interruptx Generation (IRCP4IGR4)
+32
+RW
+0000_0000h
+C48h
+Interrupt Router CP4 Interrupt5 Status (IRCP4ISR5)
+32
+RW
+0000_0000h
+C4Ch
+Interrupt Router CP4 Interrupt5 Generation (IRCP4IGR5)
+32
+RW
+0000_0000h
+C50h
+Interrupt Router CP4 Interrupt6 Status (IRCP4ISR6)
+32
+RW
+0000_0000h
+C54h
+Interrupt Router CP4 Interrupt6 Generation (IRCP4IGR6)
+32
+RW
+0000_0000h
+C58h
+Interrupt Router CP4 Interrupt7 Status (IRCP4ISR7)
+32
+RW
+0000_0000h
+C5Ch
+Interrupt Router CP4 Interrupt7 Generation (IRCP4IGR7)
+32
+RW
+0000_0000h
+C60h
+Interrupt Router CP4 Interrupt8 Status (IRCP4ISR8)
+32
+RW
+0000_0000h
+C64h
+Interrupt Router CP4 Interrupt8 Generation (IRCP4IGR8)
+32
+RW
+0000_0000h
+C68h
+Interrupt Router CP4 Interrupt9 Status (IRCP4ISR9)
+32
+RW
+0000_0000h
+C6Ch
+Interrupt Router CP4 Interrupt9 Generation (IRCP4IGR9)
+32
+RW
+0000_0000h
+C70h
+Interrupt Router CP4 Interrupt10 Status (IRCP4ISR10)
+32
+RW
+0000_0000h
+C74h
+Interrupt Router CP4 Interrupt10 Generation (IRCP4IGR10)
+32
+RW
+0000_0000h
+C78h
+Interrupt Router CP4 Interrupt11 Status (IRCP4ISR11)
+32
+RW
+0000_0000h
+C7Ch
+Interrupt Router CP4 Interrupt11 Generation (IRCP4IGR11)
+32
+RW
+0000_0000h
+C80h
+Interrupt Router CP4 Interrupt12 Status (IRCP4ISR12)
+32
+RW
+0000_0000h
+C84h
+Interrupt Router CP4 Interrupt12 Generation (IRCP4IGR12)
+32
+RW
+0000_0000h
+C88h
+Interrupt Router CP4 Interrupt13 Status (IRCP4ISR13)
+32
+RW
+0000_0000h
+C8Ch
+Interrupt Router CP4 Interrupt13 Generation (IRCP4IGR13)
+32
+RW
+0000_0000h
+C90h
+Interrupt Router CP5 Interrupt0 Status (IRCP5ISR0)
+32
+RW
+0000_0000h
+C94h
+Interrupt Router CP5 Interrupt0 Generation (IRCP5IGR0)
+32
+RW
+0000_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+258 / 5072
+
+=== PAGE 259 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+C98h
+Interrupt Router CP5 Interrupt1 Status (IRCP5ISR1)
+32
+RW
+0000_0000h
+C9Ch
+Interrupt Router CP5 Interrupt1 Generation (IRCP5IGR1)
+32
+RW
+0000_0000h
+CA0h
+Interrupt Router CP5 Interrupt2 Status (IRCP5ISR2)
+32
+RW
+0000_0000h
+CA4h
+Interrupt Router CP5 Interrupt2 Generation (IRCP5IGR2)
+32
+RW
+0000_0000h
+CA8h
+Interrupt Router CP5 Interrupt3 Status (IRCP5ISR3)
+32
+RW
+0000_0000h
+CACh
+Interrupt Router CPn Interruptx Generation (IRCP5IGR3)
+32
+RW
+0000_0000h
+CB0h
+Interrupt Router CP5 Interrupt4 Status (IRCP5ISR4)
+32
+RW
+0000_0000h
+CB4h
+Interrupt Router CPn Interruptx Generation (IRCP5IGR4)
+32
+RW
+0000_0000h
+CB8h
+Interrupt Router CP5 Interrupt5 Status (IRCP5ISR5)
+32
+RW
+0000_0000h
+CBCh
+Interrupt Router CP5 Interrupt5 Generation (IRCP5IGR5)
+32
+RW
+0000_0000h
+CC0h
+Interrupt Router CP5 Interrupt6 Status (IRCP5ISR6)
+32
+RW
+0000_0000h
+CC4h
+Interrupt Router CP5 Interrupt6 Generation (IRCP5IGR6)
+32
+RW
+0000_0000h
+CC8h
+Interrupt Router CP5 Interrupt7 Status (IRCP5ISR7)
+32
+RW
+0000_0000h
+CCCh
+Interrupt Router CP5 Interrupt7 Generation (IRCP5IGR7)
+32
+RW
+0000_0000h
+CD0h
+Interrupt Router CP5 Interrupt8 Status (IRCP5ISR8)
+32
+RW
+0000_0000h
+CD4h
+Interrupt Router CP5 Interrupt8 Generation (IRCP5IGR8)
+32
+RW
+0000_0000h
+CD8h
+Interrupt Router CP5 Interrupt9 Status (IRCP5ISR9)
+32
+RW
+0000_0000h
+CDCh
+Interrupt Router CP5 Interrupt9 Generation (IRCP5IGR9)
+32
+RW
+0000_0000h
+CE0h
+Interrupt Router CP5 Interrupt10 Status (IRCP5ISR10)
+32
+RW
+0000_0000h
+CE4h
+Interrupt Router CP5 Interrupt10 Generation (IRCP5IGR10)
+32
+RW
+0000_0000h
+CE8h
+Interrupt Router CP5 Interrupt11 Status (IRCP5ISR11)
+32
+RW
+0000_0000h
+CECh
+Interrupt Router CP5 Interrupt11 Generation (IRCP5IGR11)
+32
+RW
+0000_0000h
+CF0h
+Interrupt Router CP5 Interrupt12 Status (IRCP5ISR12)
+32
+RW
+0000_0000h
+CF4h
+Interrupt Router CP5 Interrupt12 Generation (IRCP5IGR12)
+32
+RW
+0000_0000h
+CF8h
+Interrupt Router CP5 Interrupt13 Status (IRCP5ISR13)
+32
+RW
+0000_0000h
+CFCh
+Interrupt Router CP5 Interrupt13 Generation (IRCP5IGR13)
+32
+RW
+0000_0000h
+D00h
+Interrupt Router CP6 Interrupt0 Status (IRCP6ISR0)
+32
+RW
+0000_0000h
+D04h
+Interrupt Router CP6 Interrupt0 Generation (IRCP6IGR0)
+32
+RW
+0000_0000h
+D08h
+Interrupt Router CP6 Interrupt1 Status (IRCP6ISR1)
+32
+RW
+0000_0000h
+D0Ch
+Interrupt Router CP6 Interrupt1 Generation (IRCP6IGR1)
+32
+RW
+0000_0000h
+D10h
+Interrupt Router CP6 Interrupt2 Status (IRCP6ISR2)
+32
+RW
+0000_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+259 / 5072
+
+=== PAGE 260 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+D14h
+Interrupt Router CP6 Interrupt2 Generation (IRCP6IGR2)
+32
+RW
+0000_0000h
+D18h
+Interrupt Router CP6 Interrupt3 Status (IRCP6ISR3)
+32
+RW
+0000_0000h
+D1Ch
+Interrupt Router CPn Interruptx Generation (IRCP6IGR3)
+32
+RW
+0000_0000h
+D20h
+Interrupt Router CP6 Interrupt4 Status (IRCP6ISR4)
+32
+RW
+0000_0000h
+D24h
+Interrupt Router CPn Interruptx Generation (IRCP6IGR4)
+32
+RW
+0000_0000h
+D28h
+Interrupt Router CP6 Interrupt5 Status (IRCP6ISR5)
+32
+RW
+0000_0000h
+D2Ch
+Interrupt Router CP6 Interrupt5 Generation (IRCP6IGR5)
+32
+RW
+0000_0000h
+D30h
+Interrupt Router CP6 Interrupt6 Status (IRCP6ISR6)
+32
+RW
+0000_0000h
+D34h
+Interrupt Router CP6 Interrupt6 Generation (IRCP6IGR6)
+32
+RW
+0000_0000h
+D38h
+Interrupt Router CP6 Interrupt7 Status (IRCP6ISR7)
+32
+RW
+0000_0000h
+D3Ch
+Interrupt Router CP6 Interrupt7 Generation (IRCP6IGR7)
+32
+RW
+0000_0000h
+D40h
+Interrupt Router CP6 Interrupt8 Status (IRCP6ISR8)
+32
+RW
+0000_0000h
+D44h
+Interrupt Router CP6 Interrupt8 Generation (IRCP6IGR8)
+32
+RW
+0000_0000h
+D48h
+Interrupt Router CP6 Interrupt9 Status (IRCP6ISR9)
+32
+RW
+0000_0000h
+D4Ch
+Interrupt Router CP6 Interrupt9 Generation (IRCP6IGR9)
+32
+RW
+0000_0000h
+D50h
+Interrupt Router CP6 Interrupt10 Status (IRCP6ISR10)
+32
+RW
+0000_0000h
+D54h
+Interrupt Router CP6 Interrupt10 Generation (IRCP6IGR10)
+32
+RW
+0000_0000h
+D58h
+Interrupt Router CP6 Interrupt11 Status (IRCP6ISR11)
+32
+RW
+0000_0000h
+D5Ch
+Interrupt Router CP6 Interrupt11 Generation (IRCP6IGR11)
+32
+RW
+0000_0000h
+D60h
+Interrupt Router CP6 Interrupt12 Status (IRCP6ISR12)
+32
+RW
+0000_0000h
+D64h
+Interrupt Router CP6 Interrupt12 Generation (IRCP6IGR12)
+32
+RW
+0000_0000h
+D68h
+Interrupt Router CP6 Interrupt13 Status (IRCP6ISR13)
+32
+RW
+0000_0000h
+D6Ch
+Interrupt Router CP6 Interrupt13 Generation (IRCP6IGR13)
+32
+RW
+0000_0000h
+D70h
+Interrupt Router CP7 Interrupt0 Status (IRCP7ISR0)
+32
+RW
+0000_0000h
+D74h
+Interrupt Router CP7 Interrupt0 Generation (IRCP7IGR0)
+32
+RW
+0000_0000h
+D78h
+Interrupt Router CP7 Interrupt1 Status (IRCP7ISR1)
+32
+RW
+0000_0000h
+D7Ch
+Interrupt Router CP7 Interrupt1 Generation (IRCP7IGR1)
+32
+RW
+0000_0000h
+D80h
+Interrupt Router CP7 Interrupt2 Status (IRCP7ISR2)
+32
+RW
+0000_0000h
+D84h
+Interrupt Router CP7 Interrupt2 Generation (IRCP7IGR2)
+32
+RW
+0000_0000h
+D88h
+Interrupt Router CP7 Interrupt3 Status (IRCP7ISR3)
+32
+RW
+0000_0000h
+D8Ch
+Interrupt Router CPn Interruptx Generation (IRCP7IGR3)
+32
+RW
+0000_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+260 / 5072
+
+=== PAGE 261 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+D90h
+Interrupt Router CP7 Interrupt4 Status (IRCP7ISR4)
+32
+RW
+0000_0000h
+D94h
+Interrupt Router CPn Interruptx Generation (IRCP7IGR4)
+32
+RW
+0000_0000h
+D98h
+Interrupt Router CP7 Interrupt5 Status (IRCP7ISR5)
+32
+RW
+0000_0000h
+D9Ch
+Interrupt Router CP7 Interrupt5 Generation (IRCP7IGR5)
+32
+RW
+0000_0000h
+DA0h
+Interrupt Router CP7 Interrupt6 Status (IRCP7ISR6)
+32
+RW
+0000_0000h
+DA4h
+Interrupt Router CP7 Interrupt6 Generation (IRCP7IGR6)
+32
+RW
+0000_0000h
+DA8h
+Interrupt Router CP7 Interrupt7 Status (IRCP7ISR7)
+32
+RW
+0000_0000h
+DACh
+Interrupt Router CP7 Interrupt7 Generation (IRCP7IGR7)
+32
+RW
+0000_0000h
+DB0h
+Interrupt Router CP7 Interrupt8 Status (IRCP7ISR8)
+32
+RW
+0000_0000h
+DB4h
+Interrupt Router CP7 Interrupt8 Generation (IRCP7IGR8)
+32
+RW
+0000_0000h
+DB8h
+Interrupt Router CP7 Interrupt9 Status (IRCP7ISR9)
+32
+RW
+0000_0000h
+DBCh
+Interrupt Router CP7 Interrupt9 Generation (IRCP7IGR9)
+32
+RW
+0000_0000h
+DC0h
+Interrupt Router CP7 Interrupt10 Status (IRCP7ISR10)
+32
+RW
+0000_0000h
+DC4h
+Interrupt Router CP7 Interrupt10 Generation (IRCP7IGR10)
+32
+RW
+0000_0000h
+DC8h
+Interrupt Router CP7 Interrupt11 Status (IRCP7ISR11)
+32
+RW
+0000_0000h
+DCCh
+Interrupt Router CP7 Interrupt11 Generation (IRCP7IGR11)
+32
+RW
+0000_0000h
+DD0h
+Interrupt Router CP7 Interrupt12 Status (IRCP7ISR12)
+32
+RW
+0000_0000h
+DD4h
+Interrupt Router CP7 Interrupt12 Generation (IRCP7IGR12)
+32
+RW
+0000_0000h
+DD8h
+Interrupt Router CP7 Interrupt13 Status (IRCP7ISR13)
+32
+RW
+0000_0000h
+DDCh
+Interrupt Router CP7 Interrupt13 Generation (IRCP7IGR13)
+32
+RW
+0000_0000h
+DE0h
+Interrupt Router CP8 Interrupt0 Status (IRCP8ISR0)
+32
+RW
+0000_0000h
+DE4h
+Interrupt Router CP8 Interrupt0 Generation (IRCP8IGR0)
+32
+RW
+0000_0000h
+DE8h
+Interrupt Router CP8 Interrupt1 Status (IRCP8ISR1)
+32
+RW
+0000_0000h
+DECh
+Interrupt Router CP8 Interrupt1 Generation (IRCP8IGR1)
+32
+RW
+0000_0000h
+DF0h
+Interrupt Router CP8 Interrupt2 Status (IRCP8ISR2)
+32
+RW
+0000_0000h
+DF4h
+Interrupt Router CP8 Interrupt2 Generation (IRCP8IGR2)
+32
+RW
+0000_0000h
+DF8h
+Interrupt Router CP8 Interrupt3 Status (IRCP8ISR3)
+32
+RW
+0000_0000h
+DFCh
+Interrupt Router CPn Interruptx Generation (IRCP8IGR3)
+32
+RW
+0000_0000h
+E00h
+Interrupt Router CP8 Interrupt4 Status (IRCP8ISR4)
+32
+RW
+0000_0000h
+E04h
+Interrupt Router CPn Interruptx Generation (IRCP8IGR4)
+32
+RW
+0000_0000h
+E08h
+Interrupt Router CP8 Interrupt5 Status (IRCP8ISR5)
+32
+RW
+0000_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+261 / 5072
+
+=== PAGE 262 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+E0Ch
+Interrupt Router CP8 Interrupt5 Generation (IRCP8IGR5)
+32
+RW
+0000_0000h
+E10h
+Interrupt Router CP8 Interrupt6 Status (IRCP8ISR6)
+32
+RW
+0000_0000h
+E14h
+Interrupt Router CP8 Interrupt6 Generation (IRCP8IGR6)
+32
+RW
+0000_0000h
+E18h
+Interrupt Router CP8 Interrupt7 Status (IRCP8ISR7)
+32
+RW
+0000_0000h
+E1Ch
+Interrupt Router CP8 Interrupt7 Generation (IRCP8IGR7)
+32
+RW
+0000_0000h
+E20h
+Interrupt Router CP8 Interrupt8 Status (IRCP8ISR8)
+32
+RW
+0000_0000h
+E24h
+Interrupt Router CP8 Interrupt8 Generation (IRCP8IGR8)
+32
+RW
+0000_0000h
+E28h
+Interrupt Router CP8 Interrupt9 Status (IRCP8ISR9)
+32
+RW
+0000_0000h
+E2Ch
+Interrupt Router CP8 Interrupt9 Generation (IRCP8IGR9)
+32
+RW
+0000_0000h
+E30h
+Interrupt Router CP8 Interrupt10 Status (IRCP8ISR10)
+32
+RW
+0000_0000h
+E34h
+Interrupt Router CP8 Interrupt10 Generation (IRCP8IGR10)
+32
+RW
+0000_0000h
+E38h
+Interrupt Router CP8 Interrupt11 Status (IRCP8ISR11)
+32
+RW
+0000_0000h
+E3Ch
+Interrupt Router CP8 Interrupt11 Generation (IRCP8IGR11)
+32
+RW
+0000_0000h
+E40h
+Interrupt Router CP8 Interrupt12 Status (IRCP8ISR12)
+32
+RW
+0000_0000h
+E44h
+Interrupt Router CP8 Interrupt12 Generation (IRCP8IGR12)
+32
+RW
+0000_0000h
+E48h
+Interrupt Router CP8 Interrupt13 Status (IRCP8ISR13)
+32
+RW
+0000_0000h
+E4Ch
+Interrupt Router CP8 Interrupt13 Generation (IRCP8IGR13)
+32
+RW
+0000_0000h
+E50h
+Interrupt Router CP9 Interrupt0 Status (IRCP9ISR0)
+32
+RW
+0000_0000h
+E54h
+Interrupt Router CP9 Interrupt0 Generation (IRCP9IGR0)
+32
+RW
+0000_0000h
+E58h
+Interrupt Router CP9 Interrupt1 Status (IRCP9ISR1)
+32
+RW
+0000_0000h
+E5Ch
+Interrupt Router CP9 Interrupt1 Generation (IRCP9IGR1)
+32
+RW
+0000_0000h
+E60h
+Interrupt Router CP9 Interrupt2 Status (IRCP9ISR2)
+32
+RW
+0000_0000h
+E64h
+Interrupt Router CP9 Interrupt2 Generation (IRCP9IGR2)
+32
+RW
+0000_0000h
+E68h
+Interrupt Router CP9 Interrupt3 Status (IRCP9ISR3)
+32
+RW
+0000_0000h
+E6Ch
+Interrupt Router CPn Interruptx Generation (IRCP9IGR3)
+32
+RW
+0000_0000h
+E70h
+Interrupt Router CP9 Interrupt4 Status (IRCP9ISR4)
+32
+RW
+0000_0000h
+E74h
+Interrupt Router CPn Interruptx Generation (IRCP9IGR4)
+32
+RW
+0000_0000h
+E78h
+Interrupt Router CP9 Interrupt5 Status (IRCP9ISR5)
+32
+RW
+0000_0000h
+E7Ch
+Interrupt Router CP9 Interrupt5 Generation (IRCP9IGR5)
+32
+RW
+0000_0000h
+E80h
+Interrupt Router CP9 Interrupt6 Status (IRCP9ISR6)
+32
+RW
+0000_0000h
+E84h
+Interrupt Router CP9 Interrupt6 Generation (IRCP9IGR6)
+32
+RW
+0000_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+262 / 5072
+
+=== PAGE 263 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+E88h
+Interrupt Router CP9 Interrupt7 Status (IRCP9ISR7)
+32
+RW
+0000_0000h
+E8Ch
+Interrupt Router CP9 Interrupt7 Generation (IRCP9IGR7)
+32
+RW
+0000_0000h
+E90h
+Interrupt Router CP9 Interrupt8 Status (IRCP9ISR8)
+32
+RW
+0000_0000h
+E94h
+Interrupt Router CP9 Interrupt8 Generation (IRCP9IGR8)
+32
+RW
+0000_0000h
+E98h
+Interrupt Router CP9 Interrupt9 Status (IRCP9ISR9)
+32
+RW
+0000_0000h
+E9Ch
+Interrupt Router CP9 Interrupt9 Generation (IRCP9IGR9)
+32
+RW
+0000_0000h
+EA0h
+Interrupt Router CP9 Interrupt10 Status (IRCP9ISR10)
+32
+RW
+0000_0000h
+EA4h
+Interrupt Router CP9 Interrupt10 Generation (IRCP9IGR10)
+32
+RW
+0000_0000h
+EA8h
+Interrupt Router CP9 Interrupt11 Status (IRCP9ISR11)
+32
+RW
+0000_0000h
+EACh
+Interrupt Router CP9 Interrupt11 Generation (IRCP9IGR11)
+32
+RW
+0000_0000h
+EB0h
+Interrupt Router CP9 Interrupt12 Status (IRCP9ISR12)
+32
+RW
+0000_0000h
+EB4h
+Interrupt Router CP9 Interrupt12 Generation (IRCP9IGR12)
+32
+RW
+0000_0000h
+EB8h
+Interrupt Router CP9 Interrupt13 Status (IRCP9ISR13)
+32
+RW
+0000_0000h
+EBCh
+Interrupt Router CP9 Interrupt13 Generation (IRCP9IGR13)
+32
+RW
+0000_0000h
+EC0h
+Interrupt Router CP10 Interrupt0 Status (IRCP10ISR0)
+32
+RW
+0000_0000h
+EC4h
+Interrupt Router CP10 Interrupt0 Generation (IRCP10IGR0)
+32
+RW
+0000_0000h
+EC8h
+Interrupt Router CP10 Interrupt1 Status (IRCP10ISR1)
+32
+RW
+0000_0000h
+ECCh
+Interrupt Router CP10 Interrupt1 Generation (IRCP10IGR1)
+32
+RW
+0000_0000h
+ED0h
+Interrupt Router CP10 Interrupt2 Status (IRCP10ISR2)
+32
+RW
+0000_0000h
+ED4h
+Interrupt Router CP10 Interrupt2 Generation (IRCP10IGR2)
+32
+RW
+0000_0000h
+ED8h
+Interrupt Router CP10 Interrupt3 Status (IRCP10ISR3)
+32
+RW
+0000_0000h
+EDCh
+Interrupt Router CPn Interruptx Generation (IRCP10IGR3)
+32
+RW
+0000_0000h
+EE0h
+Interrupt Router CP10 Interrupt4 Status (IRCP10ISR4)
+32
+RW
+0000_0000h
+EE4h
+Interrupt Router CPn Interruptx Generation (IRCP10IGR4)
+32
+RW
+0000_0000h
+EE8h
+Interrupt Router CP10 Interrupt5 Status (IRCP10ISR5)
+32
+RW
+0000_0000h
+EECh
+Interrupt Router CP10 Interrupt5 Generation (IRCP10IGR5)
+32
+RW
+0000_0000h
+EF0h
+Interrupt Router CP10 Interrupt6 Status (IRCP10ISR6)
+32
+RW
+0000_0000h
+EF4h
+Interrupt Router CP10 Interrupt6 Generation (IRCP10IGR6)
+32
+RW
+0000_0000h
+EF8h
+Interrupt Router CP10 Interrupt7 Status (IRCP10ISR7)
+32
+RW
+0000_0000h
+EFCh
+Interrupt Router CP10 Interrupt7 Generation (IRCP10IGR7)
+32
+RW
+0000_0000h
+F00h
+Interrupt Router CP10 Interrupt8 Status (IRCP10ISR8)
+32
+RW
+0000_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+263 / 5072
+
+=== PAGE 264 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+F04h
+Interrupt Router CP10 Interrupt8 Generation (IRCP10IGR8)
+32
+RW
+0000_0000h
+F08h
+Interrupt Router CP10 Interrupt9 Status (IRCP10ISR9)
+32
+RW
+0000_0000h
+F0Ch
+Interrupt Router CP10 Interrupt9 Generation (IRCP10IGR9)
+32
+RW
+0000_0000h
+F10h
+Interrupt Router CP10 Interrupt10 Status (IRCP10ISR10)
+32
+RW
+0000_0000h
+F14h
+Interrupt Router CP10 Interrupt10 Generation (IRCP10IGR10)
+32
+RW
+0000_0000h
+F18h
+Interrupt Router CP10 Interrupt11 Status (IRCP10ISR11)
+32
+RW
+0000_0000h
+F1Ch
+Interrupt Router CP10 Interrupt11 Generation (IRCP10IGR11)
+32
+RW
+0000_0000h
+F20h
+Interrupt Router CP10 Interrupt12 Status (IRCP10ISR12)
+32
+RW
+0000_0000h
+F24h
+Interrupt Router CP10 Interrupt12 Generation (IRCP10IGR12)
+32
+RW
+0000_0000h
+F28h
+Interrupt Router CP10 Interrupt13 Status (IRCP10ISR13)
+32
+RW
+0000_0000h
+F2Ch
+Interrupt Router CP10 Interrupt13 Generation (IRCP10IGR13)
+32
+RW
+0000_0000h
+F30h
+Interrupt Router CP11 Interrupt0 Status (IRCP11ISR0)
+32
+RW
+0000_0000h
+F34h
+Interrupt Router CP11 Interrupt0 Generation (IRCP11IGR0)
+32
+RW
+0000_0000h
+F38h
+Interrupt Router CP11 Interrupt1 Status (IRCP11ISR1)
+32
+RW
+0000_0000h
+F3Ch
+Interrupt Router CP11 Interrupt1 Generation (IRCP11IGR1)
+32
+RW
+0000_0000h
+F40h
+Interrupt Router CP11 Interrupt2 Status (IRCP11ISR2)
+32
+RW
+0000_0000h
+F44h
+Interrupt Router CP11 Interrupt2 Generation (IRCP11IGR2)
+32
+RW
+0000_0000h
+F48h
+Interrupt Router CP11 Interrupt3 Status (IRCP11ISR3)
+32
+RW
+0000_0000h
+F4Ch
+Interrupt Router CPn Interruptx Generation (IRCP11IGR3)
+32
+RW
+0000_0000h
+F50h
+Interrupt Router CP11 Interrupt4 Status (IRCP11ISR4)
+32
+RW
+0000_0000h
+F54h
+Interrupt Router CPn Interruptx Generation (IRCP11IGR4)
+32
+RW
+0000_0000h
+F58h
+Interrupt Router CP11 Interrupt5 Status (IRCP11ISR5)
+32
+RW
+0000_0000h
+F5Ch
+Interrupt Router CP11 Interrupt5 Generation (IRCP11IGR5)
+32
+RW
+0000_0000h
+F60h
+Interrupt Router CP11 Interrupt6 Status (IRCP11ISR6)
+32
+RW
+0000_0000h
+F64h
+Interrupt Router CP11 Interrupt6 Generation (IRCP11IGR6)
+32
+RW
+0000_0000h
+F68h
+Interrupt Router CP11 Interrupt7 Status (IRCP11ISR7)
+32
+RW
+0000_0000h
+F6Ch
+Interrupt Router CP11 Interrupt7 Generation (IRCP11IGR7)
+32
+RW
+0000_0000h
+F70h
+Interrupt Router CP11 Interrupt8 Status (IRCP11ISR8)
+32
+RW
+0000_0000h
+F74h
+Interrupt Router CP11 Interrupt8 Generation (IRCP11IGR8)
+32
+RW
+0000_0000h
+F78h
+Interrupt Router CP11 Interrupt9 Status (IRCP11ISR9)
+32
+RW
+0000_0000h
+F7Ch
+Interrupt Router CP11 Interrupt9 Generation (IRCP11IGR9)
+32
+RW
+0000_0000h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+264 / 5072
+
+=== PAGE 265 ===
+Table continued from the previous page...
+Offset
+Register
+Width
+(In bits)
+Access
+Reset value
+F80h
+Interrupt Router CP11 Interrupt10 Status (IRCP11ISR10)
+32
+RW
+0000_0000h
+F84h
+Interrupt Router CP11 Interrupt10 Generation (IRCP11IGR10)
+32
+RW
+0000_0000h
+F88h
+Interrupt Router CP11 Interrupt11 Status (IRCP11ISR11)
+32
+RW
+0000_0000h
+F8Ch
+Interrupt Router CP11 Interrupt11 Generation (IRCP11IGR11)
+32
+RW
+0000_0000h
+F90h
+Interrupt Router CP11 Interrupt12 Status (IRCP11ISR12)
+32
+RW
+0000_0000h
+F94h
+Interrupt Router CP11 Interrupt12 Generation (IRCP11IGR12)
+32
+RW
+0000_0000h
+F98h
+Interrupt Router CP11 Interrupt13 Status (IRCP11ISR13)
+32
+RW
+0000_0000h
+F9Ch
+Interrupt Router CP11 Interrupt13 Generation (IRCP11IGR13)
+32
+RW
+0000_0000h
+8.4.2 Processor X Type (CPXTYPE)
+Offset
+Register
+Offset
+CPXTYPE
+0h
+Function
+Provides a CPU-specific response indicating the personality of the core making the access. The 32-bit response includes four 
+ASCII characters defining the CPU type (Cortex-A53 or Cortex-M7) along with a byte defining the logical revision number. This 
+number follows Arm's rYpZ nomenclature.
+A read from the Cortex-A53 or Cortex-M7 returns the appropriate processor information. Reads from any other bus master return 
+all 0s. Attempted write accesses terminate with an error.
+Access: Read by core masters Cortex-M7 and Cortex-A53 only
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+PERSONALITY 
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+PERSONALITY 
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+265 / 5072
+
+=== PAGE 266 ===
+Fields
+Field
+Function
+31-0
+PERSONALITY
+Processor Personality
+Defines the processor personality for CPx.
+Processor
+Personality
+CPx = Cortex-A53 cluster 0 core 0
+41_35_33_30h (Cortex-A53_0)
+CPx = Cortex-A53 cluster 0 core 1
+41_35_33_31h (Cortex-A53_1)
+CPx = Cortex-A53 cluster 1 core 0
+41_35_33_32h (Cortex-A53_2)
+CPx = Cortex-A53 cluster 1 core 1
+41_35_33_33h (Cortex-A53_3)
+CPx = Cortex-A53 cluster 0 core 2
+41_35_33_34h (Cortex-A53_4)
+CPx = Cortex-A53 cluster 0 core 3
+41_35_33_35h (Cortex-A53_5)
+CPx = Cortex-A53 cluster 1 core 2
+41_35_33_36h (Cortex-A53_6)
+CPx = Cortex-A53 cluster 1 core 3
+41_35_33_37h (Cortex-A53_7)
+CPx = Cortex-M7_0
+43_4D_37_30h (Cortex-M7_0)
+CPx = Cortex-M7_1
+43_4D_37_31h (Cortex-M7_1)
+CPx = Cortex-M7_2
+43_4D_37_32h (Cortex-M7_2)
+CPx = Cortex-M7_3
+43_4D_37_33h (Cortex-M7_3)
+8.4.3 Processor X Number (CPXNUM)
+Offset
+Register
+Offset
+CPXNUM
+4h
+Function
+Provides a CPU-specific response indicating the logical processor number of the core making the access.
+A read from the Cortex-A53 or the Cortex-M7 cores returns the appropriate processor information. Reads from any other bus 
+master return all 0s. Attempted write accesses terminate with an error.
+Access: Read by core masters Cortex-M7 and Cortex-A53 only
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+266 / 5072
+
+=== PAGE 267 ===
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+0
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+CPN 
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+Fields
+Field
+Function
+31-8
+—
+Reserved
+7-0
+CPN
+Processor Number
+Defines the logical processor number for CPx.
+Processor description
+Logical processor number
+Cortex-A53 cluster 0 core 0
+CPN = 0
+Cortex-A53 cluster 0 core 1
+CPN = 1
+Cortex-A53 cluster 1 core 0
+CPN = 2
+Cortex-A53 cluster 1 core 1
+CPN = 3
+Cortex-M7 core 0
+CPN = 4
+Cortex-M7 core 1
+CPN = 5
+Cortex-M7 core 2
+CPN = 6
+Cortex-M7 core 3
+CPN = 7
+Cortex-A53 cluster 0 core 2
+CPN = 8
+Cortex-A53 cluster 0 core 3
+CPN = 9
+Cortex-A53 cluster 1 core 2
+CPN = 10
+Cortex-A53 cluster 1 core 3
+CPN = 11
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+267 / 5072
+
+=== PAGE 268 ===
+8.4.4 Processor X Revision (CPXREV)
+Offset
+Register
+Offset
+CPXREV
+8h
+Function
+Provides a CPU-specific response indicating the logical revision number of the core. The number follows Arm's 
+rYpZ nomenclature.
+A read from the Cortex-A53 or the Cortex-M7 cores returns the appropriate processor information. Reads from any other bus 
+master return all 0s. Attempted write accesses terminate with an error.
+Access: Read by core masters Cortex-M7 and Cortex-A53 only
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+0
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+RYPZ 
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+Fields
+Field
+Function
+31-8
+—
+Reserved
+7-0
+RYPZ
+Processor Revision
+Defines the processor revision for CPx.
+Processor description
+Revision
+Cortex-A53
+RYPZ = 04h corresponding to the r0p4 core release
+Cortex-M7
+RYPZ = 11h corresponding to the r1p1 core release
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+268 / 5072
+
+=== PAGE 269 ===
+8.4.5 Processor X Configuration 0 (CPXCFG0)
+Offset
+Register
+Offset
+CPXCFG0
+Ch
+Function
+Provides a CPU-specific response detailing configuration information. In this case, it is information on level 1 (L1) cache, if present.
+A read from Cortex-A53 or Cortex-M7 returns the appropriate processor information. Reads from any other bus master return all 
+0s. Attempted write accesses terminate with an error.
+Access: Read by core masters Cortex-M7 and Cortex-A53 only
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+ICSZ 
+ICWY 
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+DCSZ 
+DCWY 
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+Fields
+Field
+Function
+31-24
+ICSZ
+L1 Instruction Cache Size
+Provides an encoded value of the instruction cache size. The capacity of the memory is derived using the 
+formula 2^(8+SZ) and expressed as bytes. Here, SZ is a non-zero value, and SZ = 0 indicates that the 
+memory is not present.
+Instruction cache size
+ICSZ
+No instruction cache
+0h
+4 KB instruction cache
+4h
+8 KB instruction cache
+5h
+16 KB instruction cache
+6h
+32 KB instruction cache
+7h
+64 KB instruction cache
+8h
+128 KB instruction cache
+9h
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+269 / 5072
+
+=== PAGE 270 ===
+Field
+Function
+Instruction cache size
+ICSZ
+256 KB instruction cache
+Ah
+512 KB instruction cache
+Bh
+Cortex-A53 cores
+7h (32 KB)
+Cortex-M7 cores
+7h (32 KB)
+23-16
+ICWY
+L1 Instruction Cache Ways
+Provides the number of cache ways for the instruction cache.
+• For the Cortex-A53 cores in this chip, ICWY = 2h (2-way set-associative).
+• For the Cortex-M7 cores in this chip, ICWY = 2h (2-way set-associative).
+15-8
+DCSZ
+L1 Data Cache Size
+Provides an encoded value of the data cache size. The capacity of the memory is derived using the formula 
+2^(8+SZ) and expressed as bytes. Here, SZ is a non-zero value, and SZ = 0 indicates that the memory is 
+not present.
+Data cache size
+DCSZ
+No data cache
+0h
+4 KB data cache
+4h
+8 KB data cache
+5h
+16 KB data cache
+6h
+32 KB data cache
+7h
+64 KB data cache
+8h
+128 KB data cache
+9h
+256 KB data cache
+Ah
+512 KB data cache
+Bh
+Cortex-A53 cores
+7h (32 KB)
+Cortex-M7 cores
+7h (32 KB)
+7-0
+DCWY
+L1 Data Cache Ways
+Provides the number of cache ways for the data cache.
+• For the Cortex-A53 cores in this chip, DCWY = 4h (4-way set-associative).
+• For the Cortex-M7 cores in this chip, DCWY = 4h (4-way set-associative).
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+270 / 5072
+
+=== PAGE 271 ===
+8.4.6 Processor X Configuration 1 (CPXCFG1)
+Offset
+Register
+Offset
+CPXCFG1
+10h
+Function
+Provides a CPU-specific response detailing configuration information. In this case, it is information on level 2 (L2) cache, if present.
+A read from the Cortex-A53 or Cortex-M7 cores returns the appropriate processor information. Reads from any other bus master 
+return all 0s. Attempted write accesses terminate with an error.
+Access: Read by core masters Cortex-M7 and Cortex-A53 only
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+L2SZ 
+L2WY 
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+Fields
+Field
+Function
+31-24
+L2SZ
+L2 Cache Size
+Provides an encoded value of the L2 cache size. The capacity of the memory is derived using the formula 
+2^(8+SZ) and expressed as bytes. Here, SZ is a non-zero value, and SZ = 0 indicates that the memory is 
+not present.
+L2 cache size
+L2SZ
+No L2 cache
+0h
+4 KB L2 cache
+4h
+8 KB L2 cache
+5h
+16 KB L2 cache
+6h
+32 KB L2 cache
+7h
+64 KB L2 cache
+8h
+128 KB L2 cache
+9h
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+271 / 5072
+
+=== PAGE 272 ===
+Field
+Function
+L2 cache size
+L2SZ
+256 KB L2 cache
+Ah
+1024 KB L2 cache
+Ch
+Cortex-A53 cores
+Bh (512 KB per cluster)
+Cortex-M7 cores
+0h (not present)
+23-16
+L2WY
+L2 Cache Ways
+Provides the number of cache ways for the L2 cache.
+• For the Cortex-A53 cores in this chip, L2WY = 10h (16-way set-associative).
+• For the Cortex-M7 cores in this chip, L2WY = 0h (not present).
+15-0
+—
+Reserved
+8.4.7 Processor X Configuration 2 (CPXCFG2)
+Offset
+Register
+Offset
+CPXCFG2
+14h
+Function
+Provides a CPU-specific response detailing configuration information. In this case, it is information on tightly coupled local 
+memories, if present.
+A read from the Cortex-A53 or the Cortex-M7 cores returns the appropriate processor information. Reads from any other bus 
+master return all 0s. Attempted write accesses terminate with an error.
+Access: Read by core masters Cortex-M7 and Cortex-A53 only
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+DTCMSZ 
+0
+1
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+ITCMSZ 
+0
+1
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+272 / 5072
+
+=== PAGE 273 ===
+Fields
+Field
+Function
+31-24
+DTCMSZ
+Tightly Coupled Data Memory Size
+Provides an encoded value of the tightly coupled local data memory size. The capacity of the memory is 
+derived using the formula 2^(8+SZ) and expressed as bytes. Here, SZ is a non-zero value, and SZ = 0 
+indicates that the memory is not present.
+DTCML
+DTCMSZ
+No DTCML
+0h
+4 KB DTCML
+4h
+8 KB DTCML
+5h
+16 KB DTCML
+6h
+32 KB DTCML
+7h
+64 KB DTCML
+8h
+128 KB DTCML
+9h
+256 KB DTCML
+Ah
+512 KB DTCML
+Bh
+Cortex-A53 cores
+0h (not present)
+Cortex-M7 cores
+8h (64 KB)
+23-17
+—
+Reserved
+16
+—
+Reserved
+15-8
+ITCMSZ
+Instruction Tightly Coupled Memory Size
+Provides an encoded value of the tightly coupled local instruction memory size. The capacity of the memory 
+is derived using the formula 2^(8+SZ) and expressed as bytes. Here, SZ is a non-zero value, and SZ = 0 
+indicates that the memory is not present.
+ITCMU
+ITCMSZ
+No ITCM
+0h
+4 KB ITCMU
+4h
+8 KB ITCMU
+5h
+16 KB ITCMU
+6h
+32 KB ITCMU
+7h
+64 KB ITCMU
+8h
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+273 / 5072
+
+=== PAGE 274 ===
+Field
+Function
+ITCMU
+ITCMSZ
+128 KB ITCMU
+9h
+256 KB ITCMU
+10h
+512 KB ITCMU
+11h
+Cortex-A53 cores
+0h (not present)
+Cortex-M7 cores
+0h (not present)
+7-1
+—
+Reserved
+0
+—
+Reserved
+8.4.8 Processor X Configuration 3 (CPXCFG3)
+Offset
+Register
+Offset
+CPXCFG3
+18h
+Function
+Provides a CPU-specific response detailing configuration information. In this case, it is information on processor options.
+A privileged read from Cortex-A53 or Cortex-M7 returns the appropriate processor information. Reads from any other bus master 
+return all 0s. Attempted write accesses terminate with an error.
+Access: Read by core masters Cortex-M7 and Cortex-A53 only
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+0
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+CPY 
+CMP 
+MMU 
+SIMD 
+HW_
+FPU 
+W
+Reset
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+u
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+274 / 5072
+
+=== PAGE 275 ===
+Fields
+Field
+Function
+31-5
+—
+Reserved
+4
+CPY
+Cryptography
+Indicates whether cryptography extensions are supported in the core.
+• If cryptography support is not included, CPY = 0h.
+• If cryptography support is included, CPY = 1h.
+• For the Cortex-A53 cores in this chip, CPY = 1h (supported).
+• For the Cortex-M7 cores in this chip, CPY = 0h (not supported).
+3
+CMP
+Core Memory Protection Unit
+Indicates whether the core memory protection hardware is included in this core.
+• If core memory protection is not included, CMP = 0h.
+• If core memory protection is included, CMP = 1h.
+• For the Cortex-A53 cores in this chip, CMP = 0h (not supported).
+• For the Cortex-M7 cores in this chip, CMP = 1h (supported).
+2
+MMU
+Memory Management Unit
+Indicates whether the virtual management capabilities are supported in this core.
+• If MMU support is not included, MMU = 0h.
+• If MMU support is included, MMU = 1h.
+• For the Cortex-A53 cores in this chip, MMU = 1h (supported).
+• For the Cortex-M7 cores in this chip, MMU = 0h (not supported).
+1
+SIMD
+SIMD/Neon Instruction Support
+Indicates whether the instruction set extensions supporting SIMD and/or Neon capabilities are supported in 
+the processor.
+• If SIMD/Neon support is not included, SIMD = 0h.
+• If SIMD/Neon support is included, SIMD = 1h.
+• For the Cortex-A53 cores in this chip, SIMD = 1h (supported).
+• For the Cortex-M7 cores in this chip, SIMD = 1h (supported).
+0
+HW_FPU
+Floating Point Unit
+Indicates whether hardware support for floating point capabilities is supported in the processor.
+• If HW_FPU support is not included, HW_FPU = 0h.
+• If HW_FPU support is included, HW_FPU = 1h.
+• For the Cortex-A53 cores in this chip, HW_FPU = 1h (supported).
+• For the Cortex-M7 cores in this chip, HW_FPU = 1h (supported).
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+275 / 5072
+
+=== PAGE 276 ===
+8.4.9 Processor Type (CP0TYPE - CP11TYPE)
+Offset
+For a = 0 to 11:
+Register
+Offset
+CPaTYPE
+20h + (a × 20h)
+Function
+Defines the configuration information for CP0-6 CP0-11. It has the same field definitions and functionality as provided in Processor 
+X Type (CPXTYPE).
+A read from any bus master returns the appropriate processor information and attempted write accesses terminate with an error.
+ 
+The reset value depends on the processor.
+  NOTE  
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+PERSONALITY 
+W
+Reset
+See Register reset values.
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+PERSONALITY 
+W
+Reset
+See Register reset values.
+Register reset values
+Register
+Reset value
+CP0TYPE
+4135_3330h
+CP1TYPE
+4135_3331h
+CP2TYPE
+4135_3332h
+CP3TYPE
+4135_3333h
+CP4TYPE
+434D_3730h
+CP5TYPE
+434D_3731h
+CP6TYPE
+434D_3732h
+CP7TYPE
+434D_3733h
+CP8TYPE
+4135_3334h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+276 / 5072
+
+=== PAGE 277 ===
+Table continued from the previous page...
+Register
+Reset value
+CP9TYPE
+4135_3335h
+CP10TYPE
+4135_3336h
+CP11TYPE
+4135_3337h
+Fields
+Field
+Function
+31-0
+PERSONALITY
+Processor Personality
+Defines the processor personality for CPx.
+Processor
+Personality
+CPx = Cortex-A53 cluster 0 core 0
+41_35_33_30h (Cortex-A53_0)
+CPx = Cortex-A53 cluster 0 core 1
+41_35_33_31h (Cortex-A53_1)
+CPx = Cortex-A53 cluster 0 core 2
+41_35_33_32h (Cortex-A53_2)
+CPx = Cortex-A53 cluster 0 core 3
+41_35_33_33h (Cortex-A53_3)
+CPx = Cortex-A53 cluster 1 core 0
+41_35_33_34h (Cortex-A53_4)
+CPx = Cortex-A53 cluster 1 core 1
+41_35_33_35h (Cortex-A53_5)
+CPx = Cortex-A53 cluster 1 core 2
+41_35_33_36h (Cortex-A53_6)
+CPx = Cortex-A53 cluster 1 core 3
+41_35_33_37h (Cortex-A53_7)
+CPx = Cortex-M7_0
+43_4D_37_30h (Cortex-M7_0)
+CPx = Cortex-M7_1
+43_4D_37_31h (Cortex-M7_1)
+CPx = Cortex-M7_2
+43_4D_37_32h (Cortex-M7_2)
+CPx = Cortex-M7_3
+43_4D_37_33h (Cortex-M7_3)
+8.4.10 Processor Number (CP0NUM - CP11NUM)
+Offset
+For a = 0 to 11:
+Register
+Offset
+CPaNUM
+24h + (a × 20h)
+Function
+Defines the configuration information for CP0-6 CP0-11. It has the same field definitions and functionality as provided in Processor 
+X Number (CPXNUM).
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+277 / 5072
+
+=== PAGE 278 ===
+A privileged read from any bus master returns the appropriate processor information. Attempted write accesses terminate with 
+an error.
+ 
+The reset value depends on the processor.
+  NOTE  
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+0
+W
+Reset
+See Register reset values.
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+CPN 
+W
+Reset
+See Register reset values.
+Register reset values
+Register
+Reset value
+CP0NUM
+0000_0000h
+CP1NUM
+0000_0001h
+CP2NUM
+0000_0002h
+CP3NUM
+0000_0003h
+CP4NUM
+0000_0004h
+CP5NUM
+0000_0005h
+CP6NUM
+0000_0006h
+CP7NUM
+0000_0007h
+CP8NUM
+0000_0008h
+CP9NUM
+0000_0009h
+CP10NUM
+0000_000Ah
+CP11NUM
+0000_000Bh
+Fields
+Field
+Function
+31-8
+—
+Reserved
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+278 / 5072
+
+=== PAGE 279 ===
+Table continued from the previous page...
+Field
+Function
+7-0
+CPN
+Processor Number
+Defines the logical processor number for CPx.
+Processor description
+Logical processor number
+Cortex-A53 cluster 0 core 0
+CPN = 0
+Cortex-A53 cluster 0 core 1
+CPN = 1
+Cortex-A53 cluster 1 core 0
+CPN = 2
+Cortex-A53 cluster 1 core 1
+CPN = 3
+Cortex-M7 core 0
+CPN = 4
+Cortex-M7 core 1
+CPN = 5
+Cortex-M7 core 2
+CPN = 6
+Cortex-M7 core 3
+CPN = 7
+Cortex-A53 cluster 1 core 2
+CPN = 8
+Cortex-A53 cluster 1 core 3
+CPN = 9
+Cortex-A53 cluster 1 core 2
+CPN = 10
+Cortex-A53 cluster 1 core 3
+CPN = 11
+8.4.11 Processor Count (CP0REV - CP11REV)
+Offset
+For a = 0 to 11:
+Register
+Offset
+CPaREV
+28h + (a × 20h)
+Function
+Defines the configuration information for CP0-6 CP0-11. It has the same field definitions and functionality as provided in Processor 
+X Revision (CPXREV).
+A read from any bus master returns the appropriate processor information. Attempted write accesses terminate with an error.
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+279 / 5072
+
+=== PAGE 280 ===
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+0
+W
+Reset
+See Register reset values.
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+RYPZ 
+W
+Reset
+See Register reset values.
+Register reset values
+Register
+Reset value
+CP0REV–CP3REV
+0000_0004h
+CP4REV–CP7REV
+0000_0011h
+CP8REV–CP11REV
+0000_0004h
+Fields
+Field
+Function
+31-8
+—
+Reserved
+7-0
+RYPZ
+Processor Revision
+Defines the processor revision for CPx:
+Processor description
+Revision
+Cortex-A53
+RYPZ = 4h corresponding to the r0p4 core release
+Cortex-M7
+RYPZ = 11h corresponding to the r1p1 core release
+8.4.12 Processor Configuration 0 (CP0CFG0 - CP11CFG0)
+Offset
+For a = 0 to 11:
+Register
+Offset
+CPaCFG0
+2Ch + (a × 20h)
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+280 / 5072
+
+=== PAGE 281 ===
+Function
+Defines the configuration 0 information for CP0-6 CP0-11. It has the same field definitions and functionality as provided in 
+Processor X Configuration 0 (CPXCFG0).
+A read from any bus master returns the appropriate processor information. Attempted write accesses terminate with an error.
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+ICSZ 
+ICWY 
+W
+Reset
+0
+0
+0
+0
+0
+1
+1
+1
+0
+0
+0
+0
+0
+0
+1
+0
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+DCSZ 
+DCWY 
+W
+Reset
+0
+0
+0
+0
+0
+1
+1
+1
+0
+0
+0
+0
+0
+1
+0
+0
+Fields
+Field
+Function
+31-24
+ICSZ
+L1 Instruction Cache Size
+Provides an encoded value of the instruction cache size. The capacity of the memory is derived using the 
+formula 2^(8+SZ) and expressed as bytes. Here, SZ is a non-zero value, and SZ = 0 indicates that the 
+memory is not present.
+Instruction cache size
+ICSZ
+No instruction cache
+0h
+4 KB instruction cache
+4h
+8 KB instruction cache
+5h
+16 KB instruction cache
+6h
+32 KB instruction cache
+7h
+64 KB instruction cache
+8h
+128 KB instruction cache
+9h
+256 KB instruction cache
+Ah
+512 KB instruction cache
+Bh
+Cortex-A53 cores
+7h (32 KB)
+Cortex-M7 cores
+7h (32 KB)
+23-16
+ICWY
+L1 Instruction Cache Ways
+Provides the number of cache ways for the instruction cache.
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+281 / 5072
+
+=== PAGE 282 ===
+Table continued from the previous page...
+Field
+Function
+• For the Cortex-A53 core in this chip, ICWY = 2h (2-way set-associative).
+• For the Cortex-M7 cores in this chip, ICWY = 2h (2-way set-associative).
+15-8
+DCSZ
+L1 Data Cache Size
+Provides an encoded value of the data cache size. The capacity of the memory is derived using the formula 
+2^(8+SZ) and expressed as bytes. Here, SZ is a non-zero value, and SZ = 0 indicates that the memory is 
+not present.
+Data cache size
+DCSZ
+No data cache
+0h
+4 KB data cache
+4h
+8 KB data cache
+5h
+16 KB data cache
+6h
+32 KB data cache
+7h
+64 KB data cache
+8h
+128 KB data cache
+9h
+256 KB data cache
+Ah
+512 KB data cache
+Bh
+Cortex-A53 cores
+7h (32 KBs)
+Cortex-M7 cores
+7h (32 KBs)
+7-0
+DCWY
+L1 Data Cache Ways
+Provides the number of cache ways for the data cache.
+• For the Cortex-A53 core in this chip, DCWY = 4h (4-way set-associative).
+• For the Cortex-M7 cores in this chip, DCWY = 4h (4-way set-associative).
+8.4.13 Processor Configuration 1 (CP0CFG1 - CP11CFG1)
+Offset
+For a = 0 to 11:
+Register
+Offset
+CPaCFG1
+30h + (a × 20h)
+Function
+Defines the configuration 1 information for CP0-6 CP0-11. It has the same field definitions and functionality as provided in 
+Processor X Configuration 1 (CPXCFG1).
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+282 / 5072
+
+=== PAGE 283 ===
+A privileged read from any bus master returns the appropriate processor information. Attempted write accesses terminate with 
+an error.
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+L2SZ 
+L2WY 
+W
+Reset
+See Register reset values.
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+W
+Reset
+See Register reset values.
+Register reset values
+Register
+Reset value
+CP0CFG1–CP6CFG1
+0000_000Bh
+CP7CFG1
+0000_0000h
+CP8CFG1–CP11CFG1
+0C10_0000h
+Fields
+Field
+Function
+31-24
+L2SZ
+L2 Cache Size
+Provides an encoded value of the L2 cache size. The capacity of the memory is derived using the formula 
+2^(8+SZ) and expressed as bytes. Here, SZ is a non-zero value, and SZ = 0 indicates that the memory is 
+not present.
+L2 cache size
+L2SZ
+No L2 cache
+0h
+4 KB L2 cache
+4h
+8 KB L2 cache
+5h
+16 KB L2 cache
+6h
+32 KB L2 cache
+7h
+64 KB L2 cache
+8h
+128 KB L2 cache
+9h
+256 KB L2 cache
+Ah
+1024 KB L2 cache
+Ch
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+283 / 5072
+
+=== PAGE 284 ===
+Field
+Function
+L2 cache size
+L2SZ
+Cortex-A53 cores
+Bh (512 KB per cluster)
+Cortex-M7 cores
+0h (not present)
+23-16
+L2WY
+L2 Cache Ways
+Provides the number of cache ways for the L2 cache.
+• For the Cortex-A53 cores in this chip, L2WY = 10h (16-way set-associative).
+• For the Cortex-M7 cores in this chip, L2WY = 0h (not present).
+15-0
+—
+Reserved
+8.4.14 Processor Configuration 2 (CP0CFG2 - CP11CFG2)
+Offset
+For a = 0 to 11:
+Register
+Offset
+CPaCFG2
+34h + (a × 20h)
+Function
+Defines the configuration 2 information for CP0-6 CP0-11. It has the same field definitions and functionality as provided in 
+Processor X Configuration 2 (CPXCFG2).
+A privileged read from any bus master returns the appropriate processor information. Attempted write accesses terminate with 
+an error.
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+TMLSZ 
+0
+1
+W
+Reset
+See Register reset values.
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+TMUSZ 
+0
+1
+W
+Reset
+See Register reset values.
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+284 / 5072
+
+=== PAGE 285 ===
+Register reset values
+Register
+Reset value
+CP0CFG2–CP3CFG2
+0000_0000h
+CP4CFG2–CP7CFG2
+0800_0000h
+CP8CFG2–CP11CFG2
+0000_0000h
+Fields
+Field
+Function
+31-24
+TMLSZ
+Tightly Coupled Memory Lower Size
+Provides an encoded value of the tightly coupled local memory lower size. The capacity of the memory 
+is derived using the formula 2^(8+SZ) and expressed as bytes. Here, SZ is a non-zero value, and SZ = 0 
+indicates that the memory is not present.
+TCML
+TMLSZ
+No TCML
+0h
+4 KB TCML
+4h
+8 KB TCML
+5h
+16 KB TCML
+6h
+32 KB TCML
+7h
+64 KB TCML
+8h
+128 KB TCML
+9h
+256 KB TCML
+Ah
+512 KB TCML
+Bh
+Cortex-A53 cores
+0h (not present)
+Cortex-M7 cores
+7h (32 KB)
+23-17
+—
+Reserved
+16
+—
+Reserved
+15-8
+TMUSZ
+Tightly Coupled Memory Upper Size
+Provides an encoded value of the tightly coupled local memory upper size. The capacity of the memory 
+is derived using the formula 2^(8+SZ) and expressed as bytes. Here, SZ is a non-zero value, and SZ = 0 
+indicates that the memory is not present.
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+285 / 5072
+
+=== PAGE 286 ===
+Table continued from the previous page...
+Field
+Function
+TCMU
+TMUSZ
+No TCMU
+0h
+4 KB TCMU
+4h
+8 KB TCMU
+5h
+16 KB TCMU
+6h
+32 KB TCMU
+7h
+64 KB TCMU
+8h
+128 KB TCMU
+9h
+256 KB TCMU
+Ah
+512 KB TCMU
+Bh
+Cortex-A53 cores
+0h (not present)
+Cortex-M7 cores
+7h (32 KB)
+7-1
+—
+Reserved
+0
+—
+Reserved
+8.4.15 Processor Configuration 3 (CP0CFG3 - CP11CFG3)
+Offset
+For a = 0 to 11:
+Register
+Offset
+CPaCFG3
+38h + (a × 20h)
+Function
+Defines the configuration 3 information for CP0-6 CP0-11. It has the same field definitions and functionality as provided in 
+Processor X Configuration 3 (CPXCFG3).
+A privileged read from any bus master returns the appropriate processor information. Attempted write accesses terminate with 
+an error.
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+286 / 5072
+
+=== PAGE 287 ===
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+0
+W
+Reset
+See Register reset values.
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+CPY 
+CMP 
+MMU 
+SIMD 
+HW_
+FPU 
+W
+Reset
+See Register reset values.
+Register reset values
+Register
+Reset value
+CP0CFG3–CP3CFG3
+0000_0017h
+CP4CFG3–CP7CFG3
+0000_000Bh
+CP8CFG3–CP11CFG3
+0000_0017h
+Fields
+Field
+Function
+31-5
+—
+Reserved
+4
+CPY
+Cryptography
+Indicates whether the core supports cryptography extensions.
+• If cryptography support is not included, CPY = 0h.
+• If cryptography support is included, CPY = 1h.
+• For the Cortex-A53 cores in this chip, CPY = 1h (supported).
+• For the Cortex-M7 cores in this chip, CPY = 0h (not supported).
+3
+CMP
+Core Memory Protection Unit
+Indicates whether the core includes memory protection hardware.
+• If core memory protection is not included, CMP = 0h.
+• If core memory protection is included, CMP = 1h.
+• For the Cortex-A53 cores in this chip, CMP = 0h (not supported).
+• For the Cortex-M7 cores in this chip, CMP = 1h (supported).
+2
+Memory Management Unit
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+287 / 5072
+
+=== PAGE 288 ===
+Table continued from the previous page...
+Field
+Function
+MMU
+Indicates whether the core includes virtual management capabilities.
+• If MMU support is not included, MMU = 0h.
+• If MMU support is included, MMU = 1h.
+• For the Cortex-A53 cores in this chip, MMU = 1h (supported).
+• For the Cortex-M7 cores in this chip, MMU = 0h (not supported).
+1
+SIMD
+SIMD/Neon instruction support
+Indicates whether the processor includes instruction set extensions supporting SIMD and/or 
+Neon capabilities.
+• If SIMD/Neon support is not included, SIMD = 0h.
+• If SIMD/Neon support is included, SIMD = 1h.
+• For the Cortex-A53 cores in this chip, SIMD = 1h (supported).
+• For the Cortex-M7 cores in this chip, SIMD = 1h (supported).
+0
+HW_FPU
+Floating Point Unit
+Indicates whether the processor includes hardware support for floating point capabilities.
+• If HW_FPU support is not included, HW_FPU = 0h.
+• If HW_FPU support is included, HW_FPU = 1h.
+• For the Cortex-A53 cores in this chip, HW_FPU = 1h (supported).
+• For the Cortex-M7 cores in this chip, HW_FPU = 1h (supported).
+8.4.16 Interrupt Router Configuration (IRCPCFG)
+Offset
+Register
+Offset
+IRCPCFG
+400h
+Function
+Provides a mechanism to designate specific cores in the system as trusted. These trusted cores are allowed to access and 
+manage outstanding MSIs.
+Privileged, 32-bit accesses from the:
+• Cortex-A53 or Cortex-M7 cores are treated as R/W
+• Debugger are treated as R/WI
+• Non-core (and non-debugger) bus master are not supported
+Attempted accesses in User mode or the ones using a size other than 32 bits are not permitted. They terminate with an error.
+You can access this register only in Privileged mode for both reads and writes.
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+288 / 5072
+
+=== PAGE 289 ===
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+LOCK 
+0
+W
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+CP11_
+TR 
+CP10_
+TR 
+CP9_
+TR 
+CP8_
+TR 
+CP7_
+TR 
+CP6_
+TR 
+CP5_
+TR 
+CP4_
+TR 
+CP3_
+TR 
+CP2_
+TR 
+CP1_
+TR 
+CP0_
+TR 
+W
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Fields
+Field
+Function
+31
+LOCK
+Provides a locking mechanism that can be used to limit the ability to write to the register. If the value of 
+this field is 1, it remains asserted until the next reset.
+0b - Register can be written to by any privileged write.
+1b - Register is locked (read-only) until the next reset.
+30-12
+—
+Reserved
+11
+CP11_TR
+Indicates whether CP11 is a trusted core with access to read the full contents of the IRCPnISRx register.
+0b - Not trusted
+1b - Trusted
+10
+CP10_TR
+Indicates whether CP10 is a trusted core with access to read the full contents of the IRCPnISRx register.
+0b - Not trusted
+1b - Trusted
+9
+CP9_TR
+Indicates whether CP9 is a trusted core with access to read the full contents of the IRCPnISRx register.
+0b - Not trusted
+1b - Trusted
+8
+CP8_TR
+Indicates whether CP8 is a trusted core with access to read the full contents of the IRCPnISRx register.
+0b - Not trusted
+1b - Trusted
+7
+CP7_TR
+Indicates whether CP7 is a trusted core with access to read the full contents of the IRCPnISRx register.
+0b - Not trusted
+1b - Trusted
+6
+Indicates whether CP6 is a trusted core with access to read the full contents of the IRCPnISRx register.
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+289 / 5072
+
+=== PAGE 290 ===
+Table continued from the previous page...
+Field
+Function
+CP6_TR
+0b - Not trusted
+1b - Trusted
+5
+CP5_TR
+Indicates whether CP5 is a trusted core with access to read the full contents of the IRCPnISRx register.
+0b - Not trusted
+1b - Trusted
+4
+CP4_TR
+Indicates whether CP4 is a trusted core with access to read the full contents of the IRCPnISRx register.
+0b - Not trusted
+1b - Trusted
+3
+CP3_TR
+Indicates whether CP3 is a trusted core with access to read the full contents of the IRCPnISRx register.
+0b - Not trusted
+1b - Trusted
+2
+CP2_TR
+Indicates whether CP2 is a trusted core with access to read the full contents of the IRCPnISRx register.
+0b - Not trusted
+1b - Trusted
+1
+CP1_TR
+Indicates whether CP1 is a trusted core with access to read the full contents of the IRCPnISRx register.
+0b - Not trusted
+1b - Trusted
+0
+CP0_TR
+Indicates whether CP0 is a trusted core with access to read the full contents of the IRCPnISRx register.
+0b - Not trusted
+1b - Trusted
+8.4.17 Interrupt Router Nonmaskable Interrupt Control (IRNMIC)
+Offset
+Register
+Offset
+IRNMIC
+800h
+Function
+Enables the routing control for the nonmaskable interrupt (NMI) request to specific cores. For this chip, each interrupt request 
+can be routed using the enable fields in this register. If the value of all the fields is 0, the interrupt request is disabled. Privileged 
+accesses from non-core (and non-debug) bus masters are treated as RAZ/WI and any attempted User mode reference is 
+terminated with an error.
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+290 / 5072
+
+=== PAGE 291 ===
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+0
+W
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+CP11_
+NM...
+CP10_
+NM...
+CP9_N
+MI...
+CP8_N
+MI...
+CP7_N
+MI...
+CP6_N
+MI...
+CP5_N
+MI...
+CP4_N
+MI...
+CP3_N
+MI...
+CP2_N
+MI...
+CP1_N
+MI...
+CP0_N
+MI...
+W
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Fields
+Field
+Function
+31-12
+—
+Reserved
+11
+CP11_NMI_EN
+Enables CP11 NMI interrupt steering to Cortex-A53 cluster 1 core 3 NMI.
+0b - Disabled
+1b - Enabled
+10
+CP10_NMI_EN
+Enables CP10 NMI interrupt steering to Cortex-A53 cluster 1 core 2 NMI.
+0b - Disabled
+1b - Enabled
+9
+CP9_NMI_EN
+Enables CP9 NMI interrupt steering to Cortex-A53 cluster 0 core 3 NMI.
+0b - Disabled
+1b - Enabled
+8
+CP8_NMI_EN
+Enables CP8 NMI interrupt steering to Cortex-A53 cluster 0 core 2 NMI.
+0b - Disabled
+1b - Enabled
+7
+CP7_NMI_EN
+Enables CP7 NMI interrupt steering to Cortex-M7 core 3 NMI.
+0b - Disabled
+1b - Enabled
+6
+CP6_NMI_EN
+Enables CP6 NMI interrupt steering to Cortex-M7 core 2 NMI.
+0b - Disabled
+1b - Enabled
+5
+CP5_NMI_EN
+Enables CP5 NMI interrupt steering to Cortex-M7 core 1 NMI.
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+291 / 5072
+
+=== PAGE 292 ===
+Table continued from the previous page...
+Field
+Function
+0b - Disabled
+1b - Enabled
+4
+CP4_NMI_EN
+Enables CP4 NMI interrupt steering to Cortex-M7 core 0 NMI.
+0b - Disabled
+1b - Enabled
+3
+CP3_NMI_EN
+Enables CP3 NMI interrupt steering to Cortex-A53 cluster 1 core 1 nSEI.
+0b - Disabled
+1b - Enabled
+2
+CP2_NMI_EN
+Enables CP2 NMI interrupt steering to Cortex-A53 cluster 1 core 0 nSEI.
+0b - Disabled
+1b - Enabled
+1
+CP1_NMI_EN
+Enables CP1 NMI interrupt steering to Cortex-A53 cluster 0 core 1 nSEI.
+0b - Disabled
+1b - Enabled
+0
+CP0_NMI_EN
+Enables CP0 NMI interrupt steering to Cortex-A53 cluster 0 core 0 nSEI.
+0b - Disabled
+1b - Enabled
+8.4.18 Interrupt Router Shared Peripheral Routing Control (IRSPRC0 - IRSPRC239)
+Offset
+For a = 0 to 239:
+Register
+Offset
+IRSPRCa
+880h + (a × 2h)
+Function
+Provides an array of halfword (16-bit) registers, where each register defines the routing control for the corresponding interrupt 
+request. For this chip, each interrupt request can be routed using the bit-mapped fields in IRSPRCn. If all the CPxEn bits are 
+cleared, the interrupt request is disabled. For each routing control, halfword can be locked by asserting the LOCK field.
+Non-core, non-debugger accesses to these registers receive errors and the read data is undefined.
+Access: Privileged read/write
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+292 / 5072
+
+=== PAGE 293 ===
+Diagram
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+LOCK 
+0
+M7_3 
+M7_2 
+M7_1 
+M7_0 
+GIC50
+0 
+W
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+1
+1
+1
+1
+1
+Fields
+Field
+Function
+15
+LOCK
+Lock Interrupt Request
+Provides a mechanism to lock the routing of the corresponding interrupt request. After the field is 
+asserted, attempted writes to the IRSPRCn register are ignored until the next reset clears the flag.
+0b - Writes to IRSPRCn are allowed.
+1b - Writes to IRSPRCn are ignored.
+14-5
+—
+Reserved
+4
+M7_3
+Enable Cortex-M7_3 Interrupt Steering
+Enables the routing of the corresponding interrupt request to Cortex-M7_3.
+3
+M7_2
+Enable Cortex-M7_2 Interrupt Steering
+Enables the routing of the corresponding interrupt request to Cortex-M7_2.
+2
+M7_1
+Enable Cortex-M7_1 Interrupt Steering
+Enables the routing of the corresponding interrupt request to Cortex-M7_1.
+1
+M7_0
+Enable Cortex-M7_0 Interrupt Steering
+Enables the routing of the corresponding interrupt request to Cortex-M7_0.
+0
+GIC500
+Enable GIC500 Interrupt Steering
+Enables the routing of the corresponding interrupt request to GIC500 associated with the Cortex-A53 
+clusters.
+8.4.19 Interrupt Router CPa Interruptb Status (IRCP0ISR0 - IRCP11ISR13)
+Offset
+Register
+Offset
+IRCP0ISR0
+A60h
+IRCP0ISR1
+A68h
+IRCP0ISR2
+A70h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+293 / 5072
+
+=== PAGE 294 ===
+Table continued from the previous page...
+Register
+Offset
+IRCP0ISR5
+A88h
+IRCP0ISR6
+A90h
+IRCP0ISR7
+A98h
+IRCP0ISR8
+AA0h
+IRCP0ISR9
+AA8h
+IRCP0ISR10
+AB0h
+IRCP0ISR11
+AB8h
+IRCP0ISR12
+AC0h
+IRCP0ISR13
+AC8h
+IRCP1ISR0
+AD0h
+IRCP1ISR1
+AD8h
+IRCP1ISR2
+AE0h
+IRCP1ISR5
+AF8h
+IRCP1ISR6
+B00h
+IRCP1ISR7
+B08h
+IRCP1ISR8
+B10h
+IRCP1ISR9
+B18h
+IRCP1ISR10
+B20h
+IRCP1ISR11
+B28h
+IRCP1ISR12
+B30h
+IRCP1ISR13
+B38h
+IRCP2ISR0
+B40h
+IRCP2ISR1
+B48h
+IRCP2ISR2
+B50h
+IRCP2ISR5
+B68h
+IRCP2ISR6
+B70h
+IRCP2ISR7
+B78h
+IRCP2ISR8
+B80h
+IRCP2ISR9
+B88h
+IRCP2ISR10
+B90h
+IRCP2ISR11
+B98h
+IRCP2ISR12
+BA0h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+294 / 5072
+
+=== PAGE 295 ===
+Table continued from the previous page...
+Register
+Offset
+IRCP2ISR13
+BA8h
+IRCP3ISR0
+BB0h
+IRCP3ISR1
+BB8h
+IRCP3ISR2
+BC0h
+IRCP3ISR5
+BD8h
+IRCP3ISR6
+BE0h
+IRCP3ISR7
+BE8h
+IRCP3ISR8
+BF0h
+IRCP3ISR9
+BF8h
+IRCP3ISR10
+C00h
+IRCP3ISR11
+C08h
+IRCP3ISR12
+C10h
+IRCP3ISR13
+C18h
+IRCP4ISR0
+C20h
+IRCP4ISR1
+C28h
+IRCP4ISR2
+C30h
+IRCP4ISR5
+C48h
+IRCP4ISR6
+C50h
+IRCP4ISR7
+C58h
+IRCP4ISR8
+C60h
+IRCP4ISR9
+C68h
+IRCP4ISR10
+C70h
+IRCP4ISR11
+C78h
+IRCP4ISR12
+C80h
+IRCP4ISR13
+C88h
+IRCP5ISR0
+C90h
+IRCP5ISR1
+C98h
+IRCP5ISR2
+CA0h
+IRCP5ISR5
+CB8h
+IRCP5ISR6
+CC0h
+IRCP5ISR7
+CC8h
+IRCP5ISR8
+CD0h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+295 / 5072
+
+=== PAGE 296 ===
+Table continued from the previous page...
+Register
+Offset
+IRCP5ISR9
+CD8h
+IRCP5ISR10
+CE0h
+IRCP5ISR11
+CE8h
+IRCP5ISR12
+CF0h
+IRCP5ISR13
+CF8h
+IRCP6ISR0
+D00h
+IRCP6ISR1
+D08h
+IRCP6ISR2
+D10h
+IRCP6ISR5
+D28h
+IRCP6ISR6
+D30h
+IRCP6ISR7
+D38h
+IRCP6ISR8
+D40h
+IRCP6ISR9
+D48h
+IRCP6ISR10
+D50h
+IRCP6ISR11
+D58h
+IRCP6ISR12
+D60h
+IRCP6ISR13
+D68h
+IRCP7ISR0
+D70h
+IRCP7ISR1
+D78h
+IRCP7ISR2
+D80h
+IRCP7ISR5
+D98h
+IRCP7ISR6
+DA0h
+IRCP7ISR7
+DA8h
+IRCP7ISR8
+DB0h
+IRCP7ISR9
+DB8h
+IRCP7ISR10
+DC0h
+IRCP7ISR11
+DC8h
+IRCP7ISR12
+DD0h
+IRCP7ISR13
+DD8h
+IRCP8ISR0
+DE0h
+IRCP8ISR1
+DE8h
+IRCP8ISR2
+DF0h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+296 / 5072
+
+=== PAGE 297 ===
+Table continued from the previous page...
+Register
+Offset
+IRCP8ISR5
+E08h
+IRCP8ISR6
+E10h
+IRCP8ISR7
+E18h
+IRCP8ISR8
+E20h
+IRCP8ISR9
+E28h
+IRCP8ISR10
+E30h
+IRCP8ISR11
+E38h
+IRCP8ISR12
+E40h
+IRCP8ISR13
+E48h
+IRCP9ISR0
+E50h
+IRCP9ISR1
+E58h
+IRCP9ISR2
+E60h
+IRCP9ISR5
+E78h
+IRCP9ISR6
+E80h
+IRCP9ISR7
+E88h
+IRCP9ISR8
+E90h
+IRCP9ISR9
+E98h
+IRCP9ISR10
+EA0h
+IRCP9ISR11
+EA8h
+IRCP9ISR12
+EB0h
+IRCP9ISR13
+EB8h
+IRCP10ISR0
+EC0h
+IRCP10ISR1
+EC8h
+IRCP10ISR2
+ED0h
+IRCP10ISR5
+EE8h
+IRCP10ISR6
+EF0h
+IRCP10ISR7
+EF8h
+IRCP10ISR8
+F00h
+IRCP10ISR9
+F08h
+IRCP10ISR10
+F10h
+IRCP10ISR11
+F18h
+IRCP10ISR12
+F20h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+297 / 5072
+
+=== PAGE 298 ===
+Table continued from the previous page...
+Register
+Offset
+IRCP10ISR13
+F28h
+IRCP11ISR0
+F30h
+IRCP11ISR1
+F38h
+IRCP11ISR2
+F40h
+IRCP11ISR5
+F58h
+IRCP11ISR6
+F60h
+IRCP11ISR7
+F68h
+IRCP11ISR8
+F70h
+IRCP11ISR9
+F78h
+IRCP11ISR10
+F80h
+IRCP11ISR11
+F88h
+IRCP11ISR12
+F90h
+IRCP11ISR13
+F98h
+Function
+Provides an interrupt bitmap, in which each bit defines the state of a unique MSI based on the initiating core. An MSI interrupt is 
+cleared in an interrupt handler by writing a 1 to the appropriate field in the IRCPnISRx register.
+In this discussion, CPm represents the initiating core and CPn represents the target core for a core-to-core interrupt.
+Read access 
+• Reads to IRCPnISRx are only accessible in Privileged mode using 32-bit (word) accesses.
+• Privileged, 32-bit read accesses from non-core (and non-debugger) bus masters are treated as Read-as-Zero (RAZ).
+• Attempted accesses in User mode or the ones using a size other than 32 bits are not permitted. They terminate with an error.
+• When CPn requests to read IRCPnISRx, MSCM returns the entire content of IRCPnISRx.
+• When a trusted core, as indicated by IRCPCFG, requests to read IRCPnISRx MSCM returns the entire content of IRCPnISRx.
+• When the debugger requests to read IRCPnISRx, MSCM returns the entire content of IRCPnISRx.
+• When CPm requests to read IRCPnISRx, MSCM only returns the value of the corresponding status, CPm_INT, while not 
+exposing all other pending interrupts initiated by the other cores.
+• When CPm requests to read IRCPnISRx, MSCM returns the value of the corresponding status, CPm_INT, in bit position 0, 
+reflecting how CPm set the MSI when it wrote to IRCPnISRx. All other fields on the returned read value are zero-filled.
+Write access 
+• Writes to IRCPnISRx are only accessible in Privileged mode using 32-bit (word) accesses.
+• Attempted accesses in User mode or the ones using a size other than 32 bits are not permitted. They terminate with an error.
+• Writes to IRCPnISRx follow the Write 1 to Clear (W1C) protocol, whereby writing a 1 clears the corresponding field, and writing 
+0 is ignored.
+• PCIe_0 access is restricted to registers IRCPnIGR3 and IRCPnISR3, and PCIe_1 access is restricted to registers IRCPnIGR4 
+and IRCPnISR4.
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+298 / 5072
+
+=== PAGE 299 ===
+• The target core, CPn, has full access to write to all the fields of IRCPnISRx.
+• A trusted core, as indicated by IRCPCFG, has full access to write to all the fields of IRCPnISRx.
+• When CPm is different from CPn, the W1C action by CPm only clears IRCPnISRx[CPm_INT].
+• The CPm field must present W1C in bit position 0 to clear its corresponding interrupt. Write data bits 1-31 that CPm presents 
+are ignored.
+• The privileged write accesses from non-core (and non-debugger) bus masters are treated as Writes Ignored (WI).
+• The privileged write accesses from the debugger are treated as WI.
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+0
+W
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+CP11_
+INT 
+CP10_
+INT 
+CP9_
+INT 
+CP8_
+INT 
+CP7_
+INT 
+CP6_
+INT 
+CP5_
+INT 
+CP4_
+INT 
+CP3_
+INT 
+CP2_
+INT 
+CP1_
+INT 
+CP0_
+INT 
+W
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Fields
+Field
+Function
+31-12
+—
+Reserved
+11
+CP11_INT
+CP11-to-CPn Interrupt
+Generates a directed interrupt initiated by core 11 targeting core n, if the appropriate interrupt routing bit 
+is enabled. The interrupt is negated when the target core, a trusted core, or core 11 writes a 1 to clear 
+the field.
+0b - CP11 does not assert any interrupt to CPn.
+1b - Interrupt to CPn, initiated by CP11, is asserted.
+10
+CP10_INT
+CP10-to-CPn Interrupt
+Generates a directed interrupt initiated by core 10 targeting core n, if the appropriate interrupt routing bit 
+is enabled. The interrupt is negated when the target core, a trusted core, or core 10 writes a 1 to clear 
+the field.
+0b - CP10 does not assert any interrupt to CPn.
+1b - Interrupt to CPn, initiated by CP10, is asserted.
+9
+CP9_INT
+CP9-to-CPn Interrupt
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+299 / 5072
+
+=== PAGE 300 ===
+Table continued from the previous page...
+Field
+Function
+Generates a directed interrupt initiated by core 9 targeting core n, if the appropriate interrupt routing bit 
+is enabled. The interrupt is negated when the target core, a trusted core, or core 9 writes a 1 to clear the 
+field.
+0b - CP9 does not assert any interrupt to CPn.
+1b - Interrupt to CPn, initiated by CP9, is asserted.
+8
+CP8_INT
+CP8-to-CPn Interrupt
+Generates a directed interrupt initiated by core 8 targeting core n, if the appropriate interrupt routing bit 
+is enabled. The interrupt is negated when the target core, a trusted core, or core 8 writes a 1 to clear the 
+field.
+0b - CP8 does not assert any interrupt to CPn.
+1b - Interrupt to CPn, initiated by CP8, is asserted.
+7
+CP7_INT
+CP7-to-CPn Interrupt
+Generates a directed interrupt initiated by core 7 targeting core n, if the appropriate interrupt routing bit 
+is enabled. The interrupt is negated when the target core, a trusted core, or core 7 writes a 1 to clear the 
+field.
+0b - CP7 does not assert any interrupt to CPn.
+1b - Interrupt to CPn, initiated by CP7, is asserted.
+6
+CP6_INT
+CP6-to-CPn Interrupt
+Generates a directed interrupt initiated by core 6 targeting core n, if the appropriate interrupt routing bit 
+is enabled. The interrupt is negated when the target core, a trusted core, or core 6 writes a 1 to clear the 
+field.
+0b - CP6 does not assert any interrupt to CPn.
+1b - Interrupt to CPn, initiated by CP6, is asserted.
+5
+CP5_INT
+CP5-to-CPn Interrupt
+Generates a directed interrupt initiated by core 5 targeting core n, if the appropriate interrupt routing bit 
+is enabled. The interrupt is negated when the target core, a trusted core, or core 5 writes a 1 to clear the 
+field.
+0b - CP5 does not assert any interrupt to CPn.
+1b - Interrupt to CPn, initiated by CP5, is asserted.
+4
+CP4_INT
+PCIe_1 Interrupt
+0b - Not asserted
+1b - Asserted
+3
+CP3_INT
+PCIe_0 Interrupt
+0b - Not asserted
+1b - Asserted
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+300 / 5072
+
+=== PAGE 301 ===
+Table continued from the previous page...
+Field
+Function
+2
+CP2_INT
+CP2-to-CPn Interrupt
+Generates a directed interrupt initiated by core 2 targeting core n, if the appropriate interrupt routing bit 
+is enabled. The interrupt is negated when the target core, a trusted core, or core 2 writes a 1 to clear the 
+field.
+0b - CP2 does not assert any interrupt to CPn.
+1b - Interrupt to CPn, initiated by CP2, is asserted.
+1
+CP1_INT
+CP1-to-CPn Interrupt
+Generates a directed interrupt initiated by core 1 targeting core n, if the appropriate interrupt routing field 
+is enabled. The interrupt is negated when the target core, a trusted core, or core 1 writes a 1 to clear the 
+field.
+0b - CP1 does not assert any interrupt to CPn.
+1b - Interrupt to CPn, initiated by CP1, is asserted.
+0
+CP0_INT
+CP0-to-CPn Interrupt
+Generates a directed interrupt initiated by core 0 targeting core n, if the appropriate interrupt routing bit 
+is enabled. The interrupt is negated when the target core, a trusted core, or core 0 writes a 1 to clear the 
+field.
+0b - CP0 does not assert any interrupt to CPn.
+1b - Interrupt to CPn, initiated by CP0, is asserted.
+8.4.20 Interrupt Router CPa Interruptb Generation (IRCP0IGR0 - IRCP11IGR13)
+Offset
+Register
+Offset
+IRCP0IGR0
+A64h
+IRCP0IGR1
+A6Ch
+IRCP0IGR2
+A74h
+IRCP0IGR5
+A8Ch
+IRCP0IGR6
+A94h
+IRCP0IGR7
+A9Ch
+IRCP0IGR8
+AA4h
+IRCP0IGR9
+AACh
+IRCP0IGR10
+AB4h
+IRCP0IGR11
+ABCh
+IRCP0IGR12
+AC4h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+301 / 5072
+
+=== PAGE 302 ===
+Table continued from the previous page...
+Register
+Offset
+IRCP0IGR13
+ACCh
+IRCP1IGR0
+AD4h
+IRCP1IGR1
+ADCh
+IRCP1IGR2
+AE4h
+IRCP1IGR5
+AFCh
+IRCP1IGR6
+B04h
+IRCP1IGR7
+B0Ch
+IRCP1IGR8
+B14h
+IRCP1IGR9
+B1Ch
+IRCP1IGR10
+B24h
+IRCP1IGR11
+B2Ch
+IRCP1IGR12
+B34h
+IRCP1IGR13
+B3Ch
+IRCP2IGR0
+B44h
+IRCP2IGR1
+B4Ch
+IRCP2IGR2
+B54h
+IRCP2IGR5
+B6Ch
+IRCP2IGR6
+B74h
+IRCP2IGR7
+B7Ch
+IRCP2IGR8
+B84h
+IRCP2IGR9
+B8Ch
+IRCP2IGR10
+B94h
+IRCP2IGR11
+B9Ch
+IRCP2IGR12
+BA4h
+IRCP2IGR13
+BACh
+IRCP3IGR0
+BB4h
+IRCP3IGR1
+BBCh
+IRCP3IGR2
+BC4h
+IRCP3IGR5
+BDCh
+IRCP3IGR6
+BE4h
+IRCP3IGR7
+BECh
+IRCP3IGR8
+BF4h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+302 / 5072
+
+=== PAGE 303 ===
+Table continued from the previous page...
+Register
+Offset
+IRCP3IGR9
+BFCh
+IRCP3IGR10
+C04h
+IRCP3IGR11
+C0Ch
+IRCP3IGR12
+C14h
+IRCP3IGR13
+C1Ch
+IRCP4IGR0
+C24h
+IRCP4IGR1
+C2Ch
+IRCP4IGR2
+C34h
+IRCP4IGR5
+C4Ch
+IRCP4IGR6
+C54h
+IRCP4IGR7
+C5Ch
+IRCP4IGR8
+C64h
+IRCP4IGR9
+C6Ch
+IRCP4IGR10
+C74h
+IRCP4IGR11
+C7Ch
+IRCP4IGR12
+C84h
+IRCP4IGR13
+C8Ch
+IRCP5IGR0
+C94h
+IRCP5IGR1
+C9Ch
+IRCP5IGR2
+CA4h
+IRCP5IGR5
+CBCh
+IRCP5IGR6
+CC4h
+IRCP5IGR7
+CCCh
+IRCP5IGR8
+CD4h
+IRCP5IGR9
+CDCh
+IRCP5IGR10
+CE4h
+IRCP5IGR11
+CECh
+IRCP5IGR12
+CF4h
+IRCP5IGR13
+CFCh
+IRCP6IGR0
+D04h
+IRCP6IGR1
+D0Ch
+IRCP6IGR2
+D14h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+303 / 5072
+
+=== PAGE 304 ===
+Table continued from the previous page...
+Register
+Offset
+IRCP6IGR5
+D2Ch
+IRCP6IGR6
+D34h
+IRCP6IGR7
+D3Ch
+IRCP6IGR8
+D44h
+IRCP6IGR9
+D4Ch
+IRCP6IGR10
+D54h
+IRCP6IGR11
+D5Ch
+IRCP6IGR12
+D64h
+IRCP6IGR13
+D6Ch
+IRCP7IGR0
+D74h
+IRCP7IGR1
+D7Ch
+IRCP7IGR2
+D84h
+IRCP7IGR5
+D9Ch
+IRCP7IGR6
+DA4h
+IRCP7IGR7
+DACh
+IRCP7IGR8
+DB4h
+IRCP7IGR9
+DBCh
+IRCP7IGR10
+DC4h
+IRCP7IGR11
+DCCh
+IRCP7IGR12
+DD4h
+IRCP7IGR13
+DDCh
+IRCP8IGR0
+DE4h
+IRCP8IGR1
+DECh
+IRCP8IGR2
+DF4h
+IRCP8IGR5
+E0Ch
+IRCP8IGR6
+E14h
+IRCP8IGR7
+E1Ch
+IRCP8IGR8
+E24h
+IRCP8IGR9
+E2Ch
+IRCP8IGR10
+E34h
+IRCP8IGR11
+E3Ch
+IRCP8IGR12
+E44h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+304 / 5072
+
+=== PAGE 305 ===
+Table continued from the previous page...
+Register
+Offset
+IRCP8IGR13
+E4Ch
+IRCP9IGR0
+E54h
+IRCP9IGR1
+E5Ch
+IRCP9IGR2
+E64h
+IRCP9IGR5
+E7Ch
+IRCP9IGR6
+E84h
+IRCP9IGR7
+E8Ch
+IRCP9IGR8
+E94h
+IRCP9IGR9
+E9Ch
+IRCP9IGR10
+EA4h
+IRCP9IGR11
+EACh
+IRCP9IGR12
+EB4h
+IRCP9IGR13
+EBCh
+IRCP10IGR0
+EC4h
+IRCP10IGR1
+ECCh
+IRCP10IGR2
+ED4h
+IRCP10IGR5
+EECh
+IRCP10IGR6
+EF4h
+IRCP10IGR7
+EFCh
+IRCP10IGR8
+F04h
+IRCP10IGR9
+F0Ch
+IRCP10IGR10
+F14h
+IRCP10IGR11
+F1Ch
+IRCP10IGR12
+F24h
+IRCP10IGR13
+F2Ch
+IRCP11IGR0
+F34h
+IRCP11IGR1
+F3Ch
+IRCP11IGR2
+F44h
+IRCP11IGR5
+F5Ch
+IRCP11IGR6
+F64h
+IRCP11IGR7
+F6Ch
+IRCP11IGR8
+F74h
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+305 / 5072
+
+=== PAGE 306 ===
+Table continued from the previous page...
+Register
+Offset
+IRCP11IGR9
+F7Ch
+IRCP11IGR10
+F84h
+IRCP11IGR11
+F8Ch
+IRCP11IGR12
+F94h
+IRCP11IGR13
+F9Ch
+Function
+Provides a mechanism for cores to initiate an MSI to another core in the system.
+Privileged, 32-bit accesses from the:
+• Cortex-A53 or Cortex-M7 cores are treated as RAZ/W
+• Debugger are treated as RAZ/WI
+• Non-core (and non-debugger) bus masters are treated as RAZ/WI
+Attempted accesses in User mode or the ones using a size other than 32 bits are not permitted. They terminate with an error.
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+0
+W
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+0
+W
+INT_
+EN 
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Fields
+Field
+Function
+31-1
+—
+Reserved
+0
+INT_EN
+Interrupt Enable
+Initiates a core-to-core interrupt targeting CPn when CPm writes to it.
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+306 / 5072
+
+=== PAGE 307 ===
+8.4.21 Interrupt Router CPa Interruptb Status (IRCP0ISR3 - IRCP11ISR4)
+Offset
+For a = 0 to 11; b = 3 to 4:
+Register
+Offset
+IRCPaISRb
+A60h + (a × 70h) + (b × 8h)
+Function
+Generates a directed interrupt initiated by PCIe, targeting core n, if the appropriate interrupt routing bit is enabled. The interrupt 
+is negated when the target core or a trusted core writes 1 to clear the field.
+CPn represents the target core for a PCIe-to-core interrupt.
+ 
+IRCPnISR3 and IRCPnIGR3 correspond to the PCIe_0 interrupt; IRCPnISR4 and IRCPnIGR4 correspond to the 
+PCIe_1 interrupt.
+  NOTE  
+Read access
+• Reads to IRCPnISRx are only accessible in Privileged mode using 32-bit (word) accesses.
+• Privileged, 32-bit read accesses from non-core (and non-debugger) bus masters are treated as Read-as-Zero (RAZ).
+• Privileged, 32-bit read accesses from any other core, except CPn, are treated as RAZ.
+• Attempted accesses in User mode or the ones using a size other than 32 bits are not permitted. They terminate with an error.
+• When CPn requests to read IRCPnISRx, MSCM returns the entire content of IRCPnISRx.
+• When the debugger requests to read IRCPnISRx, MSCM returns the entire content of IRCPnISRx.
+• When a trusted core, as indicated by IRCPCFG, requests to read IRCPnISRx, MSCM returns the entire content of the 
+IRCP0ISRx register.
+Write access 
+• Writes to IRCPnISRx are only accessible in Privileged mode using 32-bit (word) accesses.
+• Writes to IRCPnISRx follow the W1C protocol, whereby writing 1 clears the corresponding field and writing 0 is ignored.
+• Privileged, 32-bit write accesses from the debugger are treated as WI.
+• Privileged, 32-bit write accesses from non-core (and non-debugger) bus masters are treated as WI.
+• Attempted accesses in User mode or the ones using a size other than 32 bits are not permitted. They terminate with an error.
+• The target core, CPn, has full access to write to all the fields of the IRCP0ISRx register.
+• A trusted core, as indicated by IRCPCFG, has full access to write to all the fields of IRCPnISRx.
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+307 / 5072
+
+=== PAGE 308 ===
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+0
+W
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+PCIE_I
+N...
+W
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+W1C
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Fields
+Field
+Function
+31-16
+—
+Reserved
+15
+PCIE_INT15
+PCIe-to-CPn Interrupt15
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt15 to CPn, initiated by PCIe, is asserted.
+14
+PCIE_INT14
+PCIe-to-CPn Interrupt14
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt14 to CPn, initiated by PCIe, is asserted.
+13
+PCIE_INT13
+PCIe-to-CPn Interrupt13
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt13 to CPn, initiated by PCIe, is asserted.
+12
+PCIE_INT12
+PCIe-to-CPn Interrupt12
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt12 to CPn, initiated by PCIe, is asserted.
+11
+PCIE_INT11
+PCIe-to-CPn Interrupt11
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt11 to CPn, initiated by PCIe, is asserted.
+10
+PCIE_INT10
+PCIe-to-CPn Interrupt10
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt10 to CPn, initiated by PCIe, is asserted.
+9
+PCIe-to-CPn Interrupt9
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+308 / 5072
+
+=== PAGE 309 ===
+Table continued from the previous page...
+Field
+Function
+PCIE_INT9
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt9 to CPn, initiated by PCIe, is asserted.
+8
+PCIE_INT8
+PCIe-to-CPn Interrupt8
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt8 to CPn, initiated by PCIe, is asserted.
+7
+PCIE_INT7
+PCIe-to-CPn Interrupt7
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt7 to CPn, initiated by PCIe, is asserted.
+6
+PCIE_INT6
+PCIe-to-CPn Interrupt6
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt6 to CPn, initiated by PCIe, is asserted.
+5
+PCIE_INT5
+PCIe-to-CPn Interrupt5
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt5 to CPn, initiated by PCIe, is asserted.
+4
+PCIE_INT4
+PCIe-to-CPn Interrupt4
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt4 to CPn, initiated by PCIe, is asserted.
+3
+PCIE_INT3
+PCIe-to-CPn Interrupt3
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt3 to CPn, initiated by PCIe, is asserted.
+2
+PCIE_INT2
+PCIe-to-CPn Interrupt2
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt2 to CPn, initiated by PCIe, is asserted.
+1
+PCIE_INT1
+PCIe-to-CPn Interrupt1
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt1 to CPn, initiated by PCIe, is asserted.
+0
+PCIE_INT0
+PCIe-to-CPn Interrupt0
+0b - PCIe does not assert any interrupt to CPn.
+1b - Interrupt0 to CPn, initiated by PCIe, is asserted.
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+309 / 5072
+
+=== PAGE 310 ===
+8.4.22 Interrupt Router CPn Interruptx Generation (IRCP0IGR3 - IRCP11IGR3)
+Offset
+For a = 0 to 11:
+Register
+Offset
+IRCPaIGR3
+A7Ch + (a × 70h)
+Function
+Provides a mechanism for PCIe to initiate an MSI to a core in the system. When PCIe writes to any of the fields in this register, 
+the action initiates a core-to-core interrupt targeting CPn.
+Privileged, 32-bit accesses from the:
+• PCIe are treated as WORZ
+• Debugger are treated as RAZ/WI
+• Bus masters other than the PCIe or debugger are treated as RAZ/WI
+Attempted accesses in User mode or the ones using a size other than 32 bits are not permitted. They terminate with an error.
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+0
+W
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+W
+INT15
+_EN 
+INT14
+_EN 
+INT13
+_EN 
+INT12
+_EN 
+INT11
+_EN 
+INT10
+_EN 
+INT9_
+EN 
+INT8_
+EN 
+INT7_
+EN 
+INT6_
+EN 
+INT5_
+EN 
+INT4_
+EN 
+INT3_
+EN 
+INT2_
+EN 
+INT1_
+EN 
+INT0_
+EN 
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Fields
+Field
+Function
+31-16
+—
+Reserved
+15
+INT15_EN
+Interrupt15 Enable
+14
+INT14_EN
+Interrupt14 Enable
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+310 / 5072
+
+=== PAGE 311 ===
+Table continued from the previous page...
+Field
+Function
+13
+INT13_EN
+Interrupt13 Enable
+12
+INT12_EN
+Interrupt12 Enable
+11
+INT11_EN
+Interrupt11 Enable
+10
+INT10_EN
+Interrupt10 Enable
+9
+INT9_EN
+Interrupt9 Enable
+8
+INT8_EN
+Interrupt8 Enable
+7
+INT7_EN
+Interrupt7 Enable
+6
+INT6_EN
+Interrupt6 Enable
+5
+INT5_EN
+Interrupt5 Enable
+4
+INT4_EN
+Interrupt4 Enable
+3
+INT3_EN
+Interrupt3 Enable
+2
+INT2_EN
+Interrupt2 Enable
+1
+INT1_EN
+Interrupt1 Enable
+0
+INT0_EN
+Interrupt0 Enable
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+311 / 5072
+
+=== PAGE 312 ===
+8.4.23 Interrupt Router CPn Interruptx Generation (IRCP0IGR4 - IRCP11IGR4)
+Offset
+For a = 0 to 11:
+Register
+Offset
+IRCPaIGR4
+A84h + (a × 70h)
+Function
+Provides a mechanism for PCIe to initiate an MSI to a core in the system. When PCIe writes to any of the fields in this register, 
+the action initiates a core-to-core interrupt targeting CPn.
+Privileged, 32-bit accesses from the:
+• PCIe are treated as WORZ
+• Debugger are treated as RAZ/WI
+• Bus masters other than the PCIe or debugger are treated as RAZ/WI
+Attempted accesses in User mode or the ones using a size other than 32 bits are not permitted. They terminate with an error.
+Diagram
+Bits
+31
+30
+29
+28
+27
+26
+25
+24
+23
+22
+21
+20
+19
+18
+17
+16
+R
+0
+W
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Bits
+15
+14
+13
+12
+11
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+R
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+W
+INT15
+_EN 
+INT14
+_EN 
+INT13
+_EN 
+INT12
+_EN 
+INT11
+_EN 
+INT10
+_EN 
+INT9_
+EN 
+INT8_
+EN 
+INT7_
+EN 
+INT6_
+EN 
+INT5_
+EN 
+INT4_
+EN 
+INT3_
+EN 
+INT2_
+EN 
+INT1_
+EN 
+INT0_
+EN 
+Reset
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+Fields
+Field
+Function
+31-16
+—
+Reserved
+15
+INT15_EN
+Interrupt15 Enable
+14
+INT14_EN
+Interrupt14 Enable
+Table continues on the next page...
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+312 / 5072
+
+=== PAGE 313 ===
+Table continued from the previous page...
+Field
+Function
+13
+INT13_EN
+Interrupt13 Enable
+12
+INT12_EN
+Interrupt12 Enable
+11
+INT11_EN
+Interrupt11 Enable
+10
+INT10_EN
+Interrupt10 Enable
+9
+INT9_EN
+Interrupt9 Enable
+8
+INT8_EN
+Interrupt8 Enable
+7
+INT7_EN
+Interrupt7 Enable
+6
+INT6_EN
+Interrupt6 Enable
+5
+INT5_EN
+Interrupt5 Enable
+4
+INT4_EN
+Interrupt4 Enable
+3
+INT3_EN
+Interrupt3 Enable
+2
+INT2_EN
+Interrupt2 Enable
+1
+INT1_EN
+Interrupt1 Enable
+0
+INT0_EN
+Interrupt0 Enable
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+313 / 5072
+
+=== PAGE 314 ===
+8.5 Functional description
+This section discusses the following topics:
+• MSI routing
+— Core-to-core MSIs
+— PCIe-to-core MSIs
+• Interrupt steering and semaphores
+— Interrupt handling overview
+— MSCM interrupt router functional description
+8.5.1 Register and field structure for CPn
+MSIs are interrupts that are indirectly broadcast to a target core by writing configuration bits in MSCM. These interrupts can either 
+be initiated by one core targeting another core in the system (known as core-to-core interrupts), or by PCIe targeting a core in the 
+system (known as PCIe-to-core interrupts).
+These MSIs are initiated via writes to the IRCPnIGRx registers and managed through the IRCPnISRx registers, where n indicates 
+the logical core number (0-11) and x represents the interrupt number (0-13). Each of the twelve cores can support up to twelve 
+outstanding core-to-core interrupts and two outstanding PCIe-to-core interrupts.
+The following table shows the register and field structure for IRCPnIGRx and IRCPnISRx. It applies to every CPn.
+Table 17. Register and field structure for CPn
+Interrupt number (x)
+Interrupt type
+IRCPnIGRx fields
+IRCPnISRx fields
+0
+CPn core-to-core interrupt0
+INT_EN
+CP0_INT–CP11_INT
+1
+CPn core-to-core interrupt1
+2
+CPn core-to-core interrupt2
+3
+PCIe_0 MSI interrupt to 
+Cortex-M7 and Cortex-A53
+INT0_EN–INT15_EN
+CP0_INT–CP15_INT
+4
+PCIe_1 MSI interrupt to 
+Cortex-M7 and Cortex-A53
+5
+CPn core-to-core interrupt3
+INT_EN
+CP0_INT–CP11_INT
+6
+CPn core-to-core interrupt4
+7
+CPn core-to-core interrupt5
+8
+CPn core-to-core interrupt6
+9
+CPn core-to-core interrupt7
+10
+CPn core-to-core interrupt8
+11
+CPn core-to-core interrupt9
+12
+CPn core-to-core interrupt10
+13
+CPn core-to-core interrupt11
+8.5.1.1
+Core-to-core MSIs
+The next figure depicts the sequence for initiating a core-to-core MSI, in which CPm represents the initiating core, CPn represents 
+the target core, and CPx indicates the MSI number. CPm writes to the IRCPnIGRx to initiate an MSI. The outstanding MSI that 
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+314 / 5072
+
+=== PAGE 315 ===
+CPm initiates, targeting CPn, is reflected in the corresponding bit-mapped field in IRCPnISRx. For example, an MSI is initiated by 
+CP6 by writing to IRCPnIGR[INT_EN], and then reflected in IRCPnISRx[CP6_INT].
+ 
+The number of core-to-core interrupts supported is 12 and the number of PCIe-to-core interrupts supported is 2.
+  NOTE  
+cp2_int
+cp1_int
+cp0_int
+int_en
+CPx masterID
+cp3_int
+cp4_int
+cp5_int
+cp6_int
+cp7_int
+cp8_int
+cp9_int
+cp10_int
+cp11_int
+Figure 12. Core-to-core MSIs
+8.5.1.2
+PCIe-to-core MSIs
+The following figure depicts the sequence for initiating a PCIe-to-core interrupt, in which CPn represents the target core. PCIe 
+writes to IRCPnIGRp to initiate an MSI. The outstanding MSI targeting CPn is reflected in IRCPnISR3. This register contains 
+bit-mapped fields indicating the initiating source of the MSI. A given core can support up to 16 outstanding PCIe-initiated MSIs.
+msi3_int
+msi2_int
+msi1_int
+msi0_int
+int0_en
+msi7_int
+msi6_int
+msi5_int
+msi4_int
+msi11_int
+msi10_int
+msi9_int
+msi8_int
+msi15_int
+msi14_int
+msi13_int
+msi12_int
+int1_en
+int2_en
+int3_en
+int4_en
+int5_en
+int6_en
+int7_en
+int8_en
+int9_en
+int10_en
+int11_en
+int12_en
+int13_en
+int14_en
+int15_en
+Figure 13. PCIe-to-core MSIs
+8.5.2 Interrupt steering and semaphores
+This section discusses these topics:
+• Interrupt handling overview
+• MSCM interrupt router functional description
+8.5.2.1
+Interrupt handling overview
+The interrupt handling mechanisms of the Cortex-A53 and Cortex-M7 cores differ significantly. The Cortex-A53 processor uses 
+a simple, two-interrupt request mechanism: fast interrupt request (FIQ) and interrupt request (IRQ), with two corresponding 
+exception vector instructions, while the Cortex-M7 has a nested vector interrupt controller (NVIC) tightly coupled to the processor 
+core. The real-time performance of Cortex-M7 means that the NVIC directly provides the appropriate interrupt vector, in the form 
+of the starting instruction address for the interrupt handler, to the core. These Cortex-M7 architectural features directly translate 
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+315 / 5072
+
+=== PAGE 316 ===
+into faster interrupt service routine (ISR) entries and exit capabilities, with an improved runtime performance. See the Arm core 
+technical reference manuals for details.
+In the Cortex-A53 core complex, a generic interrupt controller (GIC) manages the IRQ collection and prioritization for the processor 
+and provides a functionality similar to the NVIC of Cortex-M7. To minimize software complexity, a common view of the interrupt 
+requests and their routing mechanisms is implemented, although it must be recognized that the differences between the NVIC and 
+the GIC do require the ISRs to be customized for the appropriate processor.
+In this architecture, a total of 240 IRQs are supported where this parameter is defined by the realistic limits of the NVIC 
+implementation, both in terms of silicon size and supported frequency of operation. These 240 IRQs are split into a total of eight 
+directed requests and 232+ shared peripheral requests. Unless noted otherwise, let the directed requests be defined as INT[7:0] 
+and the shared peripheral requests as INT[239:8]. The association of the interrupt request bit number and its corresponding 
+position within the IRQ vectors is needed for both the NVIC and GIC service routines.
+8.5.2.2
+MSCM interrupt router functional description
+As described in MSCM register descriptions, the interrupt routing registers enable the steering of requests to the processor cores.
+NXP Semiconductors
+Miscellaneous System Control Module (MSCM)
+S32G3 Reference Manual, Rev. 4, 02/2024
+Reference Manual
+General Business Information
+316 / 5072

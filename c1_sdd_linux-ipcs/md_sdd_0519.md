@@ -2744,8 +2744,8 @@ processing flow
 | Type | Name | Description |
 |---|---|---|
 | uint32 | size | unmanaged channel memory size requested by app |
-| struct IPCS_CHANNEL_UMEM_TYPE | *local_mem | 源码未提供描述 |
-| struct IPCS_CHANNEL_UMEM_TYPE | *remote_mem | 源码未提供描述 |
+| struct IPCS_CHANNEL_UMEM_TYPE | *local_mem | the address of local shared memory |
+| struct IPCS_CHANNEL_UMEM_TYPE | *remote_mem | the address of remote shared memory |
 | uint32 | remote_tx_count | copy of remote Tx counter |
 | void (rx_cb)(void cb_arg, const uint8 instance, sint32 chan_id, void *buf) | rx_cb | receive callback |
 | void | *cb_arg | optional receive callback argument |
@@ -2756,8 +2756,8 @@ processing flow
 |---|---|---|
 | sint32 | id | channel id |
 | enum IPCS_SHM_CHANNEL_TYPE_E | type | channel type (see IPCS_SHM_CHANNEL_TYPE_E) |
-| struct IPCS_MANAGED_CHANNEL_TYPE | ch.mng | 源码未提供描述 |
-| struct IPCS_UNMANAGED_CHANNEL_TYPE | ch.umng | 源码未提供描述 |
+| struct IPCS_MANAGED_CHANNEL_TYPE | ch.mng | a structure type of managed channel |
+| struct IPCS_UNMANAGED_CHANNEL_TYPE | ch.umng | a structure type of unmanaged channe |
 
 ### 4.6.11 struct IPCS_SHM_GLOBAL_TYPE
 
@@ -2838,8 +2838,8 @@ processing flow
 | Type | Name | Description |
 |---|---|---|
 | enum IPCS_SHM_CHANNEL_TYPE_E | type | channel type from &amp;enum IPCS_SHM_CHANNEL_TYPE_E |
-| struct IPCS_SHM_MANAGED_CFG_TYPE | ch.managed | 源码未提供描述 |
-| struct IPCS_SHM_UNMANAGED_CFG_TYPE | ch.unmanaged | 源码未提供描述 |
+| struct IPCS_SHM_MANAGED_CFG_TYPE | ch.managed | configuration of managed channel |
+| struct IPCS_SHM_UNMANAGED_CFG_TYPE | ch.unmanaged | configuration of unmanaged channel |
 
 ### 4.6.20 struct IPCS_SHM_REMOTE_CORE_TYPE
 
@@ -10451,77 +10451,77 @@ sequence diagram
 
 | Type | Name | Description |
 |---|---|---|
-| volatile const uint32_t | CPXTYPE | 源码未提供描述 |
-| volatile const uint32_t | CPXNUM | 源码未提供描述 |
-| volatile const uint32_t | CPXREV | 源码未提供描述 |
-| volatile const uint32_t | CPXCFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED00[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
-| volatile const uint32_t | CP0TYPE | 源码未提供描述 |
-| volatile const uint32_t | CP0NUM | 源码未提供描述 |
-| volatile const uint32_t | CP0REV | 源码未提供描述 |
-| volatile const uint32_t | CP0CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED01[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
-| volatile const uint32_t | CP1TYPE | 源码未提供描述 |
-| volatile const uint32_t | CP1NUM | 源码未提供描述 |
-| volatile const uint32_t | CP1REV | 源码未提供描述 |
-| volatile const uint32_t | CP1CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED02[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
-| volatile const uint32_t | CP2TYPE | 源码未提供描述 |
-| volatile const uint32_t | CP2NUM | 源码未提供描述 |
-| volatile const uint32_t | CP2REV | 源码未提供描述 |
-| volatile const uint32_t | CP2CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED03[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
-| volatile const uint32_t | CP3TYPE | 源码未提供描述 |
-| volatile const uint32_t | CP3NUM | 源码未提供描述 |
-| volatile const uint32_t | CP3REV | 源码未提供描述 |
-| volatile const uint32_t | CP3CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED04[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
-| volatile const uint32_t | CP4TYPE | 源码未提供描述 |
-| volatile const uint32_t | CP4NUM | 源码未提供描述 |
-| volatile const uint32_t | CP4REV | 源码未提供描述 |
-| volatile const uint32_t | CP4CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED05[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
-| volatile const uint32_t | CP5TYPE | 源码未提供描述 |
-| volatile const uint32_t | CP5NUM | 源码未提供描述 |
-| volatile const uint32_t | CP5REV | 源码未提供描述 |
-| volatile const uint32_t | CP5CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED06[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
-| volatile const uint32_t | CP6TYPE | 源码未提供描述 |
-| volatile const uint32_t | CP6NUM | 源码未提供描述 |
-| volatile const uint32_t | CP6REV | 源码未提供描述 |
-| volatile const uint32_t | CP6CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED07[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
-| volatile const uint32_t | CP7TYPE | 源码未提供描述 |
-| volatile const uint32_t | CP7NUM | 源码未提供描述 |
-| volatile const uint32_t | CP7REV | 源码未提供描述 |
-| volatile const uint32_t | CP7CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED08[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
-| volatile const uint32_t | CP8TYPE | 源码未提供描述 |
-| volatile const uint32_t | CP8NUM | 源码未提供描述 |
-| volatile const uint32_t | CP8REV | 源码未提供描述 |
-| volatile const uint32_t | CP8CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED09[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
-| volatile const uint32_t | CP9TYPE | 源码未提供描述 |
-| volatile const uint32_t | CP9NUM | 源码未提供描述 |
-| volatile const uint32_t | CP9REV | 源码未提供描述 |
-| volatile const uint32_t | CP9CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED010[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
-| volatile const uint32_t | CP10TYPE | 源码未提供描述 |
-| volatile const uint32_t | CP10NUM | 源码未提供描述 |
-| volatile const uint32_t | CP10REV | 源码未提供描述 |
-| volatile const uint32_t | CP10CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED011[IPC_MSCM_RESERVED00_COUNT] | 源码未提供描述 |
-| volatile const uint32_t | CP11TYPE | 源码未提供描述 |
-| volatile const uint32_t | CP11NUM | 源码未提供描述 |
-| volatile const uint32_t | CP11REV | 源码未提供描述 |
-| volatile const uint32_t | CP11CFG[IPC_MSCM_CPnCFG_COUNT] | 源码未提供描述 |
-| uint8_t | RESERVED012[IPC_MSCM_RESERVED01_COUNT] | 源码未提供描述 |
-| volatile uint32_t | IRCPCFG | 源码未提供描述 |
-| uint8_t | RESERVED013[IPC_MSCM_RESERVED02_COUNT] | 源码未提供描述 |
-| volatile uint32_t | IRNMIC | 源码未提供描述 |
-| uint8_t | RESERVED14[IPC_MSCM_RESERVED03_COUNT] | 源码未提供描述 |
-| volatile uint16_t | IRSPRC[IPC_MSCM_IRSPRC_COUNT] | 源码未提供描述 |
-| struct { volatile uint32_t IPC_ISR; volatile uint32_t IPC_IGR; } | IRCPnIRx[IPC_MSCM_CP_COUNT][IPC_MSCM_IRQ_COUNT] | 源码未提供描述 |
+| volatile const uint32_t | CPXTYPE | CPU-specific processor personality (ASCII CPU type plus Arm rYpZ revision); read-only from Cortex-A53 or Cortex-M7 (RM §8.4.2). |
+| volatile const uint32_t | CPXNUM | CPU-specific logical processor number of the accessing core; read-only from Cortex-A53 or Cortex-M7 (RM §8.4.3). |
+| volatile const uint32_t | CPXREV | CPU-specific logical revision number (Arm rYpZ nomenclature); read-only from Cortex-A53 or Cortex-M7 (RM §8.4.4). |
+| volatile const uint32_t | CPXCFG[IPC_MSCM_CPnCFG_COUNT] | CPU-specific configuration words: CPXCFG0 L1 cache, CPXCFG1 L2 cache, CPXCFG2 TCM, CPXCFG3 processor options; read-only from Cortex-A53 or Cortex-M7 (RM §8.4.5–§8.4.8). |
+| uint8_t | RESERVED00[IPC_MSCM_RESERVED00_COUNT] | Reserved address space in MSCM register map. |
+| volatile const uint32_t | CP0TYPE | Processor personality for CP0; same fields and function as CPXTYPE (RM §8.4.9). |
+| volatile const uint32_t | CP0NUM | Logical processor number for CP0; same fields and function as CPXNUM (RM §8.4.10). |
+| volatile const uint32_t | CP0REV | Logical revision for CP0; same fields and function as CPXREV (RM §8.4.11). |
+| volatile const uint32_t | CP0CFG[IPC_MSCM_CPnCFG_COUNT] | Configuration words for CP0; same four-word layout as CPXCFG0–CPXCFG3 (RM §8.4.12–§8.4.15). |
+| uint8_t | RESERVED01[IPC_MSCM_RESERVED00_COUNT] | Reserved address space in MSCM register map. |
+| volatile const uint32_t | CP1TYPE | Processor personality for CP1; same fields and function as CPXTYPE (RM §8.4.9). |
+| volatile const uint32_t | CP1NUM | Logical processor number for CP1; same fields and function as CPXNUM (RM §8.4.10). |
+| volatile const uint32_t | CP1REV | Logical revision for CP1; same fields and function as CPXREV (RM §8.4.11). |
+| volatile const uint32_t | CP1CFG[IPC_MSCM_CPnCFG_COUNT] | Configuration words for CP1; same four-word layout as CPXCFG0–CPXCFG3 (RM §8.4.12–§8.4.15). |
+| uint8_t | RESERVED02[IPC_MSCM_RESERVED00_COUNT] | Reserved address space in MSCM register map. |
+| volatile const uint32_t | CP2TYPE | Processor personality for CP2; same fields and function as CPXTYPE (RM §8.4.9). |
+| volatile const uint32_t | CP2NUM | Logical processor number for CP2; same fields and function as CPXNUM (RM §8.4.10). |
+| volatile const uint32_t | CP2REV | Logical revision for CP2; same fields and function as CPXREV (RM §8.4.11). |
+| volatile const uint32_t | CP2CFG[IPC_MSCM_CPnCFG_COUNT] | Configuration words for CP2; same four-word layout as CPXCFG0–CPXCFG3 (RM §8.4.12–§8.4.15). |
+| uint8_t | RESERVED03[IPC_MSCM_RESERVED00_COUNT] | Reserved address space in MSCM register map. |
+| volatile const uint32_t | CP3TYPE | Processor personality for CP3; same fields and function as CPXTYPE (RM §8.4.9). |
+| volatile const uint32_t | CP3NUM | Logical processor number for CP3; same fields and function as CPXNUM (RM §8.4.10). |
+| volatile const uint32_t | CP3REV | Logical revision for CP3; same fields and function as CPXREV (RM §8.4.11). |
+| volatile const uint32_t | CP3CFG[IPC_MSCM_CPnCFG_COUNT] | Configuration words for CP3; same four-word layout as CPXCFG0–CPXCFG3 (RM §8.4.12–§8.4.15). |
+| uint8_t | RESERVED04[IPC_MSCM_RESERVED00_COUNT] | Reserved address space in MSCM register map. |
+| volatile const uint32_t | CP4TYPE | Processor personality for CP4; same fields and function as CPXTYPE (RM §8.4.9). |
+| volatile const uint32_t | CP4NUM | Logical processor number for CP4; same fields and function as CPXNUM (RM §8.4.10). |
+| volatile const uint32_t | CP4REV | Logical revision for CP4; same fields and function as CPXREV (RM §8.4.11). |
+| volatile const uint32_t | CP4CFG[IPC_MSCM_CPnCFG_COUNT] | Configuration words for CP4; same four-word layout as CPXCFG0–CPXCFG3 (RM §8.4.12–§8.4.15). |
+| uint8_t | RESERVED05[IPC_MSCM_RESERVED00_COUNT] | Reserved address space in MSCM register map. |
+| volatile const uint32_t | CP5TYPE | Processor personality for CP5; same fields and function as CPXTYPE (RM §8.4.9). |
+| volatile const uint32_t | CP5NUM | Logical processor number for CP5; same fields and function as CPXNUM (RM §8.4.10). |
+| volatile const uint32_t | CP5REV | Logical revision for CP5; same fields and function as CPXREV (RM §8.4.11). |
+| volatile const uint32_t | CP5CFG[IPC_MSCM_CPnCFG_COUNT] | Configuration words for CP5; same four-word layout as CPXCFG0–CPXCFG3 (RM §8.4.12–§8.4.15). |
+| uint8_t | RESERVED06[IPC_MSCM_RESERVED00_COUNT] | Reserved address space in MSCM register map. |
+| volatile const uint32_t | CP6TYPE | Processor personality for CP6; same fields and function as CPXTYPE (RM §8.4.9). |
+| volatile const uint32_t | CP6NUM | Logical processor number for CP6; same fields and function as CPXNUM (RM §8.4.10). |
+| volatile const uint32_t | CP6REV | Logical revision for CP6; same fields and function as CPXREV (RM §8.4.11). |
+| volatile const uint32_t | CP6CFG[IPC_MSCM_CPnCFG_COUNT] | Configuration words for CP6; same four-word layout as CPXCFG0–CPXCFG3 (RM §8.4.12–§8.4.15). |
+| uint8_t | RESERVED07[IPC_MSCM_RESERVED00_COUNT] | Reserved address space in MSCM register map. |
+| volatile const uint32_t | CP7TYPE | Processor personality for CP7; same fields and function as CPXTYPE (RM §8.4.9). |
+| volatile const uint32_t | CP7NUM | Logical processor number for CP7; same fields and function as CPXNUM (RM §8.4.10). |
+| volatile const uint32_t | CP7REV | Logical revision for CP7; same fields and function as CPXREV (RM §8.4.11). |
+| volatile const uint32_t | CP7CFG[IPC_MSCM_CPnCFG_COUNT] | Configuration words for CP7; same four-word layout as CPXCFG0–CPXCFG3 (RM §8.4.12–§8.4.15). |
+| uint8_t | RESERVED08[IPC_MSCM_RESERVED00_COUNT] | Reserved address space in MSCM register map. |
+| volatile const uint32_t | CP8TYPE | Processor personality for CP8; same fields and function as CPXTYPE (RM §8.4.9). |
+| volatile const uint32_t | CP8NUM | Logical processor number for CP8; same fields and function as CPXNUM (RM §8.4.10). |
+| volatile const uint32_t | CP8REV | Logical revision for CP8; same fields and function as CPXREV (RM §8.4.11). |
+| volatile const uint32_t | CP8CFG[IPC_MSCM_CPnCFG_COUNT] | Configuration words for CP8; same four-word layout as CPXCFG0–CPXCFG3 (RM §8.4.12–§8.4.15). |
+| uint8_t | RESERVED09[IPC_MSCM_RESERVED00_COUNT] | Reserved address space in MSCM register map. |
+| volatile const uint32_t | CP9TYPE | Processor personality for CP9; same fields and function as CPXTYPE (RM §8.4.9). |
+| volatile const uint32_t | CP9NUM | Logical processor number for CP9; same fields and function as CPXNUM (RM §8.4.10). |
+| volatile const uint32_t | CP9REV | Logical revision for CP9; same fields and function as CPXREV (RM §8.4.11). |
+| volatile const uint32_t | CP9CFG[IPC_MSCM_CPnCFG_COUNT] | Configuration words for CP9; same four-word layout as CPXCFG0–CPXCFG3 (RM §8.4.12–§8.4.15). |
+| uint8_t | RESERVED010[IPC_MSCM_RESERVED00_COUNT] | Reserved address space in MSCM register map. |
+| volatile const uint32_t | CP10TYPE | Processor personality for CP10; same fields and function as CPXTYPE (RM §8.4.9). |
+| volatile const uint32_t | CP10NUM | Logical processor number for CP10; same fields and function as CPXNUM (RM §8.4.10). |
+| volatile const uint32_t | CP10REV | Logical revision for CP10; same fields and function as CPXREV (RM §8.4.11). |
+| volatile const uint32_t | CP10CFG[IPC_MSCM_CPnCFG_COUNT] | Configuration words for CP10; same four-word layout as CPXCFG0–CPXCFG3 (RM §8.4.12–§8.4.15). |
+| uint8_t | RESERVED011[IPC_MSCM_RESERVED00_COUNT] | Reserved address space in MSCM register map. |
+| volatile const uint32_t | CP11TYPE | Processor personality for CP11; same fields and function as CPXTYPE (RM §8.4.9). |
+| volatile const uint32_t | CP11NUM | Logical processor number for CP11; same fields and function as CPXNUM (RM §8.4.10). |
+| volatile const uint32_t | CP11REV | Logical revision for CP11; same fields and function as CPXREV (RM §8.4.11). |
+| volatile const uint32_t | CP11CFG[IPC_MSCM_CPnCFG_COUNT] | Configuration words for CP11; same four-word layout as CPXCFG0–CPXCFG3 (RM §8.4.12–§8.4.15). |
+| uint8_t | RESERVED012[IPC_MSCM_RESERVED01_COUNT] | Reserved address space in MSCM register map. |
+| volatile uint32_t | IRCPCFG | Interrupt router configuration; designates trusted cores permitted to access and manage outstanding MSIs (RM §8.4.16). |
+| uint8_t | RESERVED013[IPC_MSCM_RESERVED02_COUNT] | Reserved address space in MSCM register map. |
+| volatile uint32_t | IRNMIC | Nonmaskable interrupt routing control; enables NMI steering to selected processors (RM §8.4.17). |
+| uint8_t | RESERVED14[IPC_MSCM_RESERVED03_COUNT] | Reserved address space in MSCM register map. |
+| volatile uint16_t | IRSPRC[IPC_MSCM_IRSPRC_COUNT] | Shared peripheral interrupt routing control array (IRSPRC0–IRSPRC239); steers each interrupt request to GIC500 and/or Cortex-M7 cores (RM §8.4.18). |
+| struct { volatile uint32_t IPC_ISR; volatile uint32_t IPC_IGR; } | IRCPnIRx[IPC_MSCM_CP_COUNT][IPC_MSCM_IRQ_COUNT] | Inter-core interrupt router register pairs per processor (CP0–CP11) and interrupt index (0–13): IPC_ISR maps to IRCPnISRx (interrupt status, W1C); IPC_IGR maps to IRCPnIGRx (interrupt generation) (RM §8.4.19–§8.4.20). |
 
 # 7 TRACE & CONSISTENCY 双向追溯一致性
 

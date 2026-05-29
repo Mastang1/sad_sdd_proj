@@ -2,17 +2,18 @@
 r"""
 将 ``md_sdd_0519.md`` 全文转换并写入 ``final_sdd.docx``（TF）。
 
-流程（与 ``scripts/build_final_sdd_docx.py`` 一致，源文件改为 md_sdd_0519.md）：
+流程：
 
 1. 解析 Markdown：将 ``md_sdd_0519_media/imageN.png`` 按上文 ``### 3.2.x / 3.3.x / 3.4.x`` 映射到
    ``files_32_svgs/`` 或 ``flow_svgs/`` 中的 SVG（缺失则保留原路径并告警）。
 2. Mermaid 预处理；**SVG 直嵌 Word**（禁止栅格化为 PNG，见 .cursorrules「插图 SVG 专规」）。
-3. Pandoc 生成正文 DOCX，与现有 ``final_sdd.docx`` 封面（首个分页符之前）合并。
-4. Pandoc 使用现有 ``final_sdd.docx`` 作为 ``--reference-doc``，使正文标题沿用 TF 的 Heading 1–4 样式。
+3. Pandoc 生成中间态正文 DOCX（``--reference-doc`` = ``format_refer/format_refer.docx``）。
+4. **套用模板**：复制 ``format_refer.docx`` 保留封面，追加 Pandoc 正文，同步页眉/页脚与分节属性
+   （``apply_format_refer.merge_body_into_template``）。
 5. **HTML 函数设计表**：Pandoc 无法将 ``<table>`` 转为 Word 表格；先从 MD 剥离 HTML 表，
    转换后再用 ``html_table_utils`` 按 colspan/rowspan 插入 Word 表格（与 task-3 规则一致）。
 6. 调用 ``format_final_sdd`` 应用 .cursorrules 中的 TF 版式（字体、表格边框、插图宽度等）。
-7. 可选：``python cursor_tmp/format_docx_py/validate_md_docx_consistency.py`` 输出 MD/DOCX 一致性报告。
+7. 终检页眉/页脚与模板一致；可选跑 ``validate_md_docx_consistency.py``。
 
 **依赖**::
 
@@ -47,9 +48,9 @@ from workspace_paths import (
     WORKSPACE_ROOT,
     MD_SDD_0519,
     FINAL_SDD_DOCX,
+    FORMAT_REFER_DOCX,
     PANDOC_MD0519,
     BODY_MD0519,
-    PANDOC_REFERENCE,
     FILES_32_SVGS,
     FLOW_SVGS,
     MEDIA_DIR,
@@ -57,6 +58,13 @@ from workspace_paths import (
     FORMAT_DOCX_PY,
     pandoc_resource_path_str,
     rel_to_workspace,
+)
+from apply_format_refer import (
+    apply_template_section_properties,
+    assert_word_compatible_docx,
+    merge_body_into_template,
+    sync_header_footer_parts,
+    verify_template_headers_footers,
 )
 from html_table_utils import (
     ensure_sect_pr,
@@ -318,20 +326,15 @@ def main() -> None:
     out_docx = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else TARGET_DOCX.resolve()
     if not SOURCE_MD.is_file():
         sys.exit(f"missing: {SOURCE_MD}")
+    if not FORMAT_REFER_DOCX.is_file():
+        sys.exit(f"missing format template: {FORMAT_REFER_DOCX}")
 
     bfd = _load_build()
     bfd.ROOT = WORKSPACE
     bfd.TARGET_DOCX = out_docx
     bfd.SOURCE_MD = SOURCE_MD
 
-    bfd.ensure_default_cover(out_docx)
-    ensure_media_from_docx(out_docx)
-
-    pandoc_ref: Path | None = None
-    ref_path = PANDOC_REFERENCE
-    if out_docx.is_file():
-        shutil.copy2(out_docx, ref_path)
-        pandoc_ref = ref_path
+    ensure_media_from_docx(FORMAT_REFER_DOCX)
 
     md = SOURCE_MD.read_text(encoding="utf-8")
     md = resolve_media_images(md)
@@ -347,35 +350,28 @@ def main() -> None:
     # SVG 直嵌：勿调用 rasterize_svg_refs_for_docx（Windows 无 rsvg 时 PNG 路径错误会导致插图丢失）
     PANDOC_SRC.write_text(md, encoding="utf-8")
 
-    run_pandoc_extended(bfd, PANDOC_SRC, BODY_DOCX, pandoc_ref)
+    run_pandoc_extended(bfd, PANDOC_SRC, BODY_DOCX, FORMAT_REFER_DOCX)
     _verify_docx_images(BODY_DOCX, expected_images)
 
-    bfd.merge_cover_and_body(out_docx, BODY_DOCX, out_docx)
+    merged_path = merge_body_into_template(
+        FORMAT_REFER_DOCX, BODY_DOCX, out_docx, workspace_root=WORKSPACE
+    )
 
     alt = out_docx.with_name(out_docx.stem + ".generated.docx")
-    body_mtime = BODY_DOCX.stat().st_mtime if BODY_DOCX.is_file() else 0
-    # 勿误用历史遗留的 .generated.docx（merge 已成功写入 out_docx 时必须以 out_docx 为准）
-    if out_docx.is_file() and out_docx.stat().st_mtime >= body_mtime - 2:
-        merged_path = out_docx
-        if alt.is_file():
-            try:
-                alt.unlink()
-                print(f"[info] Removed stale {alt.name}; using fresh merge")
-            except OSError as e:
-                print(f"[warn] Could not remove stale {alt.name}: {e}", file=sys.stderr)
-    else:
-        merged_path = alt if alt.is_file() else out_docx
-        if merged_path != out_docx:
-            print(f"[info] Using merge output {merged_path}")
+    if merged_path != out_docx.resolve() and alt.is_file():
+        print(f"[info] Using merge output {merged_path}")
 
     if merged_path.is_file():
         _merged_doc = Document(str(merged_path))
         if ensure_sect_pr(_merged_doc):
             _merged_doc.save(str(merged_path))
-            print(f"[info] Injected w:sectPr → {merged_path.name}")
+            sync_header_footer_parts(merged_path, FORMAT_REFER_DOCX)
+            apply_template_section_properties(merged_path, FORMAT_REFER_DOCX)
+            sync_header_footer_parts(merged_path, FORMAT_REFER_DOCX)
+            print(f"[info] Re-applied template sectPr after ensure_sect_pr → {merged_path.name}")
     saved = merged_path
 
-    for p in (PANDOC_SRC, BODY_DOCX, pandoc_ref):
+    for p in (PANDOC_SRC, BODY_DOCX):
         if p and p.is_file():
             p.unlink()
 
@@ -392,6 +388,11 @@ def main() -> None:
             print(f"[warn] Could not locate Heading 3 for: {missing[:8]}...")
         reapply_all_table_styles(saved)
 
+    sync_header_footer_parts(saved, FORMAT_REFER_DOCX)
+    apply_template_section_properties(saved, FORMAT_REFER_DOCX)
+    sync_header_footer_parts(saved, FORMAT_REFER_DOCX)
+    verify_template_headers_footers(saved, FORMAT_REFER_DOCX)
+    assert_word_compatible_docx(saved)
     final_blips = _verify_docx_images(saved, expected_images)
     print(f"[info] DOCX inline images verified: {final_blips}/{expected_images}")
 

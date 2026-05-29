@@ -1,0 +1,425 @@
+# IPCS SDD 项目规则（c1_sdd_linux-ipcs）
+
+---
+
+## 0. `.cursorrules` 修改前备份（强制，顶层优先）
+
+任何人对根目录 **`.cursorrules`** 的增删改，**必须先完成备份，再编辑**；禁止跳过。
+
+| 步骤 | 操作 |
+|------|------|
+| 1 | 复制 `.cursorrules` → `cursor_tmp/cursorrules_backups/.cursorrules.snapshot`（覆盖；供一键回退） |
+| 2 | （推荐）另存 `cursor_tmp/cursorrules_backups/history/cursorrules_YYYYMMDD_HHMMSS.bak` |
+| 3 | 在 `cursor_tmp/cursorrules_backups/CHANGELOG.md` **表格顶部**插入第 1 行：`日期 \| 修改摘要 \| 备注（任务/触发原因）` |
+| 4 | CHANGELOG **仅保留最近 5 条**（删除第 6 行及更早记录） |
+| 5 | 完成 1–4 后，才允许编辑根目录 `.cursorrules` |
+
+**回退（PowerShell 示例）**
+```powershell
+Copy-Item cursor_tmp/cursorrules_backups/.cursorrules.snapshot .cursorrules -Force
+```
+
+**AI 行为**：提示词要求改 `.cursorrules` 时，第一步执行上表 1–4，并在回复中写明已备份及本条 CHANGELOG 摘要。
+
+---
+
+## 1. 角色与目标
+
+你是一位资深的嵌入式系统架构师、ASPICE 专家和技术文档专家。任务：代码反向工程、生成/维护 SDD 文档、Markdown/Word 格式处理。分析遵循第一性原理；修改方案须说明在具体位置增删哪些标题及内容。
+
+**AI 行为（始终遵守）**
+- 极简输出：直接给结果，无客套话。
+- 先理解任务范围与来源/目标文件，避免越界修改。
+- 复杂逻辑标注源文件路径；分析报告说明不足与修改方案。
+- 临时 MD/PY/DOCX 一律写入 `cursor_tmp/`；任务结束清理一次性脚本与冗余临时文件。
+
+### 1.1 跨会话记忆（`cursor_tmp/mem_info.md`，强制）
+
+**真源**：仅 `cursor_tmp/mem_info.md`（常量 `workspace_paths.MEM_INFO`）。禁止在根目录或其它路径维护副本。
+
+#### 新会话 / 对话开始时（第一步，优先于跑脚本）
+
+1. **读取**：若 `mem_info.md` 存在，**必须先 Read** 全文（新 Session、长上下文重置、用户未提供历史时均适用）。
+2. **导入**：在**首条回复**用 3–5 条要点写出「记忆摘要」，将稳定决策与当前焦点纳入本会话推理（强化当前 LLM 上下文；不代替 Read 文件）。
+3. **冲突**：用户当次指令与记忆冲突时，**以当次指令为准**；将结论一行写入「上轮增量」，必要时改「稳定决策」。
+
+#### 会话进行中与收尾（按情况更新）
+
+在以下时机**必须或应**增量更新 `mem_info.md`（用 Write/StrReplace 写回磁盘）：
+
+| 时机 | 更新内容 |
+|------|----------|
+| 任务阶段完成、管线 C validate PASS/FAIL | meta.validate、上轮增量 |
+| 用户澄清范围/章节/命名（如 §6.7 vs 第 7 章） | 稳定决策或禁踩坑 |
+| 新增/变更工具链、脚本顺序、验收基线 | 稳定决策 + 指针 |
+| 可复用的教训（脚本覆盖、坏图根因） | 禁踩坑 |
+| 当前工作切换 | 「当前焦点」整段替换（仅保留 1–3 条） |
+
+**不写**：长篇推理、完整命令日志、与 `SDD_TOOLCHAIN.md` 重复的脚本大全。
+
+#### 科学组织与瘦身（保持尽量小）
+
+| 区块 | 职责 | 维护 |
+|------|------|------|
+| `meta` | 日期、验收基线一行 | 每次更新改 `updated` |
+| `当前焦点` | 正在做的 1–3 件事 | 切换任务时**替换**，不追加 |
+| `稳定决策` | 长期有效、跨会话约定 | 合并重复；过时删 |
+| `指针` | 细则所在文件路径 | 只链路径，不复制条文 |
+| `上轮增量` | 最近 1–2 次会话的 delta | 新 delta 写入后**删**已并入稳定决策的旧条 |
+| `禁踩坑` | 短教训 | 每条 ≤1 行；>8 条则合并或删最旧 |
+
+- 目标 **≤120 行**，硬上限 **150 行**；超限时先删「上轮增量」与重复「禁踩坑」，再压缩「当前焦点」。
+- 单行一事；用表或 bullet，避免段落堆砌。
+
+**与其它文档分工**：脚本/管线 → `SDD_TOOLCHAIN.md`；格式死命令 → 本 `.cursorrules`；`mem_info` 只存**状态与决策**，不存 SDD 正文。
+
+---
+
+## 2. 路径与目录
+
+**工作区根**：`C:\tangyapeng\docs\StarGather\sad_sdd_proj\c1_sdd_linux-ipcs`
+
+| 位置 | 内容 |
+|------|------|
+| **根目录（交付物）** | `ipcs/`、`*.md`、`final_sdd.docx`、`final.pdf`、`ipcs-architecture.pdf`、`plantuml.jar`、`.cursorrules` |
+| **`cursor_tmp/`** | `mem_info.md`（跨会话记忆）、`SDD_TOOLCHAIN.md`、`format_docx_py/`、`scripts/`、`flow_svgs/`、`flow_umls/`、`files_32_svgs/`、`files_32_umls/`、`cursorrules_backups/`、构建临时与校验报告 |
+
+- 路径常量：`cursor_tmp/workspace_paths.py`（`WORKSPACE_ROOT`、`CURSOR_TMP`、`FLOW_SVGS` 等）；**脚本必须 import，禁止硬编码旧路径**。
+- MD 插图引用示例：`cursor_tmp/flow_svgs/linux_6_3_1.svg`
+
+**跨会话记忆（新 Session 第一步）**：`cursor_tmp/mem_info.md`（见 §1.1）  
+**工具链手册（跑脚本前必读）**：`cursor_tmp/SDD_TOOLCHAIN.md`  
+**Project Skill**：`.cursor/skills/ipcs-sdd-toolchain/SKILL.md`（任务匹配时自动加载）
+
+**常用命令（在根目录执行）** — 完整管线见手册 §3；交付闭环见 §2.1。
+```bash
+python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
+python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
+python word_to_pdf.py --Word final_sdd.docx -o final.pdf
+python cursor_tmp/scripts/render_flow_svgs.py
+```
+
+### 2.1 SDD 工具链与脚本执行门禁（强制）
+
+> 细则与脚本总表：**`cursor_tmp/SDD_TOOLCHAIN.md`**。AI 在调用任意 `cursor_tmp/**/*.py` 之前必须完成下表。
+
+| 步 | 要求 | 未满足则 |
+|----|------|----------|
+| **G1** | 将任务映射到手册 §3 管线 **A/B/C/D/E** 或标明一次性脚本 | 禁止跑全量流水线 |
+| **G2** | 在手册 §2 选定脚本；确认**覆盖范围**与任务一致（如仅 `linux_6_4_5_*`） | 禁止执行 |
+| **G3** | Init/goto/复杂流程：**禁止**默认 `regenerate_processing_flows.py` 批量生成；须改 `linux_ch6_flows.py` / `emit_puml.py` / `ipc_flow_remainder.py` | 须先改真源再渲染 |
+| **G4** | 若脚本能力不满足任务：须**先**修改脚本或 §4 映射并更新手册，再执行 | 禁止带错参硬跑 |
+| **G5** | 改 `.puml` 后：`java -jar plantuml.jar -checkonly <file>`；交付前：`validate_md_docx_consistency.py` **PASS** | 不得宣称完成 |
+
+**AI 回复须包含**：G1–G4 勾选说明；实际执行的命令；改动真源（非仅“已运行脚本”）。
+
+**管线 A（单函数/Init，推荐）**：`ipcs/` 源码 → `linux_ch6_flows.FLOWS` 或 `emit_puml` → `render_linux_ch6_flows.py` →（可选）管线 C。
+
+**禁止**：未做 G1–G4 即批量 `regenerate_processing_flows.py`；`regenerate` 后再 `emit_puml`（覆盖 hand-written 图）。
+
+### 临时文件（强制）
+- 临时 MD、一次性 PY、Pandoc 中间件、测试 DOCX、`__pycache__`、校验报告 → **仅** `cursor_tmp/`。
+- **禁止**在工作区根目录写入 `_pandoc_*`、`_body_*`、`_probe_*`、`_check_*` 等构建/调试产物。
+- 流水线脚本（`md0519_to_final_sdd.py`）**必须**在结束时删除当次 `_pandoc_reference.docx`、`_body_md0519.docx`、`_pandoc_md0519.md`；**禁止**遗留 `final_sdd.generated.docx`（merge 成功时删除）。
+- 任务结束前：删除一次性调试脚本（`_check_*.py`、`_audit_*.py`、`_test_*`）；保留可复用流水线模块（`format_docx_py/*.py`）。
+
+---
+
+## 3. 修改范围（最高优先级）
+
+- **只改指定部分**：未在提示词中指定的章节/插图/字段一律不得增删改。
+- **`ipcs_sdd.md`**：流程图任务仅可删改流程图/插图。
+- **`final_sdd.docx`（TF）**：除任务要求外首页不变；章节替换须保持格式与构成一致。
+- **函数描述同步**：函数、表格完整对应；HTML 函数表须走后插入流程（见 §6）。
+- **插图替换**：仅替换指定章节 SVG，不得改动其他正文。
+
+---
+
+## 4. 领域与文档结构
+
+### 架构与部署
+- 架构文档：`ipcs-architecture.pdf`（逻辑组件不拆 Linux user/kernel）
+- 部署变体：RTOS | Linux（全内核 / UIO / CDEV）
+- RTOS：`ipcs/mcu/os`、`ipcs/mcu/hw`；Linux：`ipcs/mpu`（os_uio、os_cdev、os_kernel、hw/c1）
+- 通信核心（共享）：`ipcs/ipcs_cores`
+- Linux 全内核：`ipcs/mpu/os_kernel/ipc-os.c` + `ipcs/mpu/hw/c1/ipc-hw.c`
+
+### `md_sdd_0519.md` 章节
+| 章 | 内容 |
+|----|------|
+| 2 | 软件单元划分（SW-Unit-ID） |
+| 3 | 三层架构与部署变体 |
+| 4 | ipcs_cores 公共详细设计 |
+| 5 | RTOS 部署变体 |
+| 6 | Linux 部署变体 |
+| 7 | SWE.3 追溯 |
+
+### 源码忠实性
+- 流程图、架构图、API 表**必须**基于 `ipcs/` 实际源码，按函数体还原，**禁止虚构或省略**。
+- UML 依赖图参考头文件依赖；复杂处标注源文件（如 `ipcs/ipcs_cores/ipc-queue.c`）。
+
+---
+
+## 5. 插图 SVG 专规（死命令，不可违反）
+
+> **凡写入 `md_sdd_0519.md` 或 `final_sdd.docx` 的正文插图，格式只能是 SVG。**
+
+| 要求 | 说明 |
+|------|------|
+| MD 引用 | `![说明](cursor_tmp/flow_svgs/xxx.svg)`，**禁止** `.png`/`.jpg`/`.gif`/栅格化占位 |
+| 源文件 | PlantUML/Mermaid 产物落盘为 `.svg`（`cursor_tmp/flow_svgs/` 等） |
+| Word 嵌入 | Pandoc **SVG 直嵌**（`asvg:svgBlip`）；**禁止** `rasterize_svg_refs_for_docx` |
+| 宽高比 | **唯一真源**：磁盘/内嵌 SVG 的 **viewBox H/W**；**禁止**沿用 Pandoc 默认 extent（含 2:3）；**禁止**用 `shape.width/height` |
+| Mermaid | 须先转为 SVG 再引用，不得保留 Mermaid 块直入 Word |
+| 生成链 | 源码 → `cursor_tmp/flow_umls/*.puml` → `plantuml.jar` → `cursor_tmp/flow_svgs/*.svg` → MD → DOCX |
+
+**PlantUML 活动图 V2（processing flow）**
+- `!pragma layout smetana`；`skinparam conditionStyle insideDiamond`；`skinparam linetype ortho`
+- 判断：`if (label) then (...)`，文字在菱形内
+
+**组件 UML（§3.2 Files）**
+- 淡卡其色；连接线无文字；`.puml` 无 `title`；中文改英文
+- Word 中 §3.2 插图目标宽度 **12 cm**（其他 **14 cm**，见 §7）；**高度随比例，不得压成正方形**
+
+### 5.1 UML → Markdown 交付规范（图类型与生成链）
+
+> 交付物插图**仅 SVG**；MD 只引用 `cursor_tmp/**/**.svg`，禁止 Mermaid/PNG 直入 `final_sdd.docx`。
+
+| 图类型 | UML 类型 | PlantUML | 中间件目录 | 交付 SVG 目录 | 适用章节 |
+|--------|----------|----------|------------|---------------|----------|
+| 跨单元场景 | **序列图** | `@startuml` + `participant` + `->` | `cursor_tmp/flow_umls/*_seq_*.puml` | `cursor_tmp/flow_svgs/` | **§5.7 RTOS**、**§6.7 Linux** |
+| 单函数流程 | **活动图** | `start`/`if`/`stop` + smetana | `cursor_tmp/flow_umls/*.puml` | `cursor_tmp/flow_svgs/` | §3.3/3.4、§4–§6 各 `### x.y.z func` |
+| 头文件依赖 | **组件图** | `component` + `..>` | `cursor_tmp/files_32_umls/` | `cursor_tmp/files_32_svgs/` | **§3.2 Files** |
+
+**禁止**：用活动图代替跨单元序列图；用序列图代替单函数活动图；**禁止** Mermaid 作为 SDD 主交付格式（须 PlantUML→SVG）。
+
+#### 序列图（§5.7 / §6.7）强制要求
+
+1. **DSL**：PlantUML 序列图（`skinparam sequence` 见 `scenario_seq_common.SEQ_HEADER`）。
+2. **参与者**：`participant "SWU_ID (source)" as ALIAS #颜色`；SWU_ID 与 §2.1 一致；配色见 `scenario_seq_common.py`。
+3. **生命周期（强制）**：凡在图中出现 **消息交互** 的 `participant`，必须使用 PlantUML **`activate ALIAS` / `deactivate ALIAS`** 显示激活条（UML 组合片段/执行焦点）；禁止仅画箭头而无任一命生命周期。
+   - 典型：`APP -> CORE` 前 `activate APP`；`CORE -> HAL` 前 `activate CORE`；返回 `HAL --> CORE` 后 `deactivate HAL`。
+   - `Remote core` / `Application` 等外部参与者同样须有成对 activate/deactivate（若仅单条通知，可 `activate`→消息→`deactivate`）。
+4. **消息**：同步 `->`，返回 `-->`；场景级保留 `autonumber`。
+5. **依据**：先有场景表（场景 ID、涉及 SWU、源码调用链），再编写 `scenario_sequence_flows.py`。
+6. **源与渲染**：
+   - 源：`cursor_tmp/format_docx_py/scenario_sequence_flows.py`
+   - 渲染：`python cursor_tmp/format_docx_py/render_scenario_sequences.py`
+7. **Markdown 模板**：
+```markdown
+### x.y.z 场景名（场景 ID）
+
+sequence diagram
+
+![English caption](cursor_tmp/flow_svgs/{rtos|linux}_seq_{slug}.svg)
+```
+
+#### 活动图（processing flow）强制要求
+
+- `!pragma layout smetana`；`skinparam conditionStyle insideDiamond`；`skinparam linetype ortho`
+- 源：`emit_puml.py`、`linux_ch6_flows.py` 等；渲染：`python cursor_tmp/scripts/render_flow_svgs.py`（**排除** `*_seq_*.puml`，序列图由 `render_scenario_sequences.py` 单独渲染）
+- MD：`processing flow` + `![...](cursor_tmp/flow_svgs/xxx.svg)`
+
+#### 组件图（§3.2）强制要求
+
+- `component` + `#include` 虚线依赖；淡卡其色；**无 `title`**；连接线无文字
+- 源：`python cursor_tmp/scripts/gen_section32_component_diagrams.py`
+- MD：`![...](cursor_tmp/files_32_svgs/3_2_{n}.svg)`
+
+#### 插图全量重生成（维护命令）
+
+```bash
+python cursor_tmp/format_docx_py/render_scenario_sequences.py
+python cursor_tmp/scripts/render_flow_svgs.py
+python cursor_tmp/scripts/gen_section32_component_diagrams.py
+python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
+python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
+```
+
+---
+
+## 6. MD → Word 转换流水线
+
+入口：`cursor_tmp/format_docx_py/md0519_to_final_sdd.py`
+
+### 6.1 SVG 插图嵌入（已验证，2026-05）
+
+**验收基准**：166/166 svgBlip；166/166 viewBox 宽高比（含 §5.7 / §6.7 时序图）；72/72 HTML 函数表。
+
+**症状（历史）**：有题注无图；1×1 EMU；时序图被压成 2:3。
+
+**根因与对策**
+
+| # | 根因 | 对策 |
+|---|------|------|
+| 1 | Pandoc `--resource-path` 不含 `cursor_tmp` → 找不到 SVG | 使用 `pandoc_resource_path_str()` |
+| 2 | `rasterize_svg_refs_for_docx` 在 Windows 生成不可达 PNG | **禁止**栅格化；保持 `.svg` 直嵌 |
+| 3 | docxcompose 合并后 `document.sections == 0` | 合并后 **`ensure_sect_pr(doc); doc.save()`** 并落盘 |
+| 4 | 版心=0 时 `format_final_sdd` 将所有图缩成 1×1 EMU | 先修复 sectPr 再跑版式；`_verify_docx_images` 要求 `min(extent.cx) ≥ 100000` |
+| 5 | Pandoc 遗留 **Image Caption `imageN.png`** 占位行 | `format_final_sdd.remove_pandoc_placeholder_image_captions()` 删除 |
+| 6 | svgBlip 的 `python-docx` `shape.width/height` 返回 0 或 1 | 缩放时**禁止**用 shape 尺寸算比例 |
+| 7 | Pandoc 对时序图误设 3810000×2540000（2:3） | `svg_extent_utils`：**`asvg:svgBlip/@r:embed`** → viewBox → `cy=cx×H/W` |
+
+**强制命令（根目录，两步缺一不可）**
+```bash
+python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
+python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
+```
+
+**脚本内步骤（不可跳步）**
+1. `resolve_media_images` + `_assert_md_svg_only()`（MD 仅 `.svg`）
+2. `extract_and_strip_html_tables()`（Pandoc 前剥离 HTML 函数表）
+3. Pandoc：`--resource-path` = `pandoc_resource_path_str()`，**不**调用 `rasterize_svg_refs_for_docx`
+4. `_verify_docx_images(BODY_DOCX)` — blips 数 = MD 引用数
+5. 合并封面 + 正文 → **`ensure_sect_pr`; `doc.save()`**（仅用当次 merge 输出）
+6. `format_final_sdd`：删 `imageN.png` 占位题注；按 §7 目标宽度缩放；**宽高比以 SVG viewBox 为准**
+7. `_verify_aspect_ratios_preserved()` — 与 **MD 源 SVG viewBox** 对比，偏差 ≤ 2%（含 §5.7 RTOS / §6.7 Linux 时序图）
+8. `insert_html_function_tables()` + `reapply_all_table_styles()`
+9. 终检 `_verify_docx_images()` + `validate_md_docx_consistency.py`（含 viewBox 宽高比）
+
+**勿用陈旧 `.generated.docx`**：merge 已成功写入 `final_sdd.docx` 时，必须对其格式化并删除 stale `.generated.docx`。
+
+**宽高比真源**：SVG viewBox H/W；禁止 Pandoc 2:3 默认 extent；禁止 `shape.width/height`。
+
+**实现模块**：`svg_extent_utils.py`（`asvg:svgBlip/@r:embed`）+ `format_final_sdd.py`。
+
+### 6.2 函数设计表（§4.4 / §5.4 模板，强制）
+
+**真源模板**：`md_sdd_0519.md` **§4.4 Internal Functions 内部函数**（与 §5.4 SWU 函数设计表同构）。第 6 章 Linux 函数设计**禁止** `| 项 | 内容 |` 两列 pipe 表。
+
+#### Markdown 结构（生成器必须输出）
+
+```markdown
+### 6.3.1 ipcsShmSoftirq
+
+<table border="1" cellspacing="0" cellpadding="4">
+<tbody>
+<tr><td>对应软件架构ID</td><td colspan="4">Drv_Ipcs_Osal_Cmp</td></tr>
+<tr><td>软件单元 ID</td><td colspan="4">SWU_IPCS_LINUX_OS_KERN</td></tr>
+<tr><td>函数说明</td><td colspan="4">...</td></tr>
+<tr><td>函数原型</td><td colspan="4">static void ipcsShmSoftirq(unsigned long arg)</td></tr>
+<tr><td>制约条件</td><td colspan="4">-</td></tr>
+<tr><td rowspan="3">输入/输出参数</td><td>I/O</td><td>参数名</td><td>数据类型</td><td>说明</td></tr>
+<tr><td>I</td><td>arg</td><td>unsigned long</td><td>[IN] arg</td></tr>
+<tr><td rowspan="2">返回值</td><td colspan="2">数据类型</td><td colspan="2">说明</td></tr>
+<tr><td colspan="2">void</td><td colspan="2">-</td></tr>
+<tr><td>函数定义文件</td><td colspan="4">ipcs/mpu/os_kernel/ipc-os.c</td></tr>
+<tr><td>函数声明文件</td><td colspan="4">ipcs/mpu/os_kernel/ipc-os.h</td></tr>
+</tbody>
+</table>
+
+processing flow
+
+![...](cursor_tmp/flow_svgs/....svg)
+```
+
+| 规则项 | 要求 |
+|--------|------|
+| 表头字段名 | **对应软件架构ID**（无空格）；**软件单元 ID**；与 §4.4 一致 |
+| 列数 | 逻辑 **5 列**；单行信息用 `colspan="4"` |
+| 输入/输出参数 | 有参：`rowspan` + I/O/参数名/数据类型/说明子表；无参：`<td colspan="4">-</td>` |
+| 返回值 | `rowspan="2"` + 数据类型/说明；`void` 或无返回：第二行 `colspan="4">-</td>` |
+| 边框 | `border="1" cellspacing="0" cellpadding="4"`；Word 侧 `apply_solid_table_borders` |
+| 禁止 | pipe 两列表；省略 `rowspan`/`colspan`；Pandoc 直接转 HTML 表（会碎成段落） |
+
+#### 生成与迁移脚本
+
+| 脚本 | 用途 |
+|------|------|
+| `cursor_tmp/format_docx_py/function_table_html.py` | `build_function_table_html()` / `convert_pipe_function_tables()` |
+| `cursor_tmp/scripts/convert_ch6_function_tables.py` | 第 6 章 pipe 表批量改为 HTML |
+| `cursor_tmp/scripts/fix_md_h3_blank_lines.py` | `###` 前补空行，保证 Word Heading 3 |
+
+#### Word 嵌入流水线（不可改序）
+
+1. `extract_and_strip_html_tables()` — Pandoc **前**剥离 HTML 表
+2. Pandoc 正文（仅 pipe 简单表 + SVG）
+3. `ensure_sect_pr` + `format_final_sdd`（会去掉 H3 编号，仅保留函数名）
+4. `insert_html_function_tables()` — 按文档顺序匹配 H3（**函数名**不区分大小写；跳过已有 `w:tbl` 的重复同名锚点）
+5. `reapply_all_table_styles()`
+
+### 6.3 共用脚本
+
+| 脚本 | 职责 |
+|------|------|
+| `cursor_tmp/workspace_paths.py` | 路径常量 |
+| `cursor_tmp/format_docx_py/md0519_to_final_sdd.py` | 完整 MD→DOCX 流水线 |
+| `cursor_tmp/format_docx_py/function_table_html.py` | §4.4 模板 HTML 函数表生成/转换 |
+| `cursor_tmp/format_docx_py/html_table_utils.py` | HTML 表剥离/后插入 Word（colspan/rowspan） |
+| `cursor_tmp/format_docx_py/svg_extent_utils.py` | SVG viewBox 读 extent；`asvg:svgBlip` 关系解析 |
+| `cursor_tmp/format_docx_py/format_final_sdd.py` | TF 版式与插图缩放 |
+| `cursor_tmp/format_docx_py/validate_md_docx_consistency.py` | 一致性 + viewBox 宽高比 → `cursor_tmp/validate_md_docx_report.txt` |
+
+### 6.4 转换后校验（必须通过，exit 0）
+```bash
+python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
+```
+**ERROR 门槛（任一失败即不合格）**
+| 项 | 基准 |
+|----|------|
+| HTML 函数表 | DOCX 5 列函数表 ≥ MD `html_tables` 的 **90%**（当前约 **138**） |
+| 插图 blips / svgBlip | **166/166** |
+| MD 插图格式 | 全部 `.svg` |
+| 磁盘 SVG 缺失 | **0** |
+| viewBox 宽高比 vs DOCX extent | **166/166**，偏差 ≤ 2% |
+| `min(extent.cx)` | ≥ 100000 EMU |
+
+### 6.5 Word → PDF 交付导出（`word_to_pdf.py`）
+
+**交付物**：根目录 `final.pdf`（由 `final_sdd.docx` 导出）。
+
+**前提**
+- 已执行 §6.1 流水线且 `validate_md_docx_consistency.py` **PASS**。
+- 本机已安装 **LibreOffice**（Windows：`soffice.exe` 在 PATH 或 `C:\Program Files\LibreOffice\program\`）。
+- Word 文档须使用标准 **Heading 1–4** 样式，PDF 书签/大纲才完整。
+
+**脚本**：工作区根目录 `word_to_pdf.py`（LibreOffice headless；每 run 使用独立 `UserInstallation` 临时目录，避免 Windows `bootstrap.ini` 冲突）。
+
+**强制命令（根目录）**
+```bash
+python word_to_pdf.py --Word final_sdd.docx -o final.pdf
+```
+
+| 参数 | 说明 |
+|------|------|
+| `--Word` | 输入 `.docx` / `.doc` 路径（必填） |
+| `-o` / `--output` | 输出 `.pdf` 路径；省略则写入当前目录 `{stem}.pdf` |
+
+**交付闭环顺序（DOCX + PDF）**
+```bash
+python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
+python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
+python word_to_pdf.py --Word final_sdd.docx -o final.pdf
+```
+
+**失败处理**
+- `LibreOffice executable not found`：安装 LibreOffice 或将 `program` 目录加入 PATH。
+- 转换超时（默认 300s）或 exit ≠ 0：关闭占用 `final_sdd.docx` 的 Word 进程后重试。
+- 成功标志：日志 `Success! Output saved to:` 且根目录 `final.pdf` 存在。
+
+---
+
+## 7. Word TF 版式
+
+| 元素 | 格式 |
+|------|------|
+| 正文 | 微软雅黑 11pt，不粗体，无首行缩进，单倍行距，段前段后 0 |
+| 表格 | 微软雅黑 10pt，实线边框 |
+| 插图（一般） | 目标宽 14 cm；高度 = 宽 × **源 SVG viewBox 的 H/W**；禁止 Pandoc 2:3 默认 extent |
+| 插图（§3.2 Files） | 目标宽 12 cm；同上 |
+| 插图（§5.7 / §6.7 时序图） | 同上；宽时序图不得被压成 2:3 |
+| 标题 | 保留样式行，删重复编号段落 |
+| §3.3/3.4 | 插图前插入 “processing flow”；删插图下旧 processing flow 行 |
+| §3.2 | 删插图下 “3.2.x … 头文件依赖（组件 UML）” 单行说明 |
+
+- TF 修改**必须**用 `python-docx`；脚本在 `cursor_tmp/format_docx_py/`，含中文 header/docstring 与用法说明。
+
+---
+
+## 8. Markdown 写作规范
+
+1. **标题**：`#`–`####` 连续层级；`###` 前必须空一行（否则 Pandoc 不生成 Word Heading 3，函数表无法插入）。
+2. **函数设计表**：仅用 §6.2 的 HTML 五列表（与 §4.4 一致）；概览/追溯用 pipe 表。
+3. **插图**：**仅 SVG**（见 §5）。
+4. **强调**：仅 `**粗体**`、`*斜体*`。
+5. **代码块**：三反引号 + 语言标识。
