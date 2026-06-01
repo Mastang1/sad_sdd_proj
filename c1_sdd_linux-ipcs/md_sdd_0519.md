@@ -1426,7 +1426,7 @@ processing flow
 </tr>
 <tr>
 <td colspan="2">struct IPCS_SHM_CHANNEL_TYPE *</td>
-<td colspan="2">源码返回值</td>
+<td colspan="2">非 NULL：有效 channel 私有数据指针；NULL：chan_id 越界</td>
 </tr>
 <tr>
 <td>函数定义文件</td>
@@ -1493,7 +1493,7 @@ processing flow
 </tr>
 <tr>
 <td colspan="2">struct IPCS_MANAGED_CHANNEL_TYPE *</td>
-<td colspan="2">源码返回值</td>
+<td colspan="2">非 NULL：managed channel 私有数据指针；NULL：chan_id 无效或 channel 非 managed 类型</td>
 </tr>
 <tr>
 <td>函数定义文件</td>
@@ -1560,7 +1560,7 @@ processing flow
 </tr>
 <tr>
 <td colspan="2">struct IPCS_UNMANAGED_CHANNEL_TYPE *</td>
-<td colspan="2">源码返回值</td>
+<td colspan="2">非 NULL：unmanaged channel 私有数据指针；NULL：chan_id 无效或 channel 非 unmanaged 类型</td>
 </tr>
 <tr>
 <td>函数定义文件</td>
@@ -1612,7 +1612,7 @@ processing flow
 <td>I</td>
 <td>uchan</td>
 <td>const struct IPCS_UNMANAGED_CHANNEL_TYPE *</td>
-<td>源码参数</td>
+<td>待检查的 unmanaged channel 指针</td>
 </tr>
 <tr>
 <td rowspan="2">返回值</td>
@@ -1621,7 +1621,7 @@ processing flow
 </tr>
 <tr>
 <td colspan="2">sint32</td>
-<td colspan="2">源码返回值</td>
+<td colspan="2">IPC_SHM_E_OK：本端与远端 sentinel 完整；-IPC_SHM_E_INTEGRITY：边界被破坏</td>
 </tr>
 <tr>
 <td>函数定义文件</td>
@@ -1673,7 +1673,7 @@ processing flow
 <td>I</td>
 <td>mchan</td>
 <td>struct IPCS_MANAGED_CHANNEL_TYPE *</td>
-<td>源码参数</td>
+<td>待检查的 managed channel 指针</td>
 </tr>
 <tr>
 <td rowspan="2">返回值</td>
@@ -1682,7 +1682,7 @@ processing flow
 </tr>
 <tr>
 <td colspan="2">sint32</td>
-<td colspan="2">源码返回值</td>
+<td colspan="2">IPC_SHM_E_OK：bd_queue 及所有 pool queue sentinel 完整；-IPC_SHM_E_INTEGRITY：边界被破坏</td>
 </tr>
 <tr>
 <td>函数定义文件</td>
@@ -1953,7 +1953,7 @@ processing flow
 <td>I</td>
 <td>mng_pool</td>
 <td>struct IPCS_SHM_POOL_ADDR_TYPE</td>
-<td>源码参数</td>
+<td>local/remote buffer pool 共享内存地址（local_pool_shm、remote_pool_shm）</td>
 </tr>
 <tr>
 <td>I</td>
@@ -2497,7 +2497,7 @@ processing flow
 </tr>
 <tr>
 <td colspan="2">sint32</td>
-<td colspan="2">源码返回值</td>
+<td colspan="2">IPC_SHM_E_OK on success, error code otherwise</td>
 </tr>
 <tr>
 <td>函数定义文件</td>
@@ -2933,7 +2933,7 @@ sequence diagram
 
 ![](cursor_tmp/flow_svgs/core_seq_irq_poll.svg)
 
-# 5 RTOS VARIANT DETAILED DESIGN RTOS详设
+# 5 RTOS VARIANT DETAILED DESIGN RTOS详细设计
 
 ## 5.1 DEFINITION AND SCOPE 定义与范围
 
@@ -3397,7 +3397,7 @@ processing flow
 </tr>
 <tr>
 <td colspan="2">uintptr_t</td>
-<td colspan="2">源码返回值</td>
+<td colspan="2">local shared memory address for instance</td>
 </tr>
 <tr>
 <td>函数定义文件</td>
@@ -3458,7 +3458,7 @@ processing flow
 </tr>
 <tr>
 <td colspan="2">uintptr_t</td>
-<td colspan="2">源码返回值</td>
+<td colspan="2">remote shared memory address for instance</td>
 </tr>
 <tr>
 <td>函数定义文件</td>
@@ -3716,7 +3716,7 @@ processing flow
 </tr>
 <tr>
 <td colspan="2">void</td>
-<td colspan="2">源码返回值</td>
+<td colspan="2">-</td>
 </tr>
 <tr>
 <td>函数定义文件</td>
@@ -3897,7 +3897,7 @@ processing flow
 </tr>
 <tr>
 <td colspan="2">uintptr_t</td>
-<td colspan="2">源码返回值</td>
+<td colspan="2">local shared memory address for instance</td>
 </tr>
 <tr>
 <td>函数定义文件</td>
@@ -3958,7 +3958,7 @@ processing flow
 </tr>
 <tr>
 <td colspan="2">uintptr_t</td>
-<td colspan="2">源码返回值</td>
+<td colspan="2">remote shared memory address for instance</td>
 </tr>
 <tr>
 <td>函数定义文件</td>
@@ -5405,7 +5405,7 @@ processing flow
 <td>I</td>
 <td>data_addr</td>
 <td>uint32</td>
-<td>源码参数</td>
+<td>待 flush/invalidate 的 cache 区域起始地址</td>
 </tr>
 <tr>
 <td>I</td>
@@ -5420,7 +5420,7 @@ processing flow
 </tr>
 <tr>
 <td colspan="2">void</td>
-<td colspan="2">源码返回值</td>
+<td colspan="2">-</td>
 </tr>
 <tr>
 <td>函数定义文件</td>
@@ -5680,7 +5680,7 @@ processing flow
 
 RTOS 部署变体与 Linux 部署变体共用 **SHM / OSAL / HAL 三层固定接口契约**（`ipc-shm.h`、`ipc-os.h`、`ipc-hw.h`；架构见 章节3.1）。Core 层通过同一组 `ipcsOs*`、`ipcsHw*` 原型调用 OSAL 与 HAL；FreeRTOS、ThreadX、AUTOSAR OS 三套实现及共用 `SWU_IPCS_HAL_MCU` **不改变** 该边界。因此，与 章节4.7 重复的跨单元 UML 序列图不在本节再次展开。
 
-# 6 LINUX VARIANT DETAIL DESIGN LINUX详设
+# 6 LINUX VARIANT DETAIL DESIGN LINUX详细设计
 
 ## 6.1 DEFINITION AND SCOPE 定义与范围
 
