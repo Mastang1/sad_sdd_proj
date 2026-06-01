@@ -10527,13 +10527,13 @@ sequence diagram
 
 ## 7.1 TRACEABILITY STATEMENT 追溯策略声明
 
-本章节建立本模块软件详细设计与上游（软件需求、软件架构）及下游（物理源代码）之间的双向追溯关系，满足 ASPICE SWE.3.BP4 要求。
+本章节建立本模块软件详细设计与上游（软件需求、软件架构）及下游（代码）之间的双向追溯关系，满足 ASPICE SWE.3.BP4 要求。
 
 需求—架构组件分配依据架构设计规范的章节2.4；架构组件—软件单元映射依据本文档 章节2.1–章节2.2；单元行为与接口依据 章节4–章节6。本矩阵用于证明：已分配至本驱动的架构组件与需求在详细设计单元及物理实现中均有对应实体，并支持变更影响分析。
 
 ## 7.2 TRACEABILITY MATRIX 双向追溯矩阵
 
-| 软件需求 ID (SWE.1) | 架构组件 ID (SWE.2) | 本详细设计单元 ID (SWE.3) | 物理源代码实体 (Code) | 追溯关系及设计覆盖说明 |
+| 软件需求 ID (SWE.1) | 架构组件 ID (SWE.2) | 本详细设计单元 ID (SWE.3) | 代码实体 (Code) | 追溯关系及设计覆盖说明 |
 | :--- | :--- | :--- | :--- | :--- |
 | IPCS_001 | Drv_Ipcs_Core_Cmp、Drv_Ipcs_Queue_Cmp、Drv_Ipcs_Osal_Cmp、Drv_Ipcs_Hal_Cmp、Drv_Ipcs_Conf_Cmp | SWU_IPCS_CORE_SHM、SWU_IPCS_CORE_UTIL、SWU_IPCS_CORE_QUEUE；章节2.1 所列 OSAL/HAL 单元；Conf 见 章节4.6 | `ipcs/ipcs_cores/ipc-shm.c`、`ipc-queue.c`、`ipc-util.c`、`ipc-types.h`；`ipcs/mcu/os/`、`ipcs/mcu/hw/ipc-hw.c`；`ipcs/mpu/` 各实现文件 | 同核/异核点对点双向通信：实例、通道、队列、共享内存映射与核间通知 |
 | IPCS_002 | Drv_Ipcs_Osal_Cmp | SWU_IPCS_OSAL_AUTOSAR | `ipcs/mcu/os/autosar/ipc-os-autosar.c` | AutoSAR OS 部署下 OSAL 集成边界；安全目标与证据见项目安全工件 |

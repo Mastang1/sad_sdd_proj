@@ -45,6 +45,7 @@ final_sdd.docx（TF）批量版式整理脚本
    全程 **保持原始宽高比**。
 6. 主文档正文流中含插图/图表的段落（非表格单元格内）：**无缩进**、**居中对齐**（相对页面版心，而非单元格对齐）。
 7. **3.2 Files**：删除 **3.2.1～3.2.18** 各插图**下一行**中形如 ``3.2.x …`` 的说明单行；**3.3 / 3.4**：删除插图下含 ``processing flow`` 的编号说明行，并在**每个插图前**插入正文格式的 ``processing flow`` 段。
+8. **Heading 1/2/3** 字体：一级 微软雅黑粗体 14 pt（四号）；二级 微软雅黑粗斜 12 pt（小四）；三级 微软雅黑粗体 12 pt（小四）。含样式自带编号与正文 run 内章节号。
 
 版本：与 TF 配套维护。
 """
@@ -100,6 +101,12 @@ _WESTERN_FONT = "Microsoft YaHei"
 _EAST_ASIA_FONT = "微软雅黑"
 _BODY_FONT_PT = 11  # 正文 11 号（与 prompt-format 任务 3 一致）
 _TABLE_FONT_PT = 10
+# 任务 8：Heading 1/2/3 字号（四号=14pt，小四=12pt）
+_HEADING_FONT_RULES: dict[int, dict[str, object]] = {
+    1: {"size_pt": 14, "bold": True, "italic": False},
+    2: {"size_pt": 12, "bold": True, "italic": True},
+    3: {"size_pt": 12, "bold": True, "italic": False},
+}
 # 任务 5：目标宽度（厘米）；3.2 Files 节单独为 12 cm
 _DEFAULT_FIGURE_WIDTH_CM = 14.0
 _FILES_SECTION32_FIGURE_WIDTH_CM = 12.0
@@ -344,19 +351,22 @@ def _set_run_font(
     east_asia: str,
     size_pt: int,
     bold: bool,
+    italic: bool = False,
 ) -> None:
     """
-    设置单个 run 的西文/东亚字体、字号、粗体；写 ``w:rFonts`` 以兼容 Word 中文显示。
+    设置单个 run 的西文/东亚字体、字号、粗体/斜体；写 ``w:rFonts`` 以兼容 Word 中文显示。
 
     :param run: ``docx.text.run.Run``
     :param western: 西文字体名（如 Microsoft YaHei）
     :param east_asia: 东亚字体名（如 微软雅黑）
     :param size_pt: 磅值
     :param bold: 是否粗体
+    :param italic: 是否斜体
     """
     run.font.name = western
     run.font.size = Pt(size_pt)
     run.bold = bold
+    run.italic = italic
     r_pr = run._element.get_or_add_rPr()
     r_fonts = r_pr.rFonts
     if r_fonts is None:
@@ -365,6 +375,83 @@ def _set_run_font(
     r_fonts.set(qn("w:ascii"), western)
     r_fonts.set(qn("w:hAnsi"), western)
     r_fonts.set(qn("w:eastAsia"), east_asia)
+
+
+def _set_style_font(
+    style,
+    *,
+    western: str,
+    east_asia: str,
+    size_pt: int,
+    bold: bool,
+    italic: bool = False,
+) -> None:
+    """设置段落样式默认 run 字体（含样式自带大纲编号）。"""
+    style.font.name = western
+    style.font.size = Pt(size_pt)
+    style.font.bold = bold
+    style.font.italic = italic
+    r_pr = style.element.get_or_add_rPr()
+    r_fonts = r_pr.rFonts
+    if r_fonts is None:
+        r_fonts = OxmlElement("w:rFonts")
+        r_pr.insert(0, r_fonts)
+    r_fonts.set(qn("w:ascii"), western)
+    r_fonts.set(qn("w:hAnsi"), western)
+    r_fonts.set(qn("w:eastAsia"), east_asia)
+
+
+def format_heading_fonts(document: Document) -> int:
+    """
+    任务 8：仅格式化 **Heading 1/2/3** 段落及对应样式默认字体；不改标题文本与其它段落。
+
+    - Heading 1：微软雅黑、粗体、14 pt（四号）
+    - Heading 2：微软雅黑、粗体、斜体、12 pt（小四）
+    - Heading 3：微软雅黑、粗体、12 pt（小四）
+
+    :param document: Document
+    :return: 修改过的标题段落数
+    """
+    for lvl, rule in _HEADING_FONT_RULES.items():
+        style_name = f"Heading {lvl}"
+        try:
+            st = document.styles[style_name]
+        except KeyError:
+            continue
+        _set_style_font(
+            st,
+            western=_WESTERN_FONT,
+            east_asia=_EAST_ASIA_FONT,
+            size_pt=int(rule["size_pt"]),
+            bold=bool(rule["bold"]),
+            italic=bool(rule["italic"]),
+        )
+
+    n = 0
+    for para in document.paragraphs:
+        name = para.style.name if para.style else ""
+        if not name.startswith("Heading"):
+            continue
+        try:
+            lvl = int(name.split()[-1])
+        except ValueError:
+            continue
+        if lvl not in _HEADING_FONT_RULES:
+            continue
+        rule = _HEADING_FONT_RULES[lvl]
+        for run in para.runs:
+            if run._element.xpath(".//w:drawing"):
+                continue
+            _set_run_font(
+                run,
+                western=_WESTERN_FONT,
+                east_asia=_EAST_ASIA_FONT,
+                size_pt=int(rule["size_pt"]),
+                bold=bool(rule["bold"]),
+                italic=bool(rule["italic"]),
+            )
+        n += 1
+    return n
 
 
 def format_body_paragraphs(document: Document) -> int:
@@ -1068,7 +1155,8 @@ def main() -> None:
     n_dup_list = remove_duplicate_numbering_after_list(doc.paragraphs)
     n_strip_heading = strip_heading_manual_numbers_for_style_numbering(doc, doc.paragraphs)
     n_dup_heading = remove_duplicate_heading_section_numbers(doc.paragraphs)
-    # 标题在经过「目录手写号 + 标题双重号」规整后建立基准，其后任务不得再改标题文本
+    n_heading_font = format_heading_fonts(doc)
+    # 标题在经过「目录手写号 + 标题双重号 + 任务8字体」规整后建立基准，其后任务不得再改标题文本
     headings_ref = snapshot_heading_state(doc)
 
     n_tbl_border = apply_all_table_borders(doc)
@@ -1097,6 +1185,7 @@ def main() -> None:
         f"\n  任务1a 列表段手写编号去除: {n_dup_list}",
         f"\n  任务1b Heading1-3 样式编号重复手写去除: {n_strip_heading}",
         f"\n  任务1c 标题双重章节号(Tab/两段子写): {n_dup_heading}",
+        f"\n  任务8 Heading1-3 字体: {n_heading_font}",
         f"\n  任务2 表格边框: {n_tbl_border}",
         f"\n  任务3 正文段落: {n_body}",
         f"\n  任务4 表格单元格（计有文本的单元格）: {n_tbl_cells}",
