@@ -1,29 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 """
-Enterprise Word to PDF Converter (Fixed for Windows).
+Word (.docx/.doc) → PDF for IPCS SDD delivery.
 
-Feature:
-    - Converts Word (.docx, .doc) to PDF with bookmark/outline support.
-    - Uses LibreOffice headless mode with isolated user environments.
-    - Robust error handling, timeouts, and logging.
-    - Safe for server/cloud concurrency.
-    - FIX: Solves 'bootstrap.ini' corruption error on Windows by using valid URIs.
+Windows (recommended): Microsoft Word COM export — preserves CJK table text and
+complex OOXML (HTML function tables, embedded SVG) that LibreOffice often corrupts
+into digits-only or blank cells.
 
-Prerequisites:
-    - LibreOffice must be installed (e.g., `apt-get install libreoffice` or Windows installer).
-    - Input Word documents MUST use standard 'Heading' styles to generate PDF bookmarks.
+Fallback: LibreOffice headless with a sanitized temp copy (table cells forced to
+Normal style, numPr stripped).
 
 Usage:
-    python word_to_pdf_v2.py --Word input.docx [-o output.pdf]
-
-Author: Gemini
-Date: 2026-02-12
+    python word_to_pdf.py --Word final_sdd.docx -o final.pdf
+    python word_to_pdf.py --Word final_sdd.docx -o final.pdf --backend word
 """
+
+from __future__ import annotations
 
 import argparse
 import logging
+import re
 import shutil
 import subprocess
 import sys
@@ -32,208 +28,292 @@ import time
 from pathlib import Path
 from typing import Optional
 
-# --- Configuration ---
-LOG_FORMAT = '%(asctime)s - [%(levelname)s] - %(message)s'
-DEFAULT_TIMEOUT_SEC = 300  # 5 minutes timeout for conversion
+LOG_FORMAT = "%(asctime)s - [%(levelname)s] - %(message)s"
+DEFAULT_TIMEOUT_SEC = 300
+PDF_MARKERS = ("\u51fd\u6570\u539f\u578b", "Function prototype", "SWU_IPCS")
+MIN_CJK_CHARS = 500
 
-# Configure Logging
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 logger = logging.getLogger("PDFConverter")
 
+
 class ConversionError(Exception):
-    """Base exception for conversion failures."""
     pass
+
 
 class DependencyError(ConversionError):
-    """Raised when external dependencies (LibreOffice) are missing."""
     pass
 
-class PDFConverter:
-    """
-    A production-grade class to handle Document to PDF conversion.
-    Encapsulates environment setup, execution, and cleanup.
-    """
 
+def resolve_output_path(input_file: Path, output_path: Optional[str]) -> Path:
+    default_name = input_file.stem + ".pdf"
+    if not output_path:
+        return Path.cwd() / default_name
+    dest = Path(output_path).resolve()
+    if dest.is_dir():
+        return dest / default_name
+    if not dest.parent.exists():
+        dest.parent.mkdir(parents=True, exist_ok=True)
+    return dest
+
+
+def validate_pdf_content(pdf_path: Path) -> None:
+    """Fail fast if PDF looks like a broken LO export (no CJK / no function tables)."""
+    text = ""
+    try:
+        import fitz  # pymupdf
+
+        doc = fitz.open(str(pdf_path))
+        for page in doc:
+            text += page.get_text()
+        doc.close()
+    except ImportError:
+        try:
+            import pdfplumber
+
+            with pdfplumber.open(str(pdf_path)) as pdf:
+                for page in pdf.pages[: min(80, len(pdf.pages))]:
+                    text += page.extract_text() or ""
+        except ImportError:
+            logger.warning("Skip PDF content validation (install pymupdf or pdfplumber).")
+            return
+
+    cjk = len(re.findall(r"[\u4e00-\u9fff]", text))
+    if cjk < MIN_CJK_CHARS:
+        raise ConversionError(
+            f"PDF validation failed: only {cjk} CJK chars (need >={MIN_CJK_CHARS}). "
+            "Table text likely missing — retry with --backend word."
+        )
+    if not any(m in text for m in PDF_MARKERS):
+        raise ConversionError(
+            "PDF validation failed: expected function-table markers not found in text."
+        )
+    logger.info("PDF content validation PASS (CJK chars=%d)", cjk)
+
+
+def prepare_docx_for_libreoffice(src: Path, dst: Path) -> None:
+    """Sanitize table paragraphs so LibreOffice does not render list numbers only."""
+    from docx import Document
+    from docx.enum.style import WD_STYLE_TYPE
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    doc = Document(str(src))
+    try:
+        normal_id = doc.styles["Normal"].style_id
+    except KeyError:
+        normal_id = "Normal"
+
+    fixed = 0
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for para in cell.paragraphs:
+                    p_pr = para._element.get_or_add_pPr()
+                    for num_pr in p_pr.findall(qn("w:numPr")):
+                        p_pr.remove(num_pr)
+                        fixed += 1
+                    p_style = p_pr.find(qn("w:pStyle"))
+                    if p_style is None:
+                        p_style = OxmlElement("w:pStyle")
+                        p_pr.insert(0, p_style)
+                    if p_style.get(qn("w:val")) != normal_id:
+                        p_style.set(qn("w:val"), normal_id)
+                        fixed += 1
+    doc.save(str(dst))
+    logger.info("Prepared LibreOffice temp docx (table paragraph fixes=%d)", fixed)
+
+
+class WordComConverter:
+    """Export via installed Microsoft Word (Windows)."""
+
+    def is_available(self) -> bool:
+        if sys.platform != "win32":
+            return False
+        try:
+            import win32com.client  # noqa: F401
+
+            return True
+        except ImportError:
+            return False
+
+    def convert(self, input_file: Path, output_file: Path) -> None:
+        import win32com.client
+
+        logger.info("Converting with Microsoft Word COM: %s", input_file.name)
+        word = win32com.client.Dispatch("Word.Application")
+        word.Visible = False
+        start = time.time()
+        try:
+            doc = word.Documents.Open(str(input_file.resolve()))
+            try:
+                if output_file.exists():
+                    logger.info("Overwriting existing file: %s", output_file)
+                # wdExportFormatPDF = 17, wdExportCreateHeadingBookmarks = 1
+                doc.ExportAsFixedFormat(
+                    OutputFileName=str(output_file.resolve()),
+                    ExportFormat=17,
+                    OpenAfterExport=False,
+                    OptimizeFor=0,
+                    CreateBookmarks=1,
+                    DocStructureTags=True,
+                    BitmapMissingFonts=True,
+                )
+            finally:
+                doc.Close(False)
+        finally:
+            word.Quit()
+        if not output_file.exists():
+            raise ConversionError("Word COM finished but PDF was not created.")
+        logger.info("Word COM conversion finished in %.2fs", time.time() - start)
+
+
+class LibreOfficeConverter:
     def __init__(self, libreoffice_path: Optional[str] = None):
-        """
-        Initialize the converter.
-        
-        Args:
-            libreoffice_path: specific path to executable, auto-detects if None.
-        """
         self.libreoffice_exec = libreoffice_path or self._detect_libreoffice()
         if not self.libreoffice_exec:
-            logger.error("LibreOffice not found on system.")
-            logger.info("Please install LibreOffice and ensure 'soffice' is in your PATH.")
-            if sys.platform == "win32":
-                logger.info("On Windows, add 'C:\\Program Files\\LibreOffice\\program' to system PATH.")
             raise DependencyError("LibreOffice executable not found.")
 
-    def _detect_libreoffice(self) -> Optional[str]:
-        """Detects LibreOffice executable across platforms."""
-        # Priority list for Linux/macOS/Windows
+    @staticmethod
+    def _detect_libreoffice() -> Optional[str]:
         candidates = [
-            "libreoffice", "soffice", 
-            "libreoffice7.6", "libreoffice7.5",
-            "/usr/bin/libreoffice", 
-            "/usr/bin/soffice"
+            "libreoffice",
+            "soffice",
+            "libreoffice7.6",
+            "libreoffice7.5",
+            "/usr/bin/libreoffice",
+            "/usr/bin/soffice",
         ]
-        # Check Windows standard paths if on Windows
         if sys.platform == "win32":
-            candidates.extend([
-                r"C:\Program Files\LibreOffice\program\soffice.exe",
-                r"C:\Program Files (x86)\LibreOffice\program\soffice.exe"
-            ])
-
+            candidates.extend(
+                [
+                    r"C:\Program Files\LibreOffice\program\soffice.exe",
+                    r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+                ]
+            )
         for cmd in candidates:
             if shutil.which(cmd) or Path(cmd).exists():
                 return cmd
         return None
 
-    def convert(self, input_path: str, output_path: Optional[str] = None) -> Path:
-        """
-        Executes the conversion workflow.
+    def convert(self, input_file: Path, output_file: Path) -> None:
+        with tempfile.TemporaryDirectory(prefix="lo_pdf_src_") as tmp_src:
+            prepared = Path(tmp_src) / input_file.name
+            prepare_docx_for_libreoffice(input_file, prepared)
+            with tempfile.TemporaryDirectory(prefix="lo_convert_") as user_dir:
+                with tempfile.TemporaryDirectory(prefix="lo_out_") as out_dir:
+                    user_uri = Path(user_dir).as_uri()
+                    filter_opts = (
+                        'pdf:writer_pdf_Export:'
+                        '{"EmbedStandardFonts":{"type":"boolean","value":"true"},'
+                        '"UseLosslessCompression":{"type":"boolean","value":"true"}}'
+                    )
+                    cmd = [
+                        self.libreoffice_exec,
+                        f"-env:UserInstallation={user_uri}",
+                        "--headless",
+                        "--convert-to",
+                        filter_opts,
+                        "--outdir",
+                        out_dir,
+                        str(prepared),
+                    ]
+                    logger.info("Converting with LibreOffice: %s", input_file.name)
+                    start = time.time()
+                    try:
+                        subprocess.run(
+                            cmd,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            timeout=DEFAULT_TIMEOUT_SEC,
+                            check=True,
+                        )
+                    except subprocess.TimeoutExpired as exc:
+                        raise ConversionError("LibreOffice conversion timed out.") from exc
+                    except subprocess.CalledProcessError as exc:
+                        err = (exc.stderr or exc.stdout or b"").decode(
+                            "utf-8", errors="replace"
+                        )
+                        raise ConversionError(
+                            f"LibreOffice failed (exit {exc.returncode}): {err.strip()}"
+                        ) from exc
+                    logger.info(
+                        "LibreOffice conversion finished in %.2fs", time.time() - start
+                    )
+                    temp_pdf = Path(out_dir) / (prepared.stem + ".pdf")
+                    if not temp_pdf.exists():
+                        raise ConversionError("LibreOffice did not produce a PDF.")
+                    if output_file.exists():
+                        logger.info("Overwriting existing file: %s", output_file)
+                    shutil.move(str(temp_pdf), str(output_file))
 
-        Args:
-            input_path: Path to source file.
-            output_path: Desired output path.
 
-        Returns:
-            Path object of the generated PDF.
-        """
-        input_file = Path(input_path).resolve()
-        
-        # 1. Validation
-        if not input_file.exists():
-            raise FileNotFoundError(f"Input file not found: {input_file}")
-        
-        # 2. Determine Output Path
-        final_output_path = self._resolve_output_path(input_file, output_path)
-        
-        # 3. Create Isolated Environment (Critical for Server/Concurrency)
-        # LibreOffice uses a lock file in the user profile. In a server env, 
-        # using the default profile causes race conditions. We use a temp dir per run.
-        with tempfile.TemporaryDirectory(prefix="lo_convert_") as temp_user_dir:
-            self._run_conversion_process(input_file, final_output_path, temp_user_dir)
+def convert_docx_to_pdf(
+    input_path: str | Path,
+    output_path: Optional[str | Path] = None,
+    *,
+    backend: str = "auto",
+    validate: bool = True,
+) -> Path:
+    input_file = Path(input_path).resolve()
+    if not input_file.is_file():
+        raise FileNotFoundError(f"Input file not found: {input_file}")
+    output_file = resolve_output_path(input_file, str(output_path) if output_path else None)
 
-        return final_output_path
+    word = WordComConverter()
+    if backend in ("auto", "word"):
+        if word.is_available():
+            word.convert(input_file, output_file)
+            if validate:
+                validate_pdf_content(output_file)
+            logger.info("Success! Output saved to: %s", output_file)
+            return output_file
+        if backend == "word":
+            raise DependencyError(
+                "Microsoft Word COM unavailable (need Windows + pywin32 + Word)."
+            )
+        logger.warning("Word COM unavailable; falling back to LibreOffice.")
 
-    def _resolve_output_path(self, input_file: Path, output_path: Optional[str]) -> Path:
-        """Resolves the destination path, handling directories and defaults."""
-        default_name = input_file.stem + ".pdf"
-        
-        if not output_path:
-            return Path.cwd() / default_name
-        
-        dest = Path(output_path).resolve()
-        
-        if dest.is_dir():
-            return dest / default_name
-        
-        # Product decision: Fail early if parent dir is missing to avoid confusion.
-        if not dest.parent.exists():
-            logger.warning(f"Target directory {dest.parent} does not exist. Creating it.")
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            
-        return dest
+    lo = LibreOfficeConverter()
+    lo.convert(input_file, output_file)
+    if validate:
+        validate_pdf_content(output_file)
+    logger.info("Success! Output saved to: %s", output_file)
+    return output_file
 
-    def _run_conversion_process(self, input_file: Path, output_file: Path, user_profile_dir: str):
-        """
-        Constructs and runs the subprocess command.
-        """
-        # Output directory for LibreOffice (it converts to this dir, keeping filename)
-        # We use a temp output dir first to avoid partial writes to final destination
-        with tempfile.TemporaryDirectory(prefix="lo_out_") as temp_out_dir:
-            
-            # --- CRITICAL FIX FOR WINDOWS ---
-            # Convert the user profile path to a valid file URI (file:///...)
-            # This prevents LibreOffice from crashing with "bootstrap.ini" errors on Windows.
-            user_profile_uri = Path(user_profile_dir).as_uri()
-            # --------------------------------
 
-            # Construct Command
-            cmd = [
-                self.libreoffice_exec,
-                f"-env:UserInstallation={user_profile_uri}", 
-                "--headless",
-                "--convert-to", "pdf:writer_pdf_Export", # Explicit filter
-                "--outdir", temp_out_dir,
-                str(input_file)
-            ]
-
-            logger.info(f"Starting conversion: {input_file.name} -> PDF")
-            logger.debug(f"Command: {cmd}")
-
-            start_time = time.time()
-            try:
-                subprocess.run(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    timeout=DEFAULT_TIMEOUT_SEC,
-                    check=True
-                )
-            except subprocess.TimeoutExpired:
-                logger.error(f"Conversion timed out after {DEFAULT_TIMEOUT_SEC}s.")
-                raise ConversionError("Process timed out.")
-            except subprocess.CalledProcessError as e:
-                # Decode stderr safely to avoid unicode errors on Windows consoles
-                err_msg = e.stderr.decode('utf-8', errors='replace') if e.stderr else "Unknown Error"
-                logger.error(f"LibreOffice Error Output: {err_msg}")
-                raise ConversionError(f"Conversion failed (Exit Code {e.returncode}): {err_msg}")
-
-            # Duration calculation
-            duration = time.time() - start_time
-            logger.info(f"Conversion process finished in {duration:.2f}s")
-
-            # Locate the result in temp_out_dir
-            # LibreOffice keeps the original filename stem but changes extension to .pdf
-            expected_temp_file = Path(temp_out_dir) / (input_file.stem + ".pdf")
-
-            if not expected_temp_file.exists():
-                raise ConversionError("LibreOffice exited successfully, but PDF was not found. (Check file permissions or password protection)")
-
-            # Move/Rename to final destination
-            try:
-                if output_file.exists():
-                    logger.info(f"Overwriting existing file: {output_file}")
-                
-                shutil.move(str(expected_temp_file), str(output_file))
-                logger.info(f"Success! Output saved to: {output_file}")
-            except IOError as e:
-                raise ConversionError(f"Failed to save final file: {e}")
-
-def main():
-    """CLI Entry Point."""
+def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Convert Word to PDF (with Navigation/Bookmarks support)."
+        description="Convert Word to PDF (Word COM on Windows, LibreOffice fallback)."
     )
-    
+    parser.add_argument("--Word", dest="input_file", required=True, help="Input .docx/.doc")
+    parser.add_argument("-o", "--output", dest="output_file", help="Output .pdf path")
     parser.add_argument(
-        "--Word", 
-        dest="input_file",
-        required=True, 
-        help="Path to input .docx/.doc file."
+        "--backend",
+        choices=("auto", "word", "libreoffice"),
+        default="auto",
+        help="Conversion backend (default: auto → Word on Windows)",
     )
-    
     parser.add_argument(
-        "-o", "--output",
-        dest="output_file",
-        required=False,
-        help="Path to output .pdf file. Defaults to current directory."
+        "--no-validate",
+        action="store_true",
+        help="Skip post-export PDF text validation",
     )
-
     args = parser.parse_args()
-
     try:
-        converter = PDFConverter()
-        converter.convert(args.input_file, args.output_file)
-    except ConversionError as e:
-        logger.error(f"Conversion Error: {e}")
+        convert_docx_to_pdf(
+            args.input_file,
+            args.output_file,
+            backend=args.backend,
+            validate=not args.no_validate,
+        )
+    except (ConversionError, DependencyError, FileNotFoundError) as exc:
+        logger.error("Conversion Error: %s", exc)
         sys.exit(1)
-    except Exception as e:
-        logger.exception(f"Unexpected Error: {e}")
+    except Exception:
+        logger.exception("Unexpected Error")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
