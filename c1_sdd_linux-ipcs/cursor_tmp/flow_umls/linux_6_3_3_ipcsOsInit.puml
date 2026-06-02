@@ -5,36 +5,36 @@ skinparam linetype ortho
 start
 if (rx_cb == NULL?) then (yes)
   :return -EINVAL;
-  stop
+stop
 endif
 if ((instance invalid)?) then (yes)
   :return -EINVAL;
-  stop
+stop
 endif
-:request_mem_region(local); ioremap(local_virt_shm);
+:request_mem_region(cfg->local_shm_addr, cfg->shm_size, DRIVER_NAME)\nlocal_virt_shm = ioremap(cfg->local_shm_addr, cfg->shm_size);
 if (local map failed?) then (yes)
-  :release local region; return -ENOMEM;
-  stop
+  :release_mem_region(cfg->local_shm_addr, cfg->shm_size)\nreturn -ENOMEM;
+stop
 endif
-:request_mem_region(remote); ioremap(remote_virt_shm);
+:request_mem_region(cfg->remote_shm_addr, cfg->shm_size, DRIVER_NAME)\nremote_virt_shm = ioremap(cfg->remote_shm_addr, cfg->shm_size);
 if (remote map failed?) then (yes)
-  :iounmap local; release local; return -ENOMEM;
-  stop
+  :iounmap(local_virt_shm)\nrelease_mem_region(cfg->local_shm_addr, cfg->shm_size)\nreturn -ENOMEM;
+stop
 endif
-:save shm_size, phys addrs; priv.rx_cb = rx_cb;
+:priv.id[instance].shm_size = cfg->shm_size\npriv.id[instance].local_shm = cfg->local_shm_addr\npriv.id[instance].remote_shm = cfg->remote_shm_addr\npriv.rx_cb = rx_cb;
 if (inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
   :irq_num = IPC_IRQ_NONE;
 else (no)
-  :of_find_compatible_node MSCM; of_irq_get;
+  :mscm_node = of_find_compatible_node(NULL, NULL, DT_INTC_NODE_COMP)\nirq_num = of_irq_get(mscm_node, cfg->inter_core_rx_irq);
   if (mscm missing?) then (yes)
-    :iounmap remote/local; release regions; return -ENXIO;
-    stop
+    :iounmap(remote_virt_shm)\niounmap(local_virt_shm)\nrelease_mem_region(cfg->remote_shm_addr, cfg->shm_size)\nrelease_mem_region(cfg->local_shm_addr, cfg->shm_size)\nreturn -ENXIO;
+stop
   endif
 endif
 while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
   if (irq_num == irq_num_init[i]?) then (yes)
-    :state = ENABLED; return 0;
-    stop
+    :priv.id[instance].state = IPC_SHM_INSTANCE_ENABLED\nreturn 0;
+stop
   endif
   :i++;
 endwhile (no)
@@ -42,10 +42,10 @@ endwhile (no)
 if (irq_num != IPC_IRQ_NONE?) then (yes)
   :request_irq(ipcsShmHardirq);
   if (request_irq failed?) then (yes)
-    :iounmap remote/local; release regions; return err;
-    stop
+    :iounmap(remote_virt_shm)\niounmap(local_virt_shm)\nrelease_mem_region(cfg->remote_shm_addr, cfg->shm_size)\nrelease_mem_region(cfg->local_shm_addr, cfg->shm_size)\nreturn err;
+stop
   endif
 endif
-:state = ENABLED; return 0;
+:priv.id[instance].state = IPC_SHM_INSTANCE_ENABLED\nreturn 0;
 stop
 @enduml

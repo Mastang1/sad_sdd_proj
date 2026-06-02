@@ -1,0 +1,11 @@
+Chapter6 slugs: 74
+Issues: 3
+
+linux_6_3_2_ipcsShmHardirq
+  - prose:return IRQ_HANDLED
+
+linux_6_4_20_ipcsShmUioHandler
+  - prose:return IRQ_HANDLED
+
+linux_6_5_12_ipcsShmHardirq
+  - prose:return IRQ_HANDLED

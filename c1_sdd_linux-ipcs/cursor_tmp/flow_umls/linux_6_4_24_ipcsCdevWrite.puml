@@ -3,19 +3,19 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:copy_from_user IPCS_UIO_CDEV_DATA_TYPE;
+:ret = copy_from_user(&data, user_buffer, sizeof(struct IPCS_UIO_CDEV_DATA_TYPE));
 if (copy failed?) then (yes)
-  :return -EFAULT; stop
-else (no)
+  :return -EFAULT;
+stop
 endif
 if (instance >= IPC_SHM_MAX_INSTANCES?) then (yes)
-  :return -EINVAL; stop
-else (no)
+  :return -EINVAL;
+stop
 endif
-:store data; ipcsUioInit(&data);
+:ipc_pdev_priv.uio_id[data.instance].data = data\nerr = ipcsUioInit(data.instance, &data.cfg);
 if (err?) then (yes)
-  :return err; stop
-else (no)
+  :return err;
+stop
 endif
 :return sizeof(data);
 stop

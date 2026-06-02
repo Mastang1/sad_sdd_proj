@@ -6,11 +6,13 @@ title ipcsOsInit FreeRTOS
 start
 :err=-IPC_SHM_E_INVAL;;
 if (rx_cb != NULL?) then (yes)
-  :save shm state rx_cb irq/msg flags;;
-  if ((rx_irq==IPC_IRQ_NONE)||(task_is_initialized!=0)?) then (yes)
+  :id[instance].local_shm = cfg->local_shm_addr; id[instance].remote_shm = cfg->remote_shm_addr;;
+  :id[instance].state = IPC_SHM_INSTANCE_ENABLED; ipc_os_priv.rx_cb = rx_cb;;
+  :id[instance].rx_irq_num = cfg->inter_core_rx_irq; id[instance].msg_received = MSG_NOT_RECEIVED;;
+  if ((id[instance].rx_irq_num == IPC_IRQ_NONE)||(task_is_initialized != 0)?) then (yes)
     :err = IPC_SHM_E_OK;;
   else (no)
-    :os_status = xTaskCreate(ipcsShmSoftirq,...);;
+    :os_status = xTaskCreate(ipcsShmSoftirq, "softirq", IPC_SOFTIRQ_STACK_SIZE, NULL, IPC_SOFTIRQ_PRIORITY, &softirq_handle);;
     if (os_status != pdPASS?) then (yes)
       :err=-IPC_SHM_E_NOMEM;;
     else (no)

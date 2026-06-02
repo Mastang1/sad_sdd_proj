@@ -4,8 +4,7 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
 if (mscm_tx_irq != IPC_IRQ_NONE?) then (yes)
-  :writel IRCPnIGRn_INT_EN to remote core MSI;;
-else (no)
+  :writel IRCPnIGRn_INT_EN to remote core MSI;
 endif
 stop
 @enduml

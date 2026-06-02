@@ -3,20 +3,18 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:sprintf uio_name instance_N;
+:sprintf(uio_name, "instance_%u", instance);
 :nentries = scandir(IPC_SHM_UIO_DIR);
 if (nentries < 0?) then (yes)
   :return -EIO;
-  stop
-else (no)
+stop
 endif
 while (count > 0?) is (yes)
-  :match sysfs name and version via line_match;
+  :err_name = line_match(name_path, uio_name)\nerr_version = line_match(version_path, DRIVER_VERSION);
   if (matched?) then (yes)
-    :copy dev_name;
+    :strcpy(dev_name, name_list[count]->d_name);
     break
-  else (no)
-  endif
+    endif
   :count--;
 endwhile (no)
 :free name_list entries;

@@ -4,11 +4,14 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title ipcsHwFlushCacheRemote
 start
-if (IPC_D_CACHE_ENABLE defined?) then (yes)
-  :addr from ipcsOsGetRemoteShm;;
-  :ipcsHwFlushCache(tmp_addr,tmp_size);;
-else (no)
-  :(void)instance;
-endif
-stop
+        if (IPC_D_CACHE_ENABLE defined?) then (yes)
+          :data_addr = ipcsOsGetRemoteShm(instance)
+data_size = ipc_hw_priv[instance].shm_size
+tmp_size = data_size + (data_addr & (IPC_DCACHE_LINE_SIZE - 1U))
+tmp_addr = data_addr;;
+          :ipcsHwFlushCache(tmp_addr,tmp_size);;
+        else (no)
+          :(void)instance;
+        endif
+        stop
 @enduml

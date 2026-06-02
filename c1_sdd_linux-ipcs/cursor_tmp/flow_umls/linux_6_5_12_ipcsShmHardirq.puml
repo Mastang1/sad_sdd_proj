@@ -5,14 +5,13 @@ skinparam linetype ortho
 start
 :i = 0;
 while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
-  if ((disabled) || (irq_none)?) then (yes)
-  else (no)
+  if ((instance_id[i].state != IPC_SHM_INSTANCE_DISABLED) && (instance_id[i].irq_num != IPC_IRQ_NONE)?) then (yes)
     :ipcsHwIrqDisable(i);
     :ipcsHwIrqClear(i);
   endif
   :i++;
 endwhile (no)
-:wait_queue_flag = WAKE; wake_up_interruptible(&wait_queue);
+:wait_queue_flag = IPC_CDEV_WAKE_QUEUE; wake_up_interruptible(&wait_queue);
 :return IRQ_HANDLED;
 stop
 @enduml

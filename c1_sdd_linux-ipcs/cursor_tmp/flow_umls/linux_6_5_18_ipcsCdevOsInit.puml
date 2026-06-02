@@ -6,33 +6,33 @@ start
 :err = ipcsHwInit(instance, cfg);
 if (err != 0?) then (yes)
   :return err;
-  stop
+stop
 endif
 if (inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
   :irq_num = IPC_IRQ_NONE;
 else (no)
-  :of_find_compatible_node MSCM; of_irq_get;
+  :mscm_node = of_find_compatible_node(NULL, NULL, DT_INTC_NODE_COMP)\nirq_num = of_irq_get(mscm_node, cfg->inter_core_rx_irq);
   if (mscm missing?) then (yes)
     :return -ENXIO;
-    stop
+stop
   endif
   :of_node_put(mscm);
 endif
 while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
   if (irq_num == irq_num_init[i]?) then (yes)
-    :state = ENABLED; return 0;
-    stop
+    :ipc_cdev_priv.instance_id[instance].state = IPC_SHM_INSTANCE_ENABLED\nreturn 0;
+stop
   endif
   :i++;
 endwhile (no)
 :irq_num_init[instance] = irq_num;
 if (irq_num != IPC_IRQ_NONE?) then (yes)
-  :request_irq(ipcsShmHardirq);
+  :err = request_irq(irq_num, ipcsShmHardirq, 0, DRIVER_NAME, &ipc_cdev_priv);
   if (request_irq failed?) then (yes)
     :return -ENXIO;
-    stop
+stop
   endif
 endif
-:state = ENABLED; return 0;
+:ipc_cdev_priv.instance_id[instance].state = IPC_SHM_INSTANCE_ENABLED\nreturn 0;
 stop
 @enduml

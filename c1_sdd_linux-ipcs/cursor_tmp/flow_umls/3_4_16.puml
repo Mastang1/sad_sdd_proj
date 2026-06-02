@@ -4,31 +4,37 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title managedChannelInit
 start
-:chan from priv; sint32 err = -IPC_SHM_E_INVAL; total_bufs from ipcsGetTotalBufPerChan; uint32 queue_mem_size; uint8 i;
-:mng_pool_addr init NULL;;
-if (total_bufs != 0u?) then (yes)
-  :err = ipcsQueueInit(&chan->bd_queue,(uint16)total_bufs,sizeof BD,local_shm,remote_shm);;
-  if (err == IPC_SHM_E_OK?) then (yes)
-    :queue_mem_size = ipcsQueueMemSize(..);;
-    :mng_pool_addr.local_pool_shm = local_shm + queue_mem_size;
-    :mng_pool_addr.remote_pool_shm = remote_shm + queue_mem_size;;
-    if (mng_pool_addr.local bounds exceed shm?) then (yes)
-      :err = -IPC_SHM_E_NOMEM;
-    else (no)
-      :i = 0;
-      while ((err == IPC_SHM_E_OK) && (i < chan->num_pools)?)
-        :err = ipcsBufPoolInit(instance, chan_id,i,mng_pool_addr,&cfg->pools[i]);;
-        if (err != IPC_SHM_E_OK?) then (yes)
-          break
+        :chan = &ipc_shm_priv_data[instance].channels[chan_id].ch.mng
+err = -IPC_SHM_E_INVAL
+total_bufs = ipcsGetTotalBufPerChan(instance, chan_id, cfg)
+queue_mem_size = 0
+i = 0;;
+        :mng_pool_addr.local_pool_shm = (uintptr_t)NULL
+mng_pool_addr.remote_pool_shm = (uintptr_t)NULL;;
+        if (total_bufs != 0u?) then (yes)
+          :err = ipcsQueueInit(&chan->bd_queue,(uint16)total_bufs,sizeof BD,local_shm,remote_shm);;
+          if (err == IPC_SHM_E_OK?) then (yes)
+            :queue_mem_size = ipcsQueueMemSize(&chan->bd_queue);;
+            :mng_pool_addr.local_pool_shm = local_shm + queue_mem_size;
+            :mng_pool_addr.remote_pool_shm = remote_shm + queue_mem_size;;
+            if ((mng_pool_addr.local_pool_shm + queue_mem_size) > (ipcsOsGetLocalShm(instance) + shm_size)?) then (yes)
+              :err = -IPC_SHM_E_NOMEM;
+            else (no)
+              :i = 0;
+              while ((err == IPC_SHM_E_OK) && (i < chan->num_pools)?)
+                :err = ipcsBufPoolInit(instance, chan_id,i,mng_pool_addr,&cfg->pools[i]);;
+                if (err != IPC_SHM_E_OK?) then (yes)
+                  break
+                else (no)
+                  :mng_pool_addr.local_pool_shm += chan->pools[i].shm_size
+mng_pool_addr.remote_pool_shm += chan->pools[i].shm_size;;
+                  :i++;;
+                endif
+              endwhile
+            endif
+          endif
         else (no)
-          :advance mng_pool_addr by chan->pools[i].shm_size both ends;;
-          :i++;;
         endif
-      endwhile
-    endif
-  endif
-else (no)
-endif
-:return err;
-stop
+        :return err;
+        stop
 @enduml

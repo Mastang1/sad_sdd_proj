@@ -3,8 +3,21 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:foreach instance: ipcsHwIrqDisable; free_irq if needed;
-:cdev_del; device_destroy; class_destroy;
-:unregister_chrdev_region;
+:i = 0;
+while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+  if ((instance_id[i].state != IPC_SHM_INSTANCE_DISABLED) && (instance_id[i].irq_num != IPC_IRQ_NONE)?) then (yes)
+    :ipcsHwIrqDisable(i);
+    :instance_id[i].state = IPC_SHM_INSTANCE_DISABLED;
+    if (irq_num_init[i] != 0?) then (yes)
+      :free_irq(instance_id[i].irq_num, &ipc_cdev_priv);
+      :irq_num_init[i] = 0;
+    endif
+  endif
+  :i++;
+endwhile (no)
+:cdev_del(&ipc_cdev);
+:device_destroy(ipc_class, dev_major_num);
+:class_destroy(ipc_class);
+:unregister_chrdev_region(dev_major_num, 1);
 stop
 @enduml

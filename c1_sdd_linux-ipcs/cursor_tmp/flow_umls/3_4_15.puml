@@ -4,28 +4,32 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title ipcsGetTotalBufPerChan
 start
-:chan pointers; sint32 err = -IPC_SHM_E_INVAL; uint32 prev = 0; total_bufs = 0; uint8 i = 0;
-if ((cfg->num_pools > 0u) && (cfg->num_pools <= IPC_SHM_MAX_POOLS)?) then (yes)
-  :err = IPC_SHM_E_OK; chan->rx_cb = cfg->rx_cb; chan->cb_arg = cfg->cb_arg; chan->num_pools = cfg->num_pools;;
-  :i = 0;
-  while (i < chan->num_pools?)
-    :pool_cfg = &cfg->pools[i];;
-    if (pool_cfg->buf_size < prev?) then (yes)
-      :err = -IPC_SHM_E_INVAL;
-    else (no)
-      :prev = pool_cfg->buf_size; total_bufs += pool_cfg->num_bufs;;
-    endif
-    if ((err != IPC_SHM_E_OK) || (total_bufs > IPC_SHM_MAX_BUFS_PER_CHANNEL)?) then (yes)
-      :err = -IPC_SHM_E_INVAL;
-      break
-    endif
-    :i++;;
-  endwhile
-else (no)
-endif
-if (err != IPC_SHM_E_OK?) then (yes)
-  :total_bufs = 0u;
-endif
-:return total_bufs;
-stop
+        :chan = &ipc_shm_priv_data[instance].channels[chan_id].ch.mng
+err = -IPC_SHM_E_INVAL
+prev = 0
+total_bufs = 0
+i = 0;;
+        if ((cfg->num_pools > 0u) && (cfg->num_pools <= IPC_SHM_MAX_POOLS)?) then (yes)
+          :err = IPC_SHM_E_OK; chan->rx_cb = cfg->rx_cb; chan->cb_arg = cfg->cb_arg; chan->num_pools = cfg->num_pools;;
+          :i = 0;
+          while (i < chan->num_pools?)
+            :pool_cfg = &cfg->pools[i];;
+            if (pool_cfg->buf_size < prev?) then (yes)
+              :err = -IPC_SHM_E_INVAL;
+            else (no)
+              :prev = pool_cfg->buf_size; total_bufs += pool_cfg->num_bufs;;
+            endif
+            if ((err != IPC_SHM_E_OK) || (total_bufs > IPC_SHM_MAX_BUFS_PER_CHANNEL)?) then (yes)
+              :err = -IPC_SHM_E_INVAL;
+              break
+            endif
+            :i++;;
+          endwhile
+        else (no)
+        endif
+        if (err != IPC_SHM_E_OK?) then (yes)
+          :total_bufs = 0u;
+        endif
+        :return total_bufs;
+        stop
 @enduml

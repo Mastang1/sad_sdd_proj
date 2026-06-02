@@ -22,6 +22,7 @@ if str(_CT) not in sys.path:
     sys.path.insert(0, str(_CT))
 from workspace_paths import plantuml_jar_candidates
 
+from flow_body_normalize import normalize_flow_body
 from linux_ch6_flows import FLOWS, HEADER
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,9 +40,21 @@ def find_plantuml_jar() -> Path:
 def write_puml(slug: str, body: str) -> Path:
     FLOW_UMLS.mkdir(parents=True, exist_ok=True)
     path = FLOW_UMLS / f"{slug}.puml"
-    text = HEADER + body.strip() + "\n@enduml\n"
+    text = HEADER + normalize_flow_body(body) + "@enduml\n"
     path.write_text(text, encoding="utf-8")
     return path
+
+
+def check_puml(jar: Path, puml: Path) -> tuple[bool, str]:
+    result = subprocess.run(
+        ["java", "-jar", str(jar), "-checkonly", str(puml)],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    err = (result.stderr or result.stdout or "").strip()
+    return result.returncode == 0, err
 
 
 def render_svgs(jar: Path, puml_files: list[Path]) -> list[str]:
@@ -74,9 +87,18 @@ def render_svgs(jar: Path, puml_files: list[Path]) -> list[str]:
 def main() -> None:
     jar = find_plantuml_jar()
     puml_files: list[Path] = []
+    check_failed: list[str] = []
     for slug in sorted(FLOWS):
-        puml_files.append(write_puml(slug, FLOWS[slug]))
-    print(f"Wrote {len(puml_files)} .puml files")
+        puml = write_puml(slug, FLOWS[slug])
+        ok, err = check_puml(jar, puml)
+        if not ok:
+            check_failed.append(slug)
+            if err:
+                print(f"[checkonly FAIL] {slug}: {err.splitlines()[-1]}")
+        puml_files.append(puml)
+    print(f"Wrote {len(puml_files)} .puml files; checkonly OK {len(puml_files) - len(check_failed)}")
+    if check_failed:
+        sys.exit(f"PlantUML -checkonly failed for: {check_failed}")
     failed = render_svgs(jar, puml_files)
     rendered = sum(1 for slug in FLOWS if (FLOW_SVGS / f"{slug}.svg").is_file())
     print(f"Rendered {rendered} SVG(s) -> {FLOW_SVGS}/")

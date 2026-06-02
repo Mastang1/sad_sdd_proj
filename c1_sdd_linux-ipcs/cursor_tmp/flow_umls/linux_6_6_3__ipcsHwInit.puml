@@ -4,21 +4,41 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
 if (mscm_addr == NULL?) then (yes)
-  :return -EINVAL; stop
-else (no)
+  :return -EINVAL;
+stop
 endif
-:resolve local_core_idx and remote_core_idx from cfg;
-:validate trust mask and irq indices;
-if (invalid tx/rx same or core conflict?) then (yes)
-  :return -EINVAL; stop
-else (no)
+:ipc_mscm = (struct IPCS_MSCM_REGS_TYPE *)mscm_addr;
+:trust_cores = (local_core->trusted & 0xF) | ((local_core->trusted & 0xF0) << 4);
+:switch(local_core->type)\ncase IPC_CORE_A53: switch(local_core->index) set local_core_idx\ncase IPC_CORE_DEFAULT: local_core_idx = IPC_DEFAULT_LOCAL_CORE\ndefault: return -EINVAL;
+if (invalid local_core?) then (yes)
+  :return -EINVAL;
+stop
 endif
-:map MSI/SPI indices; store mscm tx/rx;
+if ((!trust_cores) || (trust_cores & ~IPC_MSCM_IRCPCFG_A53_TR) || ((1u << local_core_idx) & ~trust_cores)?) then (yes)
+  :return -EINVAL;
+stop
+endif
+:switch(remote_core->type)\ncase IPC_CORE_A53/M7: switch(remote_core->index) set remote_core_idx\ncase IPC_CORE_DEFAULT: remote_core_idx = IPC_DEFAULT_REMOTE_CORE\ndefault: return -EINVAL;
+if (invalid remote_core?) then (yes)
+  :return -EINVAL;
+stop
+endif
+if (((tx_irq != IPC_IRQ_NONE) && (tx_irq == rx_irq)) || (remote_core_idx == readl(&ipc_mscm->CPXNUM)) || (remote_core_idx == local_core_idx)?) then (yes)
+  :return -EINVAL;
+stop
+endif
+:switch(tx_irq): IPC_IRQ_NONE break; 0->0; 1->1; 2->2; 3->5; 4->6; 5->7; 6->8; 7->9; 8->10; 9->11; 10->12; 11->13\nswitch(rx_irq): IPC_IRQ_NONE break; 0->spi1/msi0; 1->spi2/msi1; 2->spi3/msi2; 3->spi22/msi5; 4->spi23/msi6; 5->spi68/msi7; 6->spi69/msi8; 7->spi164/msi9; 8->spi165/msi10; 9->spi166/msi11; 10->spi167/msi12; 11->spi168/msi13;
+if (invalid irq mapping?) then (yes)
+  :return -EINVAL;
+stop
+endif
+:mscm_tx_irq = tx_irq; mscm_rx_irq = rx_irq; remote_core = remote_core_idx; local_core = local_core_idx;
 :ipcsHwIrqDisable(instance);
-:update MSCM IRCPCFG trusted cores;
-if (IRCPCFG locked?) then (yes)
+:ircpcfg_mask = readl(&ipc_mscm->IRCPCFG);
+if (ircpcfg_mask & IPC_MSCM_IRCPCFG_LOCK?) then (yes)
   :return -EACCES;
-else (no)
+stop
+  :writel(ircpcfg_mask | trust_cores, &ipc_mscm->IRCPCFG);
   :return 0;
 endif
 stop

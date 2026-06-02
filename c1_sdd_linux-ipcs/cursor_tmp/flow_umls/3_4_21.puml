@@ -4,25 +4,26 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title ipcsShmInitInstance
 start
-:sint32 err = -IPC_SHM_E_INVAL;
-if ((cfg != NULL)&&(local/remote shm != NULL)&&(num_channels>=1u)&&(num_channels<=IPC_SHM_MAX_CHANNELS)?) then (yes)
-  :save shm_size num_channels;;
-  :err = ipcsHwInit(instance,cfg);;
-  if (err == IPC_SHM_E_OK?) then (yes)
-    :err = ipcsOsInit(instance,cfg,ipcsShmRx);;
-    if (err != IPC_SHM_E_OK?) then (yes)
-      :ipcsHwFree(instance);;
-    else (no)
-      :err = ipcsShmInitChannels(instance,cfg);;
-      if (err == IPC_SHM_E_OK?) then (yes)
-        :ipcsHwIrqClear(instance); ipcsHwIrqEnable(instance);;
-        :global->state = IPC_SHM_STATE_READY;;
-        :ipcsHwFlushCacheLocal(instance);;
-      endif
-    endif
-  endif
-else (no)
-endif
-:return err;
-stop
+        :sint32 err = -IPC_SHM_E_INVAL;
+        if ((cfg != NULL)&&(local/remote shm != NULL)&&(num_channels>=1u)&&(num_channels<=IPC_SHM_MAX_CHANNELS)?) then (yes)
+          :ipc_shm_priv_data[instance].shm_size = cfg->shm_size
+ipc_shm_priv_data[instance].num_channels = cfg->num_channels;;
+          :err = ipcsHwInit(instance,cfg);;
+          if (err == IPC_SHM_E_OK?) then (yes)
+            :err = ipcsOsInit(instance,cfg,ipcsShmRx);;
+            if (err != IPC_SHM_E_OK?) then (yes)
+              :ipcsHwFree(instance);;
+            else (no)
+              :err = ipcsShmInitChannels(instance,cfg);;
+              if (err == IPC_SHM_E_OK?) then (yes)
+                :ipcsHwIrqClear(instance); ipcsHwIrqEnable(instance);;
+                :global->state = IPC_SHM_STATE_READY;;
+                :ipcsHwFlushCacheLocal(instance);;
+              endif
+            endif
+          endif
+        else (no)
+        endif
+        :return err;
+        stop
 @enduml

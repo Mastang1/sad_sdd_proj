@@ -4,25 +4,30 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title ipcsShmRx
 start
-:num_chans from priv; sint32 chan_budget, chan_work; more_work = 1; work = 0; uint8 i = 0;
-while ((work < budget) && (more_work > 0)?)
-  :chan_budget = (budget-work)/num_chans;;
-  if (chan_budget == 0?) then (yes)
-    :chan_budget = 1;
-  else (no)
-  endif
-  :more_work = 0;;
-  :ipcsHwFlushCacheRemote(instance);;
-  :i = 0;
-  while (i < num_chans?)
-    :chan_work = ipcsChannelRx(instance,(sint32)i,chan_budget);;
-    :work += chan_work;;
-    if (chan_work == chan_budget?) then (yes)
-      :more_work = 1;
-    endif
-    :i++;;
-  endwhile
-endwhile
-:return work;
-stop
+        :num_chans = ipc_shm_priv_data[instance].num_channels
+chan_budget = 0
+chan_work = 0
+more_work = 1
+work = 0
+i = 0;;
+        while ((work < budget) && (more_work > 0)?)
+          :chan_budget = (budget-work)/num_chans;;
+          if (chan_budget == 0?) then (yes)
+            :chan_budget = 1;
+          else (no)
+          endif
+          :more_work = 0;;
+          :ipcsHwFlushCacheRemote(instance);;
+          :i = 0;
+          while (i < num_chans?)
+            :chan_work = ipcsChannelRx(instance,(sint32)i,chan_budget);;
+            :work += chan_work;;
+            if (chan_work == chan_budget?) then (yes)
+              :more_work = 1;
+            endif
+            :i++;;
+          endwhile
+        endwhile
+        :return work;
+        stop
 @enduml

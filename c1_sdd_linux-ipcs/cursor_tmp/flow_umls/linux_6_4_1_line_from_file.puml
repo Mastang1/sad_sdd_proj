@@ -6,16 +6,18 @@ start
 :file = fopen(filename, "r");
 if (file == NULL?) then (yes)
   :return -ENONET;
-  stop
-else (no)
+stop
 endif
 :s = fgets(buf, IPC_SHM_UIO_BUF_LEN, file);
 if (s == NULL?) then (yes)
   :return -EIO;
-  stop
-else (no)
+stop
 endif
-:strip first line at newline; fclose(file);
+:while ((*s) && (i < IPC_SHM_UIO_BUF_LEN));
+if (*s == '\n') *s = 0
+s++
+i++
+fclose(file);
 :return 0;
 stop
 @enduml

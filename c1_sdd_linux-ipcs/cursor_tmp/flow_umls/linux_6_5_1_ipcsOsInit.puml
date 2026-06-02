@@ -5,50 +5,51 @@ skinparam linetype ortho
 start
 if (rx_cb == NULL?) then (yes)
   :return -EINVAL;
-  stop
+stop
 endif
-:save shm_size, rx_cb;
-if (ipc_files_opened == CLEAR?) then (yes)
-  :open/load ipc-shm-cdev module;
-  if (module failed?) then (yes)
+:priv.id[instance].shm_size = cfg->shm_size; priv.id[instance].rx_cb = rx_cb;
+if (priv.ipc_files_opened == IPC_STATUS_CLEAR?) then (yes)
+  :ipc_usr_module_fd = open(IPC_USR_MODULE_PATH, O_RDONLY)\nfinit_module(ipc_usr_module_fd, "", 0);
+  if ((ipc_usr_module_fd == -1) || (finit_module != 0)?) then (yes)
     :return -ENODEV;
-    stop
+stop
   endif
-  :open /dev/mem and /dev/ipc-shm-cdev;
-  if (open failed?) then (yes)
-    :close module; return -ENODEV;
-    stop
+  :priv.dev_mem_fd = open(IPC_USR_DEV_MEM_NAME, O_RDWR)\npriv.ipc_usr_fd = open(IPC_USR_CDEV_NAME, O_RDWR);
+  if ((dev_mem_fd == -1) || (ipc_usr_fd == -1)?) then (yes)
+    :close(priv.dev_mem_fd)\nclose(priv.ipc_usr_fd)\nclose(ipc_usr_module_fd)\nreturn -ENODEV;
+stop
   endif
-  :ipc_files_opened = SET;
+  :priv.ipc_files_opened = IPC_STATUS_SET;
 endif
-:mmap local shm (page aligned);
-if (local MAP_FAILED?) then (yes)
+:page_phys_addr = (cfg->local_shm_addr / page_size) * page_size\nlocal_shm_offset = cfg->local_shm_addr - page_phys_addr\nlocal_shm_map = mmap(NULL, local_shm_offset + cfg->shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, dev_mem_fd, page_phys_addr)\nlocal_virt_shm = local_shm_map + local_shm_offset;
+if (local_shm_map == MAP_FAILED?) then (yes)
   :return -ENOMEM;
-  stop
+stop
 endif
-:mmap remote shm;
-if (remote MAP_FAILED?) then (yes)
-  :munmap local; return -ENOMEM;
-  stop
+:page_phys_addr = (cfg->remote_shm_addr / page_size) * page_size\nremote_shm_offset = cfg->remote_shm_addr - page_phys_addr\nremote_shm_map = mmap(NULL, remote_shm_offset + cfg->shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, dev_mem_fd, page_phys_addr)\nremote_virt_shm = remote_shm_map + remote_shm_offset;
+if (remote_shm_map == MAP_FAILED?) then (yes)
+  :munmap(local_shm_map); return -ENOMEM;
+stop
 endif
-if (ipc_soft_created == CLEAR?) then (yes)
-  :pthread_create global ipcsShmSoftirq;
-  if (pthread_create failed?) then (yes)
-    :munmap remote and local; return err;
-    stop
+if (priv.ipc_soft_created == IPC_STATUS_CLEAR?) then (yes)
+  :pthread_attr_init(&irq_thread_attr)\npthread_attr_setschedpolicy(&irq_thread_attr, RX_SOFTIRQ_POLICY)\npthread_attr_setschedparam(&irq_thread_attr, &irq_thread_param)\nerr = pthread_create(&priv.irq_thread_id, &irq_thread_attr, ipcsShmSoftirq, &priv);
+  if (err == -1?) then (yes)
+    :munmap(remote_shm_map, remote_shm_offset + shm_size)\nmunmap(local_shm_map, local_shm_offset + shm_size)\nreturn err;
+stop
   endif
-  :ipc_soft_created = SET;
+  :priv.ipc_soft_created = IPC_STATUS_SET;
 endif
-:ioctl(SET_INSTANCE, instance);
-if (ioctl failed?) then (yes)
-  :munmap remote and local; return err;
-  stop
+:err = ioctl(priv.ipc_usr_fd, IPC_CDEV_CMD_SET_INSTANCE, instance);
+if (!err) err = ioctl(priv.ipc_usr_fd, IPC_CDEV_CMD_INIT_INSTANCE, cfg);
+if (err?) then (yes)
+  :munmap(remote_shm_map, remote_shm_offset + shm_size)\nmunmap(local_shm_map, local_shm_offset + shm_size)\nreturn err;
+stop
 endif
-:ioctl(INIT_INSTANCE, cfg);
-if (ioctl failed?) then (yes)
-  :munmap remote and local; return err;
-  stop
+if (cfg->inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
+  :priv.id[instance].irq_num = IPC_IRQ_NONE;
+else (no)
+  :priv.id[instance].irq_num = 0;
 endif
-:irq_num per cfg; state = ENABLED; return 0;
+:priv.id[instance].state = IPC_SHM_INSTANCE_ENABLED; return 0;
 stop
 @enduml

@@ -4,9 +4,10 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title ipcsHwIrqNotify
 start
-if (mscm_tx_irq != IPC_IRQ_NONE?) then (yes)
-  :read remote_core / msi_tx_index from priv;;
-  :set IPC_MSCM_IRCPnIRx[..].IPC_IGR |= INT_EN;;
-endif
-stop
+        if (mscm_tx_irq != IPC_IRQ_NONE?) then (yes)
+          :remote_core = ipc_hw_priv[instance].remote_core
+msi_tx_index = ipc_hw_priv[instance].msi_tx_irq;;
+          :IPC_MSCM_IRCPnIRx->IRCPnIRx[remote_core][msi_tx_index].IPC_IGR |= IPC_MSCM_IRCPnIGRx_INT_EN;;
+        endif
+        stop
 @enduml

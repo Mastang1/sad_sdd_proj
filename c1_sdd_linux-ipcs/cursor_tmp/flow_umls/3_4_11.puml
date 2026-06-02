@@ -4,33 +4,36 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title ipcsChannelRx
 start
-:managed / unmanaged branching on chan->type;;
-if (cfg->type == IPC_SHM_UNMANAGED?) then (yes)
-  :ipcsHwFlushCacheLocal(instance); ipcsHwFlushCacheRemote(instance);;
-  :work = 0;
-  if (ipcsCheckUchanIntegrity(uchan) == OK?) then (yes)
-    :remote_tx_count = uchan->remote_mem->tx_count;;
-    if (remote_tx_count != uchan->remote_tx_count?) then (yes)
-      :uchan->remote_tx_count = remote_tx_count;;
-      :uchan->rx_cb(uchan->cb_arg,...,(void*)uchan->remote_mem->mem);;
-      :work = budget;;
-    endif
-  endif
-else (no)
-  :work = 0;
-  while (work < budget?)
-    :result = ipcsQueuePop(&mchan->bd_queue,&bd);;
-    if (result != IPC_SHM_E_OK?) then (yes)
-      break
-    else (no)
-      :pool = &mchan->pools[bd.pool_id];;
-      :buf_offset = pool->buf_size * bd.buf_id;;
-      :buf_addr = pool->remote_pool_addr + buf_offset;;
-      :mchan->rx_cb(mchan->cb_arg,...,(void*)buf_addr,bd.data_size);;
-      :work++;;
-    endif
-  endwhile
-endif
-:return work;
-stop
+        :chan = &ipc_shm_priv_data[instance].channels[chan_id]
+mchan = &chan->ch.mng
+uchan = &chan->ch.umng
+work = 0;;
+        if (cfg->type == IPC_SHM_UNMANAGED?) then (yes)
+          :ipcsHwFlushCacheLocal(instance); ipcsHwFlushCacheRemote(instance);;
+          :work = 0;
+          if (ipcsCheckUchanIntegrity(uchan) == OK?) then (yes)
+            :remote_tx_count = uchan->remote_mem->tx_count;;
+            if (remote_tx_count != uchan->remote_tx_count?) then (yes)
+              :uchan->remote_tx_count = remote_tx_count;;
+              :uchan->rx_cb(uchan->cb_arg, instance, chan->id, (void*)uchan->remote_mem->mem);;
+              :work = budget;;
+            endif
+          endif
+        else (no)
+          :work = 0;
+          while (work < budget?)
+            :result = ipcsQueuePop(&mchan->bd_queue,&bd);;
+            if (result != IPC_SHM_E_OK?) then (yes)
+              break
+            else (no)
+              :pool = &mchan->pools[bd.pool_id];;
+              :buf_offset = pool->buf_size * bd.buf_id;;
+              :buf_addr = pool->remote_pool_addr + buf_offset;;
+              :mchan->rx_cb(mchan->cb_arg, instance, chan->id, (void*)buf_addr, bd.data_size);;
+              :work++;;
+            endif
+          endwhile
+        endif
+        :return work;
+        stop
 @enduml

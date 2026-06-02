@@ -3,8 +3,20 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:unregister UIO devices per instance;
-:cdev_del; class_destroy; devm unmap;
+:device_destroy(cdev_class, major);
+:class_destroy(cdev_class);
+:cdev_del(&cdev);
+:unregister_chrdev_region(major, 1);
+:i = 0;
+while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+    if (uio_id[i].state == IPC_SHM_INSTANCE_ENABLED?) then (yes)
+    :uio_id[i].state = IPC_SHM_INSTANCE_DISABLED;
+    if (irq_num_init[i] != IPC_IRQ_NONE?) then (yes)
+      :uio_unregister_device(&uio_id[i].info);
+    endif
+  endif
+  :i++;
+endwhile (no)
 :return 0;
 stop
 @enduml

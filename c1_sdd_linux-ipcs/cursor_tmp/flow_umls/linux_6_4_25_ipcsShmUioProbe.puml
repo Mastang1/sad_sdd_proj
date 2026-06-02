@@ -3,9 +3,38 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:platform_get_resource MSCM; devm_ioremap;
-:create class and cdev ipc-cdev-uio;
-:register platform driver;
+:i = 0;
+while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+  :uio_id[i].irq_num = IPC_IRQ_NONE; irq_num_init[i] = IPC_IRQ_NONE;
+  :i++;
+endwhile (no)
+:platform_set_drvdata(pdev, uio_id); ipc_pdev = pdev;
+:res = platform_get_resource(ipc_pdev, IORESOURCE_MEM, 0);
+:pdev_reg = devm_ioremap_resource(&ipc_pdev->dev, res);
+if (IS_ERR_OR_NULL(pdev_reg)?) then (yes)
+  :return -ENOMEM;
+stop
+endif
+:err = alloc_chrdev_region(&major, 0, 1, IPC_CDEV_NAME);
+if (err < 0?) then (yes)
+  :return err;
+stop
+endif
+:cdev_init(&cdev, &ipc_cdev_fops); err = cdev_add(&cdev, major, 1);
+if (err < 0?) then (yes)
+  :unregister_chrdev_region(major, 1); return err;
+stop
+endif
+:cdev_class = class_create(THIS_MODULE, IPC_CDEV_NAME);
+if (!cdev_class?) then (yes)
+  :cdev_del(&cdev); unregister_chrdev_region(major, 1); return -EEXIST;
+stop
+endif
+if (!device_create(cdev_class, NULL, major, NULL, IPC_CDEV_NAME)?) then (yes)
+  :class_destroy(cdev_class); cdev_del(&cdev); unregister_chrdev_region(major, 1); return -EINVAL;
+stop
+endif
+:mutex_init(&mmap_device_mutex);
 :return 0;
 stop
 @enduml

@@ -6,11 +6,10 @@ start
 :err = line_from_file(filename, linebuf);
 if (err != 0?) then (yes)
   :return err;
-  stop
-else (no)
+stop
 endif
 if (strncmp(linebuf, filter) != 0?) then (yes)
-  :return EINVAL;
+  :return -EINVAL;
 else (no)
   :return 0;
 endif

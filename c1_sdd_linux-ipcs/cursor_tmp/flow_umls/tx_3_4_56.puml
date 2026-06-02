@@ -4,27 +4,31 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title ipcsOsInit ThreadX
 start
-:err = -IPC_SHM_E_INVAL;
-if ((rx_cb != NULL) && (cfg != NULL)?) then (yes)
-  :save localShm remoteShm state rxCallback rxIrqNum;;
-  if ((taskIsInitialized != 0) || (rxIrqNum == IPC_IRQ_NONE)?) then (yes)
-    :err = IPC_SHM_E_OK;;
-  else (no)
-    :osStatus = tx_event_flags_create(&softIrqEvents);;
-    if (osStatus != TX_SUCCESS?) then (yes)
-      :err = -IPC_SHM_E_NOMEM;;
-    else (no)
-      :osStatus = tx_thread_create(softIrqHandle, ipcsShmSoftIrq);;
-      if (osStatus != TX_SUCCESS?) then (yes)
-        :err = -IPC_SHM_E_NOMEM;;
-      else (no)
-        :taskIsInitialized = 1;;
-        :err = IPC_SHM_E_OK;;
-      endif
-    endif
-  endif
-else (no)
-endif
-:return err;
-stop
+        :err = -IPC_SHM_E_INVAL;
+        if ((rx_cb != NULL) && (cfg != NULL)?) then (yes)
+          :ipc_os_priv.id[instance].localShm = cfg->local_shm_addr
+ipc_os_priv.id[instance].remoteShm = cfg->remote_shm_addr
+ipc_os_priv.id[instance].state = IPC_SHM_INSTANCE_ENABLED
+ipc_os_priv.id[instance].rxCallback = rx_cb
+ipc_os_priv.id[instance].rxIrqNum = cfg->inter_core_rx_irq;;
+          if ((taskIsInitialized != 0) || (rxIrqNum == IPC_IRQ_NONE)?) then (yes)
+            :err = IPC_SHM_E_OK;;
+          else (no)
+            :osStatus = tx_event_flags_create(&softIrqEvents);;
+            if (osStatus != TX_SUCCESS?) then (yes)
+              :err = -IPC_SHM_E_NOMEM;;
+            else (no)
+              :osStatus = tx_thread_create(softIrqHandle, ipcsShmSoftIrq);;
+              if (osStatus != TX_SUCCESS?) then (yes)
+                :err = -IPC_SHM_E_NOMEM;;
+              else (no)
+                :taskIsInitialized = 1;;
+                :err = IPC_SHM_E_OK;;
+              endif
+            endif
+          endif
+        else (no)
+        endif
+        :return err;
+        stop
 @enduml

@@ -3,34 +3,34 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:sprintf(uio_name, instance_N);
+:sprintf(uio_name, "instance_%u", instance);
 :err = ipcsHwInit(instance, cfg);
 if (err != 0?) then (yes)
   :return err;
-  stop
+stop
 endif
 if (inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
   :return 0;
-  stop
+stop
 endif
 :irq = platform_get_irq(ipc_pdev, inter_core_rx_irq);
 if (irq < 0?) then (yes)
   :return irq;
-  stop
+stop
 endif
 while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
   if (irq == irq_num_init[i]?) then (yes)
     :return -EFAULT;
-    stop
+stop
   endif
   :i++;
 endwhile (no)
-:irq_num_init[instance] = irq; fill uio_info;
-:uio_register_device;
+:irq_num_init[instance] = irq\nuio_id[instance].info.name = uio_name\nuio_id[instance].info.version = IPC_UIO_VERSION\nuio_id[instance].info.handler = ipcsShmUioHandler\nuio_id[instance].info.irqcontrol = ipcsShmUioIrqcontrol;
+:err = uio_register_device(&ipc_pdev->dev, &uio_id[instance].info);
 if (uio_register failed?) then (yes)
   :return err;
-  stop
+stop
 endif
-:state = ENABLED; return 0;
+:uio_id[instance].state = IPC_SHM_INSTANCE_ENABLED\nreturn 0;
 stop
 @enduml

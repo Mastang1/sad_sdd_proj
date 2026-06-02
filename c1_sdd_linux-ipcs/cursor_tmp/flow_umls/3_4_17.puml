@@ -4,14 +4,18 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title unmanagedChannelInit
 start
-:chan from priv UM; sint32 err = -IPC_SHM_E_INVAL;
-if (cfg->size <= IPC_SHM_MAX_UMNG_SIZE?) then (yes)
-  :save size rx_cb cb_arg;;
-  :link local_mem/remote_mem pointers;;
-  :local sentinel = IPC_UCHAN_SENTINEL; local tx_count = 0; remote_tx_copy = 0;;
-  :err = IPC_SHM_E_OK;
-else (no)
-endif
-:return err;
-stop
+        :chan = &ipc_shm_priv_data[instance].channels[chan_id].ch.umng
+err = -IPC_SHM_E_INVAL;;
+        if (cfg->size <= IPC_SHM_MAX_UMNG_SIZE?) then (yes)
+          :chan->size = cfg->size
+chan->rx_cb = cfg->rx_cb
+chan->cb_arg = cfg->cb_arg;;
+          :chan->local_mem = (struct IPCS_CHANNEL_UMEM_TYPE *)local_shm
+chan->remote_mem = (struct IPCS_CHANNEL_UMEM_TYPE *)remote_shm;;
+          :local sentinel = IPC_UCHAN_SENTINEL; local tx_count = 0; remote_tx_copy = 0;;
+          :err = IPC_SHM_E_OK;
+        else (no)
+        endif
+        :return err;
+        stop
 @enduml

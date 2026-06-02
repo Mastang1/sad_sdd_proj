@@ -5,8 +5,7 @@ skinparam linetype ortho
 start
 :ret = write(uio_fd, &cmd, sizeof(int));
 if (ret != sizeof(int)?) then (yes)
-  :shm_dbg failed command;
-else (no)
+  :shm_dbg("Failed to write UIO command %d", cmd);
 endif
 stop
 @enduml

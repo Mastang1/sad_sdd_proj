@@ -8,7 +8,7 @@ if (mscm_rx_irq != IPC_IRQ_NONE?) then (yes)
   note right
     unless USING_OS_AUTOSAROS clear IRSPRC bit
   end note
-  :IRSPRC[mscm_rx_irq] &= ~mask;;
+  :IP_MSCM->IRSPRC[ipc_hw_priv[instance].mscm_rx_irq] &= ~((uint16)1u << (ipc_hw_priv[instance].local_core - (uint8)IPC_M7_0 + 1u));;
 endif
 stop
 @enduml

@@ -6,6 +6,6 @@ start
 :instance = info->data.instance;
 :ipcsHwIrqDisable(instance);
 :ipcsHwIrqClear(instance);
-:return IRQ_HANDLED (uio_event_notify user);
+:return IRQ_HANDLED;
 stop
 @enduml

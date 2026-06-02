@@ -3,6 +3,6 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:return (no-op user proxy);
+:return;
 stop
 @enduml

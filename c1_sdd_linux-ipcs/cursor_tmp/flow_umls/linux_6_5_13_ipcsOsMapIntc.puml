@@ -3,11 +3,16 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:of_find_compatible_node; of_address_to_resource; ioremap;
-if (failed?) then (yes)
+:node = of_find_compatible_node(NULL, NULL, DT_INTC_NODE_COMP);
+if (!node?) then (yes)
   :return NULL;
-else (no)
-  :return mapped addr;
+stop
 endif
+:err = of_address_to_resource(node, 0, &res); of_node_put(node);
+if (err?) then (yes)
+  :return NULL;
+stop
+endif
+:return ioremap(res.start, resource_size(&res));
 stop
 @enduml

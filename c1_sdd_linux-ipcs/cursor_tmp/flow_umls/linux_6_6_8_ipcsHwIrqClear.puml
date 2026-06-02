@@ -4,8 +4,7 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
 if (mscm_rx_irq != IPC_IRQ_NONE?) then (yes)
-  :writel clear ISR on local core MSI;;
-else (no)
+  :writel clear ISR on local core MSI;
 endif
 stop
 @enduml

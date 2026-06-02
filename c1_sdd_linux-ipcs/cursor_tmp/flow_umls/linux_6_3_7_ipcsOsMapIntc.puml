@@ -6,15 +6,13 @@ start
 :node = of_find_compatible_node(DT_INTC_NODE_COMP);
 if (node == NULL?) then (yes)
   :return NULL;
-  stop
-else (no)
+stop
 endif
-:of_address_to_resource; of_node_put;
+:err = of_address_to_resource(node, 0, &res)\nof_node_put(node);
 if (err?) then (yes)
   :return NULL;
-  stop
-else (no)
+stop
 endif
-:return ioremap(res.start, resource_size);
+:return ioremap(res.start, resource_size(&res));
 stop
 @enduml

@@ -3,7 +3,7 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:shm_dbg driver version init;
+:shm_dbg("%s: %s", DRIVER_NAME, DRIVER_VERSION);
 :return 0;
 stop
 @enduml

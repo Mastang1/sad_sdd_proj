@@ -5,52 +5,51 @@ skinparam linetype ortho
 start
 if (rx_cb == NULL?) then (yes)
   :return -EINVAL;
-  stop
+stop
 endif
-:save shm_size, rx_cb, instance;
-if (ipc_files_opened == CLEAR?) then (yes)
-  :open ipc-shm-uio module; finit_module;
-  if (module open/load failed?) then (yes)
-    :return -ENODEV;
-    stop
+:ipc_os_priv.id[instance].shm_size = cfg->shm_size; ipc_os_priv.id[instance].rx_cb = rx_cb; ipc_os_priv.id[instance].instance = instance;
+if (ipc_os_priv.ipc_files_opened == IPC_STATUS_CLEAR?) then (yes)
+  :ipc_uio_module_fd = open(IPC_UIO_MODULE_PATH, O_RDONLY)\nfinit_module(ipc_uio_module_fd, "", 0);
+  if ((ipc_uio_module_fd == -1) || (finit_module != 0)?) then (yes)
+    :err = -ENODEV\nclose(ipc_uio_module_fd)\nreturn err;
+stop
   endif
-  :open ipc-cdev-uio; open /dev/mem;
-  if (cdev or mem open failed?) then (yes)
-    :close module fd; return -ENODEV;
-    stop
+  :ipc_os_priv.ipc_cdev_fd = open(IPC_UIO_CDEV_NAME, O_RDWR)\nipc_os_priv.dev_mem_fd = open(IPC_UIO_DEV_MEM_NAME, O_RDWR);
+  if ((ipc_cdev_fd == -1) || (dev_mem_fd == -1)?) then (yes)
+    :err = -ENODEV\nclose(ipc_os_priv.ipc_cdev_fd)\nclose(ipc_uio_module_fd)\nreturn err;
+stop
   endif
-  :ipc_files_opened = SET;
+  :ipc_os_priv.ipc_files_opened = IPC_STATUS_SET;
 endif
-:mmap local shm (/dev/mem, page aligned);
-if (local MAP_FAILED?) then (yes)
-  :close mem fd; return -ENOMEM;
-  stop
+:page_phys_addr = (cfg->local_shm_addr / page_size) * page_size\nlocal_shm_offset = cfg->local_shm_addr - page_phys_addr\nlocal_shm_map = mmap(NULL, local_shm_offset + cfg->shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, dev_mem_fd, page_phys_addr)\nlocal_virt_shm = local_shm_map + local_shm_offset;
+if (local_shm_map == MAP_FAILED?) then (yes)
+  :return -ENOMEM;
+stop
 endif
-:mmap remote shm;
-if (remote MAP_FAILED?) then (yes)
-  :munmap local; return -ENOMEM;
-  stop
+:page_phys_addr = (cfg->remote_shm_addr / page_size) * page_size\nremote_shm_offset = cfg->remote_shm_addr - page_phys_addr\nremote_shm_map = mmap(NULL, remote_shm_offset + cfg->shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, dev_mem_fd, page_phys_addr)\nremote_virt_shm = remote_shm_map + remote_shm_offset;
+if (remote_shm_map == MAP_FAILED?) then (yes)
+  :munmap(local_shm_map); return -ENOMEM;
+stop
 endif
-:write IPCS_UIO_CDEV_DATA_TYPE to cdev;
-if (write failed?) then (yes)
-  :munmap remote and local; return -EINVAL;
-  stop
+:irq_num = cfg->inter_core_rx_irq\ndata_cfg.instance = instance\ndata_cfg.cfg = *cfg\nerr = write(ipc_os_priv.ipc_cdev_fd, &data_cfg, sizeof(data_cfg));
+if (err < 0?) then (yes)
+  :munmap(remote_shm_map, remote_shm_offset + shm_size)\nmunmap(local_shm_map, local_shm_offset + shm_size)\nreturn -EINVAL;
+stop
 endif
-if (inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
-  :state = ENABLED; return 0;
-  stop
+if (cfg->inter_core_rx_irq == IPC_IRQ_NONE?) then (yes)
+  :id[instance].state = IPC_SHM_INSTANCE_ENABLED; return 0;
+stop
 endif
-:get_uio_dev_name; open /dev/uioX;
-if (open UIO failed?) then (yes)
-  :munmap remote and local; return -ENODEV;
-  stop
+:err = get_uio_dev_name(uio_dev_name, instance)\nsnprintf(dev_uio, sizeof(dev_uio), "/dev/%s", uio_dev_name)\nuio_fd = open(dev_uio, O_RDWR);
+if ((err != 0) || (uio_fd == -1)?) then (yes)
+  :munmap(remote_shm_map, remote_shm_offset + shm_size)\nmunmap(local_shm_map, local_shm_offset + shm_size)\nreturn -ENODEV;
+stop
 endif
-:pthread_attr_init/setschedpolicy/setschedparam;
-:pthread_create(ipcsShmSoftirq);
-if (pthread_create failed?) then (yes)
-  :close uio; munmap remote and local; return err;
-  stop
+:pthread_attr_init(&irq_thread_attr)\npthread_attr_setschedpolicy(&irq_thread_attr, RX_SOFTIRQ_POLICY)\npthread_attr_setschedparam(&irq_thread_attr, &irq_thread_param)\nerr = pthread_create(&irq_thread_id, &irq_thread_attr, ipcsShmSoftirq, &id[instance]);
+if (err == -1?) then (yes)
+  :close(uio_fd)\nmunmap(remote_shm_map, remote_shm_offset + shm_size)\nmunmap(local_shm_map, local_shm_offset + shm_size)\nreturn err;
+stop
 endif
-:state = ENABLED; return 0;
+:id[instance].state = IPC_SHM_INSTANCE_ENABLED; return 0;
 stop
 @enduml

@@ -4,27 +4,33 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title ipcsOsInit autosar
 start
-:StatusType os_status=E_OK; TaskStateType task_state=SUSPENDED; err=-IPC_SHM_E_INVAL;;
-if (rx_cb != NULL?) then (yes)
-  :copy cfg fields into ipc_os_priv.id[instance] + rx_cb + irq + msg_received + isr;;
-  if ((rx_irq==IPC_IRQ_NONE)||(task_is_initialized!=0)?) then (yes)
-    :err = IPC_SHM_E_OK;
-  else (no)
-    :GetTaskState(ipcsShmSoftirq,&task_state);;
-    if (task_state != SUSPENDED?) then (yes)
-      :err=-IPC_SHM_E_NOTSUP;
-    else (no)
-      :os_status=ActivateTask(ipcsShmSoftirq);;
-      if (os_status != E_OK?) then (yes)
-        :err=-IPC_SHM_E_NOTSUP;
-      else (no)
-        :task_is_initialized=1;;
-        :err=IPC_SHM_E_OK;
-      endif
-    endif
-  endif
-else (no)
-endif
-:return err;
-stop
+        :StatusType os_status=E_OK; TaskStateType task_state=SUSPENDED; err=-IPC_SHM_E_INVAL;;
+        if (rx_cb != NULL?) then (yes)
+          :ipc_os_priv.id[instance].local_shm = cfg->local_shm_addr
+ipc_os_priv.id[instance].remote_shm = cfg->remote_shm_addr
+ipc_os_priv.id[instance].state = IPC_SHM_INSTANCE_ENABLED
+ipc_os_priv.rx_cb = rx_cb
+ipc_os_priv.id[instance].rx_irq_num = cfg->inter_core_rx_irq
+ipc_os_priv.id[instance].msg_received = MSG_NOT_RECEIVED
+ipc_os_priv.id[instance].isr_id_handler = cfg->isr_id_handler;;
+          if ((rx_irq==IPC_IRQ_NONE)||(task_is_initialized!=0)?) then (yes)
+            :err = IPC_SHM_E_OK;
+          else (no)
+            :GetTaskState(ipcsShmSoftirq,&task_state);;
+            if (task_state != SUSPENDED?) then (yes)
+              :err=-IPC_SHM_E_NOTSUP;
+            else (no)
+              :os_status=ActivateTask(ipcsShmSoftirq);;
+              if (os_status != E_OK?) then (yes)
+                :err=-IPC_SHM_E_NOTSUP;
+              else (no)
+                :task_is_initialized=1;;
+                :err=IPC_SHM_E_OK;
+              endif
+            endif
+          endif
+        else (no)
+        endif
+        :return err;
+        stop
 @enduml

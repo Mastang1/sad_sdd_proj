@@ -3,6 +3,6 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:return 0 (kernel UIO handles HAL);
+:return 0;
 stop
 @enduml

@@ -4,11 +4,15 @@ skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 title ipcsShmHardirq autosar
 start
-:for i in 0..IPC_SHM_MAX_INSTANCES-1;;
-if ((state ENABLED)&&(rx_irq != NONE)?) then (yes)
-  :DisableInterruptSource(isr);;
-  :msg_received = MSG_IS_RECEIVED;
-endif
-:SetEvent(ipcsShmSoftirq,IPC_EVENT_RX_IRQ);;
+:i = 0;
+while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+  if ((id[i].state != IPC_SHM_INSTANCE_DISABLED) && (id[i].rx_irq_num != IPC_IRQ_NONE)?) then (yes)
+    :os_status = DisableInterruptSource(id[i].isr_id_handler);;
+    :id[i].msg_received = MSG_IS_RECEIVED;;
+  else (no)
+  endif
+  :i++;
+endwhile (no)
+:os_status = SetEvent(ipcsShmSoftirq, IPC_EVENT_RX_IRQ);;
 stop
 @enduml

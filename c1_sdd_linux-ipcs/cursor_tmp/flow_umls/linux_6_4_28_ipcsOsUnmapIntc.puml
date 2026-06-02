@@ -3,6 +3,6 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:no-op (devm manages MSCM mapping);
+:return;
 stop
 @enduml

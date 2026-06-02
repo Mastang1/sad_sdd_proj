@@ -5,7 +5,7 @@ skinparam linetype ortho
 start
 if (irq_num == IPC_IRQ_NONE?) then (yes)
   if (rx_cb != NULL?) then (yes)
-    :return rx_cb(instance, budget);;
+    :return rx_cb(instance, budget);
   else (no)
     :return -EINVAL;
   endif

@@ -11,6 +11,8 @@ elseif (cmd == IPC_UIO_ENABLE_CMD?) then (yes)
 elseif (cmd == IPC_UIO_TRIGGER_CMD?) then (yes)
   :ipcsHwIrqNotify(instance);
 else (no)
+  :return -EINVAL;
+stop
 endif
 :return 0;
 stop

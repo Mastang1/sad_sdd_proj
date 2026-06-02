@@ -3,13 +3,13 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:err = alloc_chrdev_region;
+:err = alloc_chrdev_region(&dev_major_num, 0, 1, DEVICE_NAME);
 if (err != 0?) then (yes)
   :return err;
-  stop
+stop
 endif
-:class_create; cdev_init; cdev_add;
-:device_create(/dev/ipc-shm-cdev);
+:ipc_class = class_create(THIS_MODULE, DEVICE_NAME)\ncdev_init(&ipc_cdev, &ipc_fops)\ncdev_add(&ipc_cdev, dev_major_num, 1);
+:device_create(ipc_class, NULL, dev_major_num, NULL, DEVICE_NAME);
 :dev_is_opened = 0; wait_queue_flag = SLEEP;
 :init_waitqueue_head(&wait_queue);
 :return 0;

@@ -130,11 +130,20 @@ def emit() -> None:
           if ((chan == NULL) || (mem_size == 0u) || (ipcsCheckMchanIntegrity(chan) != OK)?) then (yes)
             :buf_addr = NULL;
           else (no)
-            :pool_id loop 0..chan->num_pools-1;;
-            note right
-              for each pool_id: if mem_size > pool->buf_size continue;
-              if ipcsQueuePop(pool->bd_queue,\&bd)==0 break
-            end note
+            :pool_id = 0;;
+            while (pool_id < chan->num_pools?)
+              :pool = \&chan->pools[pool_id];;
+              if (mem_size > pool->buf_size?) then (yes)
+                :pool_id++;;
+              else (no)
+                :err = ipcsQueuePop(\&pool->bd_queue, \&bd);;
+                if (err == IPC_SHM_E_OK?) then (yes)
+                  break
+                else (no)
+                  :pool_id++;;
+                endif
+              endif
+            endwhile
             if (pool_id == chan->num_pools?) then (yes)
               :buf_addr = NULL;
             else (no)

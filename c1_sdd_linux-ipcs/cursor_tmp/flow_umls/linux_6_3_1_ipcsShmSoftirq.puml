@@ -5,13 +5,11 @@ skinparam linetype ortho
 start
 :i = 0;
 while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
-  if ((priv.id[i].state == DISABLED) || (priv.id[i].irq_num == IPC_IRQ_NONE)?) then (yes)
-  else (no)
+  if ((priv.id[i].state != DISABLED) && (priv.id[i].irq_num != IPC_IRQ_NONE)?) then (yes)
     repeat
       :work = priv.rx_cb(i, budget);
       if (work >= budget?) then (yes)
         :tasklet_schedule(&ipc_shm_rx_tasklet);
-      else (no)
       endif
     repeat while (work >= budget?) is (yes)
     :ipcsHwIrqEnable(i);

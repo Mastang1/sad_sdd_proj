@@ -180,7 +180,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "ipcsChannelRx",
         """
         start
-        :managed / unmanaged branching on chan->type;;
+        :chan = &ipc_shm_priv_data[instance].channels[chan_id]\nmchan = &chan->ch.mng\nuchan = &chan->ch.umng\nwork = 0;;
         if (cfg->type == IPC_SHM_UNMANAGED?) then (yes)
           :ipcsHwFlushCacheLocal(instance); ipcsHwFlushCacheRemote(instance);;
           :work = 0;
@@ -188,7 +188,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
             :remote_tx_count = uchan->remote_mem->tx_count;;
             if (remote_tx_count != uchan->remote_tx_count?) then (yes)
               :uchan->remote_tx_count = remote_tx_count;;
-              :uchan->rx_cb(uchan->cb_arg,...,(void*)uchan->remote_mem->mem);;
+              :uchan->rx_cb(uchan->cb_arg, instance, chan->id, (void*)uchan->remote_mem->mem);;
               :work = budget;;
             endif
           endif
@@ -202,7 +202,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
               :pool = \&mchan->pools[bd.pool_id];;
               :buf_offset = pool->buf_size * bd.buf_id;;
               :buf_addr = pool->remote_pool_addr + buf_offset;;
-              :mchan->rx_cb(mchan->cb_arg,...,(void*)buf_addr,bd.data_size);;
+              :mchan->rx_cb(mchan->cb_arg, instance, chan->id, (void*)buf_addr, bd.data_size);;
               :work++;;
             endif
           endwhile
@@ -234,7 +234,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "ipcsShmRx",
         """
         start
-        :num_chans from priv; sint32 chan_budget, chan_work; more_work = 1; work = 0; uint8 i = 0;
+        :num_chans = ipc_shm_priv_data[instance].num_channels\nchan_budget = 0\nchan_work = 0\nmore_work = 1\nwork = 0\ni = 0;;
         while ((work < budget) && (more_work > 0)?)
           :chan_budget = (budget-work)/num_chans;;
           if (chan_budget == 0?) then (yes)
@@ -262,10 +262,10 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "ipcsBufPoolInit",
         """
         start
-        :pool from channel; sint32 err = -IPC_SHM_E_INVAL; uint16 i = 0; struct IPCS_SHM_BD_TYPE bd;
+        :chan = &ipc_shm_priv_data[instance].channels[chan_id].ch.mng\npool = &chan->pools[pool_id]\nlocal_shm = mng_pool.local_pool_shm\nremote_shm = mng_pool.remote_pool_shm\nerr = -IPC_SHM_E_INVAL; i = 0;;
         if (cfg->num_bufs <= IPC_SHM_MAX_BUFS_PER_POOL?) then (yes)
           :pool->num_bufs = cfg->num_bufs; pool->buf_size = cfg->buf_size;;
-          :err = ipcsQueueInit(\&pool->bd_queue,...);;
+          :err = ipcsQueueInit(\&pool->bd_queue, pool->num_bufs, (uint8)sizeof(struct IPCS_SHM_BD_TYPE), local_shm, remote_shm);;
           if (err == IPC_SHM_E_OK?) then (yes)
             :queue_mem_size = ipcsQueueMemSize(\&pool->bd_queue);;
             :pool->local_pool_addr = local_shm + queue_mem_size;
@@ -276,7 +276,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
             else (no)
               :i = 0;
               while (i < pool->num_bufs?)
-                :fill bd pool_id buf_id;;
+                :bd.pool_id = (sint16)pool_id\nbd.buf_id = i\nbd.data_size = 0;;
                 :err = ipcsQueuePush(\&pool->bd_queue,\&bd);;
                 if (err != IPC_SHM_E_OK?) then (yes)
                   break
@@ -297,7 +297,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "ipcsGetTotalBufPerChan",
         """
         start
-        :chan pointers; sint32 err = -IPC_SHM_E_INVAL; uint32 prev = 0; total_bufs = 0; uint8 i = 0;
+        :chan = &ipc_shm_priv_data[instance].channels[chan_id].ch.mng\nerr = -IPC_SHM_E_INVAL\nprev = 0\ntotal_bufs = 0\ni = 0;;
         if ((cfg->num_pools > 0u) && (cfg->num_pools <= IPC_SHM_MAX_POOLS)?) then (yes)
           :err = IPC_SHM_E_OK; chan->rx_cb = cfg->rx_cb; chan->cb_arg = cfg->cb_arg; chan->num_pools = cfg->num_pools;;
           :i = 0;
@@ -329,15 +329,15 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "managedChannelInit",
         """
         start
-        :chan from priv; sint32 err = -IPC_SHM_E_INVAL; total_bufs from ipcsGetTotalBufPerChan; uint32 queue_mem_size; uint8 i;
-        :mng_pool_addr init NULL;;
+        :chan = &ipc_shm_priv_data[instance].channels[chan_id].ch.mng\nerr = -IPC_SHM_E_INVAL\ntotal_bufs = ipcsGetTotalBufPerChan(instance, chan_id, cfg)\nqueue_mem_size = 0\ni = 0;;
+        :mng_pool_addr.local_pool_shm = (uintptr_t)NULL\nmng_pool_addr.remote_pool_shm = (uintptr_t)NULL;;
         if (total_bufs != 0u?) then (yes)
           :err = ipcsQueueInit(\&chan->bd_queue,(uint16)total_bufs,sizeof BD,local_shm,remote_shm);;
           if (err == IPC_SHM_E_OK?) then (yes)
-            :queue_mem_size = ipcsQueueMemSize(..);;
+            :queue_mem_size = ipcsQueueMemSize(\&chan->bd_queue);;
             :mng_pool_addr.local_pool_shm = local_shm + queue_mem_size;
             :mng_pool_addr.remote_pool_shm = remote_shm + queue_mem_size;;
-            if (mng_pool_addr.local bounds exceed shm?) then (yes)
+            if ((mng_pool_addr.local_pool_shm + queue_mem_size) > (ipcsOsGetLocalShm(instance) + shm_size)?) then (yes)
               :err = -IPC_SHM_E_NOMEM;
             else (no)
               :i = 0;
@@ -346,7 +346,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
                 if (err != IPC_SHM_E_OK?) then (yes)
                   break
                 else (no)
-                  :advance mng_pool_addr by chan->pools[i].shm_size both ends;;
+                  :mng_pool_addr.local_pool_shm += chan->pools[i].shm_size\nmng_pool_addr.remote_pool_shm += chan->pools[i].shm_size;;
                   :i++;;
                 endif
               endwhile
@@ -363,10 +363,10 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "unmanagedChannelInit",
         """
         start
-        :chan from priv UM; sint32 err = -IPC_SHM_E_INVAL;
+        :chan = &ipc_shm_priv_data[instance].channels[chan_id].ch.umng\nerr = -IPC_SHM_E_INVAL;;
         if (cfg->size <= IPC_SHM_MAX_UMNG_SIZE?) then (yes)
-          :save size rx_cb cb_arg;;
-          :link local_mem/remote_mem pointers;;
+          :chan->size = cfg->size\nchan->rx_cb = cfg->rx_cb\nchan->cb_arg = cfg->cb_arg;;
+          :chan->local_mem = (struct IPCS_CHANNEL_UMEM_TYPE *)local_shm\nchan->remote_mem = (struct IPCS_CHANNEL_UMEM_TYPE *)remote_shm;;
           :local sentinel = IPC_UCHAN_SENTINEL; local tx_count = 0; remote_tx_copy = 0;;
           :err = IPC_SHM_E_OK;
         else (no)
@@ -380,20 +380,20 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "ipcsShmInitChannel",
         """
         start
-        :chan struct; sint32 err = -IPC_SHM_E_INVAL;
+        :chan = &ipc_shm_priv_data[instance].channels[chan_id]\nerr = -IPC_SHM_E_INVAL;;
         if (cfg != NULL?) then (yes)
           :chan->id = chan_id; chan->type = cfg->type;;
           if (cfg->type == IPC_SHM_MANAGED?) then (yes)
             if ((cfg->ch.managed.rx_cb==NULL)||(cfg->ch.managed.pools==NULL)?) then (yes)
               :err = -IPC_SHM_E_INVAL;
             else (no)
-              :err = managedChannelInit(...,\&cfg->ch.managed);;
+              :err = managedChannelInit(instance, chan_id, local_shm, remote_shm, \&cfg->ch.managed);;
             endif
           elseif (cfg->type == IPC_SHM_UNMANAGED?) then (yes)
             if (cfg->ch.unmanaged.rx_cb==NULL?) then (yes)
               :err = -IPC_SHM_E_INVAL;
             else (no)
-              :err = unmanagedChannelInit(...,\&cfg->ch.unmanaged);;
+              :err = unmanagedChannelInit(instance, chan_id, local_shm, remote_shm, \&cfg->ch.unmanaged);;
             endif
           else (IPC_SHM other type?)
             :err = -IPC_SHM_E_INVAL;
@@ -428,13 +428,13 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "ipcsShmInitChannels",
         """
         start
-        :local_shm = ipcsOsGetLocalShm; global pointer at start;;
-        :local_chan remote_chan offset skip global size; sint32 err = -IPC_SHM_E_INVAL;;
+        :local_shm = ipcsOsGetLocalShm(instance)\nremote_shm = ipcsOsGetRemoteShm(instance)\nglobal = (struct IPCS_SHM_GLOBAL_TYPE *)local_shm;;
+        :local_chan = local_shm + sizeof(struct IPCS_SHM_GLOBAL_TYPE)\nremote_chan = remote_shm + sizeof(struct IPCS_SHM_GLOBAL_TYPE)\nerr = -IPC_SHM_E_INVAL;;
         :i = 0;
         while (i < ipc_shm_priv_data[instance].num_channels?)
           :err = ipcsShmInitChannel(instance,i,local_chan,remote_chan,\&cfg->channels[i]);;
           if (err == IPC_SHM_E_OK?) then (yes)
-            :advance local_chan/remote_chan by getChanMemmapSize(instance,i);;
+            :chan_size = getChanMemmapSize(instance, i)\nlocal_chan += chan_size\nremote_chan += chan_size;;
             :i++;;
           else (no)
             :ipcsOsFree(instance); ipcsHwFree(instance);;
@@ -452,7 +452,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         start
         :sint32 err = -IPC_SHM_E_INVAL;
         if ((cfg != NULL)&&(local/remote shm != NULL)&&(num_channels>=1u)&&(num_channels<=IPC_SHM_MAX_CHANNELS)?) then (yes)
-          :save shm_size num_channels;;
+          :ipc_shm_priv_data[instance].shm_size = cfg->shm_size\nipc_shm_priv_data[instance].num_channels = cfg->num_channels;;
           :err = ipcsHwInit(instance,cfg);;
           if (err == IPC_SHM_E_OK?) then (yes)
             :err = ipcsOsInit(instance,cfg,ipcsShmRx);;
@@ -775,7 +775,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
           note right
             unless USING_OS_AUTOSAROS compile flag set IRSPRC enable bit
           end note
-          :IRSPRC[mscm_rx_irq] |= mask for local_core;;
+          :IP_MSCM->IRSPRC[ipc_hw_priv[instance].mscm_rx_irq] |= ((uint16)1u << (ipc_hw_priv[instance].local_core - (uint8)IPC_M7_0 + 1u));;
         else (no)
         endif
         stop
@@ -790,7 +790,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
           note right
             unless USING_OS_AUTOSAROS clear IRSPRC bit
           end note
-          :IRSPRC[mscm_rx_irq] &= ~mask;;
+          :IP_MSCM->IRSPRC[ipc_hw_priv[instance].mscm_rx_irq] &= ~((uint16)1u << (ipc_hw_priv[instance].local_core - (uint8)IPC_M7_0 + 1u));;
         endif
         stop
         """,
@@ -801,8 +801,8 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         """
         start
         if (mscm_tx_irq != IPC_IRQ_NONE?) then (yes)
-          :read remote_core / msi_tx_index from priv;;
-          :set IPC_MSCM_IRCPnIRx[..].IPC_IGR |= INT_EN;;
+          :remote_core = ipc_hw_priv[instance].remote_core\nmsi_tx_index = ipc_hw_priv[instance].msi_tx_irq;;
+          :IPC_MSCM_IRCPnIRx->IRCPnIRx[remote_core][msi_tx_index].IPC_IGR |= IPC_MSCM_IRCPnIGRx_INT_EN;;
         endif
         stop
         """,
@@ -813,7 +813,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         """
         start
         if (mscm_rx_irq != IPC_IRQ_NONE?) then (yes)
-          :locals remote_core/msi_rx_index;;
+          :local_core = ipc_hw_priv[instance].local_core\nremote_core = ipc_hw_priv[instance].remote_core\nmsi_rx_index = ipc_hw_priv[instance].msi_rx_irq;;
           if ((IPC_M7_0 <= remote_core <= IPC_M7_3)?) then (yes)
             :IPC_ISR = (1<<remote_core);;
           else (no)
@@ -847,7 +847,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         """
         start
         if (IPC_D_CACHE_ENABLE defined?) then (yes)
-          :addr from ipcsOsGetLocalShm; size/temp from shm_size alignment;;
+          :data_addr = ipcsOsGetLocalShm(instance)\ndata_size = ipc_hw_priv[instance].shm_size\ntmp_size = data_size + (data_addr & (IPC_DCACHE_LINE_SIZE - 1U))\ntmp_addr = data_addr;;
           :ipcsHwFlushCache(tmp_addr,tmp_size);;
         else (no)
           :(void)instance;
@@ -861,7 +861,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         """
         start
         if (IPC_D_CACHE_ENABLE defined?) then (yes)
-          :addr from ipcsOsGetRemoteShm;;
+          :data_addr = ipcsOsGetRemoteShm(instance)\ndata_size = ipc_hw_priv[instance].shm_size\ntmp_size = data_size + (data_addr & (IPC_DCACHE_LINE_SIZE - 1U))\ntmp_addr = data_addr;;
           :ipcsHwFlushCache(tmp_addr,tmp_size);;
         else (no)
           :(void)instance;
@@ -878,7 +878,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         start
         :StatusType os_status=E_OK; TaskStateType task_state=SUSPENDED; err=-IPC_SHM_E_INVAL;;
         if (rx_cb != NULL?) then (yes)
-          :copy cfg fields into ipc_os_priv.id[instance] + rx_cb + irq + msg_received + isr;;
+          :ipc_os_priv.id[instance].local_shm = cfg->local_shm_addr\nipc_os_priv.id[instance].remote_shm = cfg->remote_shm_addr\nipc_os_priv.id[instance].state = IPC_SHM_INSTANCE_ENABLED\nipc_os_priv.rx_cb = rx_cb\nipc_os_priv.id[instance].rx_irq_num = cfg->inter_core_rx_irq\nipc_os_priv.id[instance].msg_received = MSG_NOT_RECEIVED\nipc_os_priv.id[instance].isr_id_handler = cfg->isr_id_handler;;
           if ((rx_irq==IPC_IRQ_NONE)||(task_is_initialized!=0)?) then (yes)
             :err = IPC_SHM_E_OK;
           else (no)
@@ -934,7 +934,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
           endif
           :i = 0;
           while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
-            if ((state==DISABLED)||(msg_received==MSG_NOT_RECEIVED)||(rx_irq==IPC_IRQ_NONE)?) then (yes)
+            if ((id[i].state == IPC_SHM_INSTANCE_DISABLED)||(id[i].msg_received == MSG_NOT_RECEIVED)||(id[i].rx_irq_num == IPC_IRQ_NONE)?) then (yes)
             else (no)
               repeat
                 :work = ipc_os_priv.rx_cb(i, IPC_SOFTIRQ_BUDGET);;
@@ -947,9 +947,9 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
           :os_status = ClearEvent(IPC_EVENT_RX_IRQ);;
           :i = 0;
           while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
-            if ((state != DISABLED) \&\& (rx_irq != IPC_IRQ_NONE)?) then (yes)
+            if ((id[i].state != IPC_SHM_INSTANCE_DISABLED) \&\& (id[i].rx_irq_num != IPC_IRQ_NONE)?) then (yes)
               :ipcsHwIrqClear(i);;
-              :os_status = EnableInterruptSource(isr_id_handler, TRUE);;
+              :os_status = EnableInterruptSource(id[i].isr_id_handler, TRUE);;
             else (no)
             endif
             :i++;
@@ -963,12 +963,16 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "ipcsShmHardirq autosar",
         """
         start
-        :for i in 0..IPC_SHM_MAX_INSTANCES-1;;
-        if ((state ENABLED)&&(rx_irq != NONE)?) then (yes)
-          :DisableInterruptSource(isr);;
-          :msg_received = MSG_IS_RECEIVED;
-        endif
-        :SetEvent(ipcsShmSoftirq,IPC_EVENT_RX_IRQ);;
+        :i = 0;
+        while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+          if ((id[i].state != IPC_SHM_INSTANCE_DISABLED) \&\& (id[i].rx_irq_num != IPC_IRQ_NONE)?) then (yes)
+            :os_status = DisableInterruptSource(id[i].isr_id_handler);;
+            :id[i].msg_received = MSG_IS_RECEIVED;;
+          else (no)
+          endif
+          :i++;
+        endwhile (no)
+        :os_status = SetEvent(ipcsShmSoftirq, IPC_EVENT_RX_IRQ);;
         stop
         """,
     )
@@ -977,12 +981,13 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         "ipcsShmHardirqInstance autosar",
         """
         start
-        if ((state ENABLED)&&(rx_irq != NONE)?) then (yes)
-          :DisableInterruptSource(..);;
-          if (msg_received == MSG_NOT_RECEIVED?) then (yes)
-            :msg_received=MSG_IS_RECEIVED;;
+        if ((id[instance].state != IPC_SHM_INSTANCE_DISABLED) \&\& (id[instance].rx_irq_num != IPC_IRQ_NONE)?) then (yes)
+          :os_status = DisableInterruptSource(id[instance].isr_id_handler);;
+          if (id[instance].msg_received == MSG_NOT_RECEIVED?) then (yes)
+            :id[instance].msg_received = MSG_IS_RECEIVED;;
           endif
-          :SetEvent(ipcsShmSoftirq,IPC_EVENT_RX_IRQ);;
+          :os_status = SetEvent(ipcsShmSoftirq, IPC_EVENT_RX_IRQ);;
+        else (no)
         endif
         stop
         """,
@@ -1031,11 +1036,13 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         start
         :err=-IPC_SHM_E_INVAL;;
         if (rx_cb != NULL?) then (yes)
-          :save shm state rx_cb irq/msg flags;;
-          if ((rx_irq==IPC_IRQ_NONE)||(task_is_initialized!=0)?) then (yes)
+          :id[instance].local_shm = cfg->local_shm_addr; id[instance].remote_shm = cfg->remote_shm_addr;;
+          :id[instance].state = IPC_SHM_INSTANCE_ENABLED; ipc_os_priv.rx_cb = rx_cb;;
+          :id[instance].rx_irq_num = cfg->inter_core_rx_irq; id[instance].msg_received = MSG_NOT_RECEIVED;;
+          if ((id[instance].rx_irq_num == IPC_IRQ_NONE)||(task_is_initialized != 0)?) then (yes)
             :err = IPC_SHM_E_OK;;
           else (no)
-            :os_status = xTaskCreate(ipcsShmSoftirq,...);;
+            :os_status = xTaskCreate(ipcsShmSoftirq, "softirq", IPC_SOFTIRQ_STACK_SIZE, NULL, IPC_SOFTIRQ_PRIORITY, \&softirq_handle);;
             if (os_status != pdPASS?) then (yes)
               :err=-IPC_SHM_E_NOMEM;;
             else (no)
@@ -1151,11 +1158,13 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         start
         :err=-IPC_SHM_E_INVAL;;
         if (rx_cb != NULL?) then (yes)
-          :save shm state rx_cb irq/msg flags;;
-          if ((rx_irq==IPC_IRQ_NONE)||(task_is_initialized!=0)?) then (yes)
+          :id[instance].local_shm = cfg->local_shm_addr; id[instance].remote_shm = cfg->remote_shm_addr;;
+          :id[instance].state = IPC_SHM_INSTANCE_ENABLED; ipc_os_priv.rx_cb = rx_cb;;
+          :id[instance].rx_irq_num = cfg->inter_core_rx_irq; id[instance].msg_received = MSG_NOT_RECEIVED;;
+          if ((id[instance].rx_irq_num == IPC_IRQ_NONE)||(task_is_initialized != 0)?) then (yes)
             :err = IPC_SHM_E_OK;;
           else (no)
-            :os_status = xTaskCreate(ipcsShmSoftirq,...);;
+            :os_status = xTaskCreate(ipcsShmSoftirq, "softirq", IPC_SOFTIRQ_STACK_SIZE, NULL, IPC_SOFTIRQ_PRIORITY, \&softirq_handle);;
             if (os_status != pdPASS?) then (yes)
               :err=-IPC_SHM_E_NOMEM;;
             else (no)
@@ -1444,7 +1453,7 @@ def add_flows_remainder(W: Callable[..., None]) -> None:
         start
         :err = -IPC_SHM_E_INVAL;
         if ((rx_cb != NULL) && (cfg != NULL)?) then (yes)
-          :save localShm remoteShm state rxCallback rxIrqNum;;
+          :ipc_os_priv.id[instance].localShm = cfg->local_shm_addr\nipc_os_priv.id[instance].remoteShm = cfg->remote_shm_addr\nipc_os_priv.id[instance].state = IPC_SHM_INSTANCE_ENABLED\nipc_os_priv.id[instance].rxCallback = rx_cb\nipc_os_priv.id[instance].rxIrqNum = cfg->inter_core_rx_irq;;
           if ((taskIsInitialized != 0) || (rxIrqNum == IPC_IRQ_NONE)?) then (yes)
             :err = IPC_SHM_E_OK;;
           else (no)

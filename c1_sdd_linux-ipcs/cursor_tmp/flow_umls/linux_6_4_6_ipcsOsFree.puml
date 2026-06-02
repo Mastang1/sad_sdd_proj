@@ -3,18 +3,22 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-:state = DISABLED;
-if (irq_num != IPC_IRQ_NONE?) then (yes)
-  :ipcsHwIrqDisable; pthread_cancel/join irq thread;
-  :close uio_fd;
-else (no)
+:ipc_os_priv.id[instance].state = IPC_SHM_INSTANCE_DISABLED;
+if (ipc_os_priv.id[instance].irq_num != IPC_IRQ_NONE?) then (yes)
+  :ipcsHwIrqDisable(instance)\npthread_cancel(irq_thread_id)\npthread_join(irq_thread_id, &res)\nclose(uio_fd);
 endif
-:munmap remote and local;
-if (any instance still ENABLED?) then (yes)
+:munmap(remote_shm_map, remote_shm_offset + shm_size)\nmunmap(local_shm_map, local_shm_offset + shm_size);
+:i = 0;
+while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
+  if (ipc_os_priv.id[i].state == IPC_SHM_INSTANCE_ENABLED?) then (yes)
   :return;
-  stop
-else (no)
+stop
+  endif
+  :i++;
+endwhile (no)
+:close(ipc_cdev_fd)\nclose(dev_mem_fd);
+if (delete_module(IPC_UIO_MODULE_NAME, O_NONBLOCK) != 0?) then (yes)
+  :shm_err("Can't unload %s module", IPC_UIO_MODULE_NAME);
 endif
-:close cdev and mem; delete_module ipc-shm-uio;
 stop
 @enduml

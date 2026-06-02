@@ -3,19 +3,15 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
-while (forever?) is (yes)
-  if (rx_cb != NULL?) then (yes)
-    :read(uio_fd, irq_count) block until kernel IRQ;
-  else (no)
+while (1?) is (yes)
+  if (info->rx_cb != NULL?) then (yes)
+    :read(info->uio_fd, &irq_count, sizeof(irq_count));
   endif
   repeat
-    :work = rx_cb(instance, budget);
-    if (work >= budget?) then (yes)
-      :sched_yield();
-    else (no)
-    endif
-  repeat while (work >= budget?) is (yes)
-  :ipcsHwIrqEnable(instance);
+    :work = info->rx_cb(info->instance, IPC_SOFTIRQ_BUDGET);
+    :sched_yield();
+  repeat while (work >= IPC_SOFTIRQ_BUDGET?) is (yes)
+  :ipcsHwIrqEnable(info->instance);
 endwhile (no)
 stop
 @enduml

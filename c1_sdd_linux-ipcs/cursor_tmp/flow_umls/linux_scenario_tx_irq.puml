@@ -5,9 +5,9 @@ skinparam linetype ortho
 start
 :User/Core ipcsHwIrqNotify;
 if (UIO?) then (yes)
-  :write UIO TRIGGER -> irqcontrol -> ipcsHwIrqNotify MSCM;;
+  :write UIO TRIGGER -> irqcontrol -> ipcsHwIrqNotify MSCM;
 else (no)
-  :ioctl TRIGGER_TX_IRQ -> ipcsHwIrqNotify MSCM;;
+  :ioctl TRIGGER_TX_IRQ -> ipcsHwIrqNotify MSCM;
 endif
 :Remote core receives inter-core interrupt;
 stop

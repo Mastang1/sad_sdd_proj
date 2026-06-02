@@ -15,7 +15,7 @@ while (forever?) is (yes)
   endif
   :i = 0;
   while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
-    if ((state==DISABLED)||(msg_received==MSG_NOT_RECEIVED)||(rx_irq==IPC_IRQ_NONE)?) then (yes)
+    if ((id[i].state == IPC_SHM_INSTANCE_DISABLED)||(id[i].msg_received == MSG_NOT_RECEIVED)||(id[i].rx_irq_num == IPC_IRQ_NONE)?) then (yes)
     else (no)
       repeat
         :work = ipc_os_priv.rx_cb(i, IPC_SOFTIRQ_BUDGET);;
@@ -28,9 +28,9 @@ while (forever?) is (yes)
   :os_status = ClearEvent(IPC_EVENT_RX_IRQ);;
   :i = 0;
   while (i < IPC_SHM_MAX_INSTANCES?) is (yes)
-    if ((state != DISABLED) && (rx_irq != IPC_IRQ_NONE)?) then (yes)
+    if ((id[i].state != IPC_SHM_INSTANCE_DISABLED) && (id[i].rx_irq_num != IPC_IRQ_NONE)?) then (yes)
       :ipcsHwIrqClear(i);;
-      :os_status = EnableInterruptSource(isr_id_handler, TRUE);;
+      :os_status = EnableInterruptSource(id[i].isr_id_handler, TRUE);;
     else (no)
     endif
     :i++;
