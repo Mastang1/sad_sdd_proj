@@ -31,7 +31,7 @@ description: >-
 |------|--------|----------|
 | **A** | 单函数/Init 活动图（推荐） | 改 `linux_ch6_flows.FLOWS` → `render_linux_ch6_flows.py` |
 | **B** | 全量刷新 puml/svg | `emit_puml` → `render_linux_ch6_flows` → `render_flow_svgs` → `render_scenario_sequences` |
-| **C** | 交付 Word | `md0519_to_final_sdd.py` → `validate_md_docx_consistency.py`（须 PASS） |
+| **C** | 交付 Word | `md0519_to_final_sdd.py`（含 ACTIVITY 流程图五号缩放）→ `validate_md_docx_consistency.py`（须 PASS） |
 | **D** | 仅序列图 §5.7/§6.9 | `scenario_sequence_flows.py` → `render_scenario_sequences.py` |
 | **E** | 仅 §3.2 组件图 | `gen_section32_component_diagrams.py` |
 

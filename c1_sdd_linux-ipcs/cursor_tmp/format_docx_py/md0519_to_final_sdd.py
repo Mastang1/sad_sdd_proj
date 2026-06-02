@@ -13,7 +13,9 @@ r"""
 5. **HTML 函数设计表**：Pandoc 无法将 ``<table>`` 转为 Word 表格；先从 MD 剥离 HTML 表，
    转换后再用 ``html_table_utils`` 按 colspan/rowspan 插入 Word 表格（与 task-3 规则一致）。
 6. 调用 ``format_final_sdd`` 应用 .cursorrules 中的 TF 版式（字体、表格边框、插图宽度等）。
-7. 终检页眉/页脚与模板一致；可选跑 ``validate_md_docx_consistency.py``。
+7. HTML 函数表插入与表格适应窗口后，对 ACTIVITY 流程图按 ``scale_flow_diagram_typography``
+   逐图设宽（Word 内约五号正文）。
+8. 终检页眉/页脚与模板一致；可选跑 ``validate_md_docx_consistency.py``。
 
 **依赖**::
 
@@ -72,6 +74,11 @@ from html_table_utils import (
     insert_html_function_tables,
     reapply_all_table_styles,
     apply_table_autofit_window_to_docx,
+)
+from scale_flow_diagram_typography import (
+    REPORT_PATH as FLOW_TYPOGRAPHY_REPORT,
+    apply_flow_typography_scale,
+    write_report as write_flow_typography_report,
 )
 
 WORKSPACE = WORKSPACE_ROOT
@@ -378,9 +385,6 @@ def main() -> None:
 
     print("[info] Applying format_final_sdd (TF styles)...")
     run_format_final_sdd(saved)
-    aspects_after = _collect_inline_aspect_ratios(saved)
-    _verify_aspect_ratios_preserved(expected_aspects, aspects_after)
-    print(f"[info] Aspect ratios match SVG viewBox for {len(expected_aspects)} image(s)")
 
     if html_table_blocks:
         inserted, missing = insert_html_function_tables(saved, html_table_blocks)
@@ -391,6 +395,18 @@ def main() -> None:
 
     n_autofit = apply_table_autofit_window_to_docx(saved)
     print(f"[info] Table autofit window: {n_autofit} table(s)")
+
+    scaled, skipped, flow_reports = apply_flow_typography_scale(saved)
+    write_flow_typography_report(FLOW_TYPOGRAPHY_REPORT, saved, scaled, skipped, flow_reports)
+    print(
+        f"[info] ACTIVITY flow typography (五号): {scaled} diagram(s); "
+        f"skipped {skipped} inline image(s)"
+    )
+    print(f"[info] Flow typography report: {FLOW_TYPOGRAPHY_REPORT}")
+
+    aspects_after = _collect_inline_aspect_ratios(saved)
+    _verify_aspect_ratios_preserved(expected_aspects, aspects_after)
+    print(f"[info] Aspect ratios match SVG viewBox for {len(expected_aspects)} image(s)")
 
     sync_header_footer_parts(saved, FORMAT_REFER_DOCX)
     apply_template_section_properties(saved, FORMAT_REFER_DOCX)

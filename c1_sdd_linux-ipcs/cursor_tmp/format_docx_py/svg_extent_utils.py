@@ -53,6 +53,17 @@ def _svg_text_from_inline(inline_el, document: Document) -> str | None:
         return None
 
 
+def svg_text_from_inline(inline_el, document: Document) -> str | None:
+    """Read embedded SVG XML from a ``wp:inline`` drawing."""
+    return _svg_text_from_inline(inline_el, document)
+
+
+def svg_diagram_type(svg_text: str) -> str | None:
+    """Return PlantUML ``data-diagram-type`` (ACTIVITY, SEQUENCE, …)."""
+    m = re.search(r'data-diagram-type="([^"]+)"', svg_text or "", re.I)
+    return m.group(1).upper() if m else None
+
+
 def svg_aspect_ratio_from_inline(inline_el, document: Document) -> float | None:
     """内嵌 SVG 的高宽比 cy/cx = viewBox H / W。"""
     svg = _svg_text_from_inline(inline_el, document)
