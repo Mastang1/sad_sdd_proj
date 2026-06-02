@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 按 viewBox + font-size 为 ACTIVITY（processing flow）流程图单独设 Word 显示宽度，
-使 Word 中正文约 **五号（10.5pt）**；不修改 SVG 源文件。
+使 Word 中正文约 **小四（12pt）**；不修改 SVG 源文件。
 
 管线 C（``md0519_to_final_sdd.py``）在表格适应窗口之后自动调用 ``apply_flow_typography_scale``。
 

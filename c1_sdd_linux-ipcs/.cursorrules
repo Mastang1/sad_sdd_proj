@@ -262,7 +262,8 @@ python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 | 6 | 若缺 `w:sectPr`：`ensure_sect_pr` 后**再**执行步骤 5 | `html_table_utils` + `apply_format_refer` |
 | 7 | `format_final_sdd`（字体/边框/插图缩放；删 `imageN.png` 占位题注） | `format_final_sdd.py` |
 | 8 | `_verify_aspect_ratios_preserved()` — 与 MD 源 SVG viewBox 对比，偏差 ≤ 2% | `md0519_to_final_sdd.py` |
-| 9 | `insert_html_function_tables()` + `reapply_all_table_styles()` | `html_table_utils.py` |
+| 9 | `insert_html_function_tables()` + `reapply_all_table_styles()` + 表格适应窗口 | `html_table_utils.py` |
+| 9b | ACTIVITY 流程图 typography 缩放（Word 内约 **小四 12pt**） | `scale_flow_diagram_typography.py` |
 | 10 | **终态**再执行步骤 5（`format_final_sdd` 会改写 header 部件） | `apply_format_refer.py` |
 | 11 | `verify_template_headers_footers()` + `_verify_docx_images()` + `validate_md_docx_consistency.py` | 同上 |
 
@@ -429,6 +430,7 @@ python word_to_pdf.py --Word final_sdd.docx -o final.pdf
 | 插图（一般） | 目标宽 14 cm；高度 = 宽 × **源 SVG viewBox 的 H/W**；禁止 Pandoc 2:3 默认 extent |
 | 插图（§3.2 Files） | 目标宽 12 cm；同上 |
 | 插图（§5.7 / §6.7 时序图） | 同上；宽时序图不得被压成 2:3 |
+| 插图（ACTIVITY 流程图） | `format_final_sdd` 任务 5 统一设宽后，管线 C 末步 `scale_flow_diagram_typography` 按 viewBox+字号再缩放，Word 内正文约 **小四 12pt**（仅 `data-diagram-type="ACTIVITY"`） |
 | 标题 | 保留样式行，删重复编号段落 |
 | §3.3/3.4 | 插图前插入 “processing flow”；删插图下旧 processing flow 行 |
 | §3.2 | 删插图下 “3.2.x … 头文件依赖（组件 UML）” 单行说明 |

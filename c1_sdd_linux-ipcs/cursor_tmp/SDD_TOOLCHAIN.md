@@ -59,7 +59,7 @@ python cursor_tmp/scripts/sdd_preflight.py --md-svg
 | `format_docx_py/apply_format_refer.py` | 中间态正文合并进模板 + HF 校验 | 被 md0519 调用 | body docx + 模板 → docx | 模板存在 | 覆盖 docx HF | 是 |
 | `format_docx_py/md0519_to_final_sdd.py` | MD→DOCX 主入口 | **管线 C** 交付 | `md_sdd_0519.md` → `final_sdd.docx` | MD+SVG+模板 | 覆盖 docx | 是 |
 | `format_docx_py/format_final_sdd.py` | TF 版式、插图比例、删占位 | 被 md0519 调用 | docx | — | 改版式 | 是 |
-| `format_docx_py/scale_flow_diagram_typography.py` | ACTIVITY 流程图按 viewBox+字号设宽（Word 内约五号） | **管线 C 末步**（md0519 自动调用）；可单独补跑 | docx | format 后 | 改 ACTIVITY extent | 是 |
+| `format_docx_py/scale_flow_diagram_typography.py` | ACTIVITY 流程图按 viewBox+字号设宽（Word 内约小四 12pt） | **管线 C 末步**（md0519 自动调用）；可单独补跑 | docx | format 后 | 改 ACTIVITY extent | 是 |
 | `format_docx_py/svg_typography_scale.py` | 流程图目标宽度计算（被 scale 脚本 import） | — | — | — | — | 是 |
 | `format_docx_py/html_table_utils.py` | HTML 函数表剥离/后插入 | 被 md0519 调用 | md html → docx 表 | — | 改表 | 是 |
 | `format_docx_py/validate_md_docx_consistency.py` | MD/DOCX 一致性 + viewBox | **管线 C 必跑** | md+docx → report | docx 已生成 | 只读 | 是 |

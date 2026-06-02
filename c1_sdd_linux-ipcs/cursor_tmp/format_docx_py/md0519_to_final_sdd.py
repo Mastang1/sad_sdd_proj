@@ -14,7 +14,7 @@ r"""
    转换后再用 ``html_table_utils`` 按 colspan/rowspan 插入 Word 表格（与 task-3 规则一致）。
 6. 调用 ``format_final_sdd`` 应用 .cursorrules 中的 TF 版式（字体、表格边框、插图宽度等）。
 7. HTML 函数表插入与表格适应窗口后，对 ACTIVITY 流程图按 ``scale_flow_diagram_typography``
-   逐图设宽（Word 内约五号正文）。
+   逐图设宽（Word 内约小四正文）。
 8. 终检页眉/页脚与模板一致；可选跑 ``validate_md_docx_consistency.py``。
 
 **依赖**::
@@ -399,7 +399,7 @@ def main() -> None:
     scaled, skipped, flow_reports = apply_flow_typography_scale(saved)
     write_flow_typography_report(FLOW_TYPOGRAPHY_REPORT, saved, scaled, skipped, flow_reports)
     print(
-        f"[info] ACTIVITY flow typography (五号): {scaled} diagram(s); "
+        f"[info] ACTIVITY flow typography (小四): {scaled} diagram(s); "
         f"skipped {skipped} inline image(s)"
     )
     print(f"[info] Flow typography report: {FLOW_TYPOGRAPHY_REPORT}")
