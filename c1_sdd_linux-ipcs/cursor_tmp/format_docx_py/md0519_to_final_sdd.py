@@ -71,6 +71,7 @@ from html_table_utils import (
     extract_and_strip_html_tables,
     insert_html_function_tables,
     reapply_all_table_styles,
+    apply_table_autofit_window_to_docx,
 )
 
 WORKSPACE = WORKSPACE_ROOT
@@ -387,6 +388,9 @@ def main() -> None:
         if missing:
             print(f"[warn] Could not locate Heading 3 for: {missing[:8]}...")
         reapply_all_table_styles(saved)
+
+    n_autofit = apply_table_autofit_window_to_docx(saved)
+    print(f"[info] Table autofit window: {n_autofit} table(s)")
 
     sync_header_footer_parts(saved, FORMAT_REFER_DOCX)
     apply_template_section_properties(saved, FORMAT_REFER_DOCX)

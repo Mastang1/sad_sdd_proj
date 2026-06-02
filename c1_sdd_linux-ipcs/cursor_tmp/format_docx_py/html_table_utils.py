@@ -198,3 +198,13 @@ def reapply_all_table_styles(docx_path) -> None:
     apply_all_table_borders(doc)
     format_all_table_cells(doc)
     doc.save(str(docx_path))
+
+
+def apply_table_autofit_window_to_docx(docx_path) -> int:
+    """仅对已有 docx 全部表格设置「适应窗口」，不改动边框/字体/正文。"""
+    from format_final_sdd import apply_all_table_autofit_window
+
+    doc = Document(str(docx_path))
+    n = apply_all_table_autofit_window(doc)
+    doc.save(str(docx_path))
+    return n

@@ -341,6 +341,36 @@ def apply_all_table_borders(document: Document) -> int:
     return n
 
 
+def apply_table_autofit_window(table: Table) -> None:
+    """
+    任务 9：表格适应窗口（100% 版心宽 + autofit 布局）。
+
+    仅修改 ``w:tblW`` / ``w:tblLayout``，不改动单元格文本、边框或段落样式。
+    """
+    tbl = table._tbl
+    tbl_pr = tbl.tblPr
+    if tbl_pr is None:
+        tbl_pr = OxmlElement("w:tblPr")
+        tbl.insert(0, tbl_pr)
+    for tag in (qn("w:tblW"), qn("w:tblLayout")):
+        for old in tbl_pr.findall(tag):
+            tbl_pr.remove(old)
+    tbl_w = OxmlElement("w:tblW")
+    tbl_w.set(qn("w:w"), "5000")
+    tbl_w.set(qn("w:type"), "pct")
+    tbl_pr.append(tbl_w)
+    layout = OxmlElement("w:tblLayout")
+    layout.set(qn("w:type"), "autofit")
+    tbl_pr.append(layout)
+
+
+def apply_all_table_autofit_window(document: Document) -> int:
+    """对文档内全部表格应用「适应窗口」宽度。"""
+    for tbl in document.tables:
+        apply_table_autofit_window(tbl)
+    return len(document.tables)
+
+
 # ---------------------------------------------------------------------------
 # 字体辅助（东亚字体在 OOXML 中需 rFonts/@eastAsia）
 # ---------------------------------------------------------------------------
@@ -1160,6 +1190,7 @@ def main() -> None:
     headings_ref = snapshot_heading_state(doc)
 
     n_tbl_border = apply_all_table_borders(doc)
+    n_tbl_autofit = apply_all_table_autofit_window(doc)
     n_tbl_cells = format_all_table_cells(doc)
     n_body = format_body_paragraphs(doc)
     n_shape, shape_reports = scale_inline_shapes_margin_and_width(doc)
@@ -1187,6 +1218,7 @@ def main() -> None:
         f"\n  任务1c 标题双重章节号(Tab/两段子写): {n_dup_heading}",
         f"\n  任务8 Heading1-3 字体: {n_heading_font}",
         f"\n  任务2 表格边框: {n_tbl_border}",
+        f"\n  任务9 表格适应窗口: {n_tbl_autofit}",
         f"\n  任务3 正文段落: {n_body}",
         f"\n  任务4 表格单元格（计有文本的单元格）: {n_tbl_cells}",
         f"\n  任务5 缩放插图: {n_shape} 张",
