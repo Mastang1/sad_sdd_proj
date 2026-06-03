@@ -81,7 +81,8 @@ Copy-Item cursor_tmp/cursorrules_backups/.cursorrules.snapshot .cursorrules -For
 
 | 位置 | 内容 |
 |------|------|
-| **根目录（交付物）** | `ipcs/`、`*.md`、`final_sdd.docx`、`final.pdf`、`ipcs-architecture.pdf`、`plantuml.jar`、`.cursorrules` |
+| **根目录（交付物）** | `ipcs/`、`*.md`、`final_sdd.docx`、`final.pdf`、`fuck.docx`、`fuck_svg.docx`、`ipcs-architecture.pdf`、`plantuml.jar`、`.cursorrules` |
+| **`format_refer/`** | Word 版式/页眉页脚模板 `format_refer.docx`（MD→DOCX **必须**套用，勿删） |
 | **`cursor_tmp/`** | `mem_info.md`（跨会话记忆）、`SDD_TOOLCHAIN.md`、`format_docx_py/`、`scripts/`、`flow_svgs/`、`flow_umls/`、`files_32_svgs/`、`files_32_umls/`、`cursorrules_backups/`、构建临时与校验报告 |
 
 - 路径常量：`cursor_tmp/workspace_paths.py`（`WORKSPACE_ROOT`、`CURSOR_TMP`、`FLOW_SVGS` 等）；**脚本必须 import，禁止硬编码旧路径**。
@@ -91,11 +92,12 @@ Copy-Item cursor_tmp/cursorrules_backups/.cursorrules.snapshot .cursorrules -For
 **工具链手册（跑脚本前必读）**：`cursor_tmp/SDD_TOOLCHAIN.md`  
 **Project Skill**：`.cursor/skills/ipcs-sdd-toolchain/SKILL.md`（任务匹配时自动加载）
 
-**常用命令（在根目录执行）** — 完整管线见手册 §3；交付闭环见 §2.1。
+**常用命令（在根目录执行）** — 完整管线见手册 §3；交付闭环见 §2.1 / §6.5 / §6.6。
 ```bash
 python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
 python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
-python word_to_pdf.py --Word final_sdd.docx -o final.pdf
+python cursor_tmp/format_docx_py/update_fuck_svg_docx.py   # 改 fuck.docx 后
+python word_to_pdf.py --Word fuck_svg.docx -o final.pdf    # PDF 禁止用 fuck.docx
 python cursor_tmp/scripts/render_flow_svgs.py
 ```
 
@@ -120,7 +122,7 @@ python cursor_tmp/scripts/render_flow_svgs.py
 ### 临时文件（强制）
 - 临时 MD、一次性 PY、Pandoc 中间件、测试 DOCX、`__pycache__`、校验报告 → **仅** `cursor_tmp/`。
 - **禁止**在工作区根目录写入 `_pandoc_*`、`_body_*`、`_probe_*`、`_check_*` 等构建/调试产物。
-- 流水线脚本（`md0519_to_final_sdd.py`）**必须**在结束时删除当次 `_pandoc_reference.docx`、`_body_md0519.docx`、`_pandoc_md0519.md`；**禁止**遗留 `final_sdd.generated.docx`（merge 成功时删除）。
+- 流水线脚本（`md0519_to_final_sdd.py`）**必须**在结束时删除当次 `_body_md0519.docx`、`_pandoc_md0519.md`；**禁止**遗留 `final_sdd.generated.docx`（merge 成功时删除）。
 - 任务结束前：删除一次性调试脚本（`_check_*.py`、`_audit_*.py`、`_test_*`）；保留可复用流水线模块（`format_docx_py/*.py`）。
 
 ---
@@ -129,7 +131,7 @@ python cursor_tmp/scripts/render_flow_svgs.py
 
 - **只改指定部分**：未在提示词中指定的章节/插图/字段一律不得增删改。
 - **`ipcs_sdd.md`**：流程图任务仅可删改流程图/插图。
-- **`final_sdd.docx`（TF）**：除任务要求外首页不变；章节替换须保持格式与构成一致。
+- **`final_sdd.docx`（TF）**：封面与页眉/页脚以 `format_refer/format_refer.docx` 为准；正文由 `md_sdd_0519.md` 生成替换；除任务要求外勿改封面。
 - **函数描述同步**：函数、表格完整对应；HTML 函数表须走后插入流程（见 §6）。
 - **插图替换**：仅替换指定章节 SVG，不得改动其他正文。
 
@@ -242,23 +244,45 @@ python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 
 入口：`cursor_tmp/format_docx_py/md0519_to_final_sdd.py`
 
-### 6.1 SVG 插图嵌入（已验证，2026-05）
+**版式/页眉页脚模板（强制）**：`format_refer/format_refer.docx`（常量 `workspace_paths.FORMAT_REFER_DOCX`）。  
+**禁止**再用旧 `final_sdd.docx` 作 Pandoc `--reference-doc` 或封面来源。
 
-**验收基准**：166/166 svgBlip；166/166 viewBox 宽高比（含 §5.7 / §6.7 时序图）；72/72 HTML 函数表。
+### 6.1 模板套用 + SVG 插图嵌入（已验证，2026-05）
 
-**症状（历史）**：有题注无图；1×1 EMU；时序图被压成 2:3。
+**验收基准**：183/183 svgBlip；183/183 viewBox 宽高比；138/138 HTML 函数表；页眉/页脚与模板 **字节级一致**。
 
-**根因与对策**
+**推荐方案（强制）**：Pandoc 生成**中间态正文** → 复制进模板 → 同步页眉/页脚 → 版式后处理 → **终态再同步页眉/页脚**。
+
+| 步骤 | 动作 | 模块 |
+|------|------|------|
+| 1 | MD 预处理：`resolve_media_images`、`_assert_md_svg_only`、`extract_and_strip_html_tables` | `md0519_to_final_sdd.py` |
+| 2 | Pandoc → `cursor_tmp/_body_md0519.docx`；`--reference-doc` = **`format_refer.docx`**；`--resource-path` = `pandoc_resource_path_str()` | 同上 |
+| 3 | `_verify_docx_images(BODY)` — blips = MD 引用数 | 同上 |
+| 4 | **合并进模板**：复制 `format_refer.docx` → 保留首个手动分页符前封面 → docxcompose 追加正文 | `apply_format_refer.merge_body_into_template` |
+| 5 | 从模板**强制覆盖** header/footer 部件 + 注入 cover/body 两套 `w:sectPr` | `sync_header_footer_parts` + `apply_template_section_properties` |
+| 6 | 若缺 `w:sectPr`：`ensure_sect_pr` 后**再**执行步骤 5 | `html_table_utils` + `apply_format_refer` |
+| 7 | `format_final_sdd`（字体/边框/插图缩放；删 `imageN.png` 占位题注） | `format_final_sdd.py` |
+| 8 | `_verify_aspect_ratios_preserved()` — 与 MD 源 SVG viewBox 对比，偏差 ≤ 2% | `md0519_to_final_sdd.py` |
+| 9 | `insert_html_function_tables()` + `reapply_all_table_styles()` + 表格适应窗口 | `html_table_utils.py` |
+| 9b | ACTIVITY 流程图 typography 缩放（Word 内约 **小四 12pt**） | `scale_flow_diagram_typography.py` |
+| 10 | **终态**再执行步骤 5（`format_final_sdd` 会改写 header 部件） | `apply_format_refer.py` |
+| 11 | `verify_template_headers_footers()` + `_verify_docx_images()` + `validate_md_docx_consistency.py` | 同上 |
+
+**页眉/页脚分节（与模板一致，勿手改）**
+- **封面节**（首个手动分页符所在段）：first/even/default 页眉 + default 页脚 + `titlePg`
+- **正文节**（文档末尾 `w:sectPr`）：default 页眉（`header4.xml`）
+
+**根因与对策（插图 + 合并）**
 
 | # | 根因 | 对策 |
 |---|------|------|
 | 1 | Pandoc `--resource-path` 不含 `cursor_tmp` → 找不到 SVG | 使用 `pandoc_resource_path_str()` |
 | 2 | `rasterize_svg_refs_for_docx` 在 Windows 生成不可达 PNG | **禁止**栅格化；保持 `.svg` 直嵌 |
-| 3 | docxcompose 合并后 `document.sections == 0` | 合并后 **`ensure_sect_pr(doc); doc.save()`** 并落盘 |
-| 4 | 版心=0 时 `format_final_sdd` 将所有图缩成 1×1 EMU | 先修复 sectPr 再跑版式；`_verify_docx_images` 要求 `min(extent.cx) ≥ 100000` |
-| 5 | Pandoc 遗留 **Image Caption `imageN.png`** 占位行 | `format_final_sdd.remove_pandoc_placeholder_image_captions()` 删除 |
-| 6 | svgBlip 的 `python-docx` `shape.width/height` 返回 0 或 1 | 缩放时**禁止**用 shape 尺寸算比例 |
-| 7 | Pandoc 对时序图误设 3810000×2540000（2:3） | `svg_extent_utils`：**`asvg:svgBlip/@r:embed`** → viewBox → `cy=cx×H/W` |
+| 3 | docxcompose 合并后丢失 `w:sectPr` / 页眉页脚引用 | `merge_body_into_template` + `apply_template_section_properties` |
+| 4 | docxcompose / `format_final_sdd` 改写 header XML | 终态 **`sync_header_footer_parts`** 从模板强制覆盖 |
+| 5 | 版心=0 时插图缩成 1×1 EMU | 先修复 sectPr 再跑版式；`min(extent.cx) ≥ 100000` |
+| 6 | Pandoc 遗留 **Image Caption `imageN.png`** 占位行 | `format_final_sdd.remove_pandoc_placeholder_image_captions()` |
+| 7 | Pandoc 对宽时序图误设 2:3 extent | `svg_extent_utils`：`asvg:svgBlip/@r:embed` → viewBox → `cy=cx×H/W` |
 
 **强制命令（根目录，两步缺一不可）**
 ```bash
@@ -266,22 +290,16 @@ python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
 python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 ```
 
-**脚本内步骤（不可跳步）**
-1. `resolve_media_images` + `_assert_md_svg_only()`（MD 仅 `.svg`）
-2. `extract_and_strip_html_tables()`（Pandoc 前剥离 HTML 函数表）
-3. Pandoc：`--resource-path` = `pandoc_resource_path_str()`，**不**调用 `rasterize_svg_refs_for_docx`
-4. `_verify_docx_images(BODY_DOCX)` — blips 数 = MD 引用数
-5. 合并封面 + 正文 → **`ensure_sect_pr`; `doc.save()`**（仅用当次 merge 输出）
-6. `format_final_sdd`：删 `imageN.png` 占位题注；按 §7 目标宽度缩放；**宽高比以 SVG viewBox 为准**
-7. `_verify_aspect_ratios_preserved()` — 与 **MD 源 SVG viewBox** 对比，偏差 ≤ 2%（含 §5.7 RTOS / §6.7 Linux 时序图）
-8. `insert_html_function_tables()` + `reapply_all_table_styles()`
-9. 终检 `_verify_docx_images()` + `validate_md_docx_consistency.py`（含 viewBox 宽高比）
+**单独合并中间态正文（调试）**
+```bash
+python cursor_tmp/format_docx_py/apply_format_refer.py cursor_tmp/_body_md0519.docx -o final_sdd.docx
+```
 
 **勿用陈旧 `.generated.docx`**：merge 已成功写入 `final_sdd.docx` 时，必须对其格式化并删除 stale `.generated.docx`。
 
 **宽高比真源**：SVG viewBox H/W；禁止 Pandoc 2:3 默认 extent；禁止 `shape.width/height`。
 
-**实现模块**：`svg_extent_utils.py`（`asvg:svgBlip/@r:embed`）+ `format_final_sdd.py`。
+**实现模块**：`apply_format_refer.py`（模板合并/HF）+ `svg_extent_utils.py` + `format_final_sdd.py`。
 
 ### 6.2 函数设计表（§4.4 / §5.4 模板，强制）
 
@@ -333,17 +351,21 @@ processing flow
 #### Word 嵌入流水线（不可改序）
 
 1. `extract_and_strip_html_tables()` — Pandoc **前**剥离 HTML 表
-2. Pandoc 正文（仅 pipe 简单表 + SVG）
-3. `ensure_sect_pr` + `format_final_sdd`（会去掉 H3 编号，仅保留函数名）
-4. `insert_html_function_tables()` — 按文档顺序匹配 H3（**函数名**不区分大小写；跳过已有 `w:tbl` 的重复同名锚点）
-5. `reapply_all_table_styles()`
+2. Pandoc 中间态正文（`--reference-doc` = **`format_refer.docx`**；仅 pipe 简单表 + SVG）
+3. `merge_body_into_template()` — 复制模板、保留封面、追加正文、首次 HF 同步
+4. `ensure_sect_pr`（若需要）+ 再 `apply_template_section_properties`
+5. `format_final_sdd`（会去掉 H3 编号，仅保留函数名）
+6. `insert_html_function_tables()` — 按文档顺序匹配 H3（**函数名**不区分大小写；跳过已有 `w:tbl` 的重复同名锚点）
+7. `reapply_all_table_styles()`
+8. **终态** `sync_header_footer_parts` + `apply_template_section_properties` + `verify_template_headers_footers`
 
 ### 6.3 共用脚本
 
 | 脚本 | 职责 |
 |------|------|
-| `cursor_tmp/workspace_paths.py` | 路径常量 |
+| `cursor_tmp/workspace_paths.py` | 路径常量（含 `FORMAT_REFER_DOCX`） |
 | `cursor_tmp/format_docx_py/md0519_to_final_sdd.py` | 完整 MD→DOCX 流水线 |
+| `cursor_tmp/format_docx_py/apply_format_refer.py` | 中间态正文合并进模板；页眉/页脚/分节属性同步与校验 |
 | `cursor_tmp/format_docx_py/function_table_html.py` | §4.4 模板 HTML 函数表生成/转换 |
 | `cursor_tmp/format_docx_py/html_table_utils.py` | HTML 表剥离/后插入 Word（colspan/rowspan） |
 | `cursor_tmp/format_docx_py/svg_extent_utils.py` | SVG viewBox 读 extent；`asvg:svgBlip` 关系解析 |
@@ -358,44 +380,95 @@ python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 | 项 | 基准 |
 |----|------|
 | HTML 函数表 | DOCX 5 列函数表 ≥ MD `html_tables` 的 **90%**（当前约 **138**） |
-| 插图 blips / svgBlip | **166/166** |
+| 插图 blips / svgBlip | **183/183** |
 | MD 插图格式 | 全部 `.svg` |
 | 磁盘 SVG 缺失 | **0** |
-| viewBox 宽高比 vs DOCX extent | **166/166**，偏差 ≤ 2% |
+| viewBox 宽高比 vs DOCX extent | **183/183**，偏差 ≤ 2% |
 | `min(extent.cx)` | ≥ 100000 EMU |
+| 页眉/页脚 | `verify_template_headers_footers()` **PASS**（与 `format_refer.docx` 一致） |
 
 ### 6.5 Word → PDF 交付导出（`word_to_pdf.py`）
 
-**交付物**：根目录 `final.pdf`（由 `final_sdd.docx` 导出）。
+**交付物**：根目录 `final.pdf`。
+
+**PDF 输入真源（强制，task-17 任务 2）**
+
+| 允许 | 禁止 |
+|------|------|
+| **`fuck_svg.docx`**（流程图为 SVG，与 MD 一致） | **`fuck.docx`**（流程图为 EMF，仅用于 Word 编辑） |
+| `final_sdd.docx`（管线 C 全量交付，非 fuck 工作流时） | 以 `fuck.docx` 作为 `--Word` 输入导出 `final.pdf` |
+
+**触发**：用户说「生成 PDF」「更新 PDF」「导出 PDF」「refresh pdf」「word to pdf」等 — **必须**基于 `fuck_svg.docx`，**禁止**用 `fuck.docx`。
+
+**推荐顺序（fuck 工作流）**
+```bash
+# 若刚改过 fuck.docx，先同步 SVG 副本
+python cursor_tmp/format_docx_py/update_fuck_svg_docx.py
+# 再从 SVG 版导出 PDF（不可改用 fuck.docx）
+python word_to_pdf.py --Word fuck_svg.docx -o final.pdf --backend libreoffice
+```
+（本机 Word COM 可用时可 `--backend word` 或 `--backend auto`。）
 
 **前提**
-- 已执行 §6.1 流水线且 `validate_md_docx_consistency.py` **PASS**。
-- 本机已安装 **LibreOffice**（Windows：`soffice.exe` 在 PATH 或 `C:\Program Files\LibreOffice\program\`）。
+- `fuck_svg.docx` 已与 `fuck.docx` 同步（§6.6）；插图为 SVG 直嵌。
+- 本机已安装 **LibreOffice** 或 **Microsoft Word**（见 `word_to_pdf.py` `--backend`）。
 - Word 文档须使用标准 **Heading 1–4** 样式，PDF 书签/大纲才完整。
 
-**脚本**：工作区根目录 `word_to_pdf.py`（LibreOffice headless；每 run 使用独立 `UserInstallation` 临时目录，避免 Windows `bootstrap.ini` 冲突）。
+**脚本**：工作区根目录 `word_to_pdf.py`。
 
-**强制命令（根目录）**
-```bash
-python word_to_pdf.py --Word final_sdd.docx -o final.pdf
-```
-
-| 参数 | 说明 |
-|------|------|
-| `--Word` | 输入 `.docx` / `.doc` 路径（必填） |
-| `-o` / `--output` | 输出 `.pdf` 路径；省略则写入当前目录 `{stem}.pdf` |
-
-**交付闭环顺序（DOCX + PDF）**
+**管线 C 交付（非 fuck 编辑流）**
 ```bash
 python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
 python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 python word_to_pdf.py --Word final_sdd.docx -o final.pdf
 ```
 
+| 参数 | 说明 |
+|------|------|
+| `--Word` | 输入 `.docx`；**fuck 工作流下填 `fuck_svg.docx`** |
+| `-o` / `--output` | 输出 `.pdf`（默认 `{stem}.pdf`） |
+| `--backend` | `auto` / `word` / `libreoffice` |
+
 **失败处理**
 - `LibreOffice executable not found`：安装 LibreOffice 或将 `program` 目录加入 PATH。
-- 转换超时（默认 300s）或 exit ≠ 0：关闭占用 `final_sdd.docx` 的 Word 进程后重试。
-- 成功标志：日志 `Success! Output saved to:` 且根目录 `final.pdf` 存在。
+- 转换超时（默认 300s）或 exit ≠ 0：关闭占用 docx 的 Word 进程后重试。
+- 成功标志：日志 `Success! Output saved to:` 且 `final.pdf` 存在。
+
+**AI 行为**：执行 PDF 相关命令前自检 `--Word` 路径；若为 `fuck.docx` 则**停止**并改为 `fuck_svg.docx`（必要时先跑 `update_fuck_svg_docx.py`）。
+
+### 6.6 `fuck.docx` / `fuck_svg.docx` 双副本（流程图 EMF vs SVG）
+
+**目的**：Word 中编辑版式时，138 张 ACTIVITY 流程图用 **EMF** 可稳定保存；带 **SVG** 直嵌的文档易保存失败。故成对维护两个文件：
+
+| 文件 | 流程图 | 用途 |
+|------|--------|------|
+| `fuck.docx` | **EMF** | 用户版式/表格/段落编辑（**只改此文件**） |
+| `fuck_svg.docx` | **SVG**（`cursor_tmp/flow_svgs/` 真源，不重生成） | 校验、PDF、与 MD 插图一致 |
+
+**脚本**（根目录执行；路径见 `workspace_paths.FUCK_DOCX` / `FUCK_SVG_DOCX`）：
+
+| 脚本 | 作用 |
+|------|------|
+| `cursor_tmp/format_docx_py/sync_fuck_docx_pair.py` | 全流程：① `fuck.docx` ACTIVITY → EMF（保留 `wp:extent`）② 删旧 `fuck_svg.docx` → 拷贝 `fuck.docx` → EMF → SVG |
+| `cursor_tmp/format_docx_py/update_fuck_svg_docx.py` | **仅**同步 SVG 副本（用户改完 `fuck.docx` 后） |
+| `replace_flow_svg_with_emf.py` | 底层：任意 docx ACTIVITY → EMF（Inkscape；`--replace-only` 用 `flow_emf/` 缓存） |
+| `replace_flow_emf_with_svg.py` | 底层：仅 `fuck_svg.docx` EMF → SVG |
+
+**初始/全量同步**
+```bash
+python cursor_tmp/format_docx_py/sync_fuck_docx_pair.py --replace-only
+```
+（若无 EMF 缓存则去掉 `--replace-only`，或加 `--force-emf` 强制 Inkscape 重导。）
+
+**用户改完 `fuck.docx` 后** — 对 LLM 发送 **`update fuck_svg.docx`**（或 **`updata fuck_svg.docx`**，同义）时，**必须**执行：
+```bash
+python cursor_tmp/format_docx_py/update_fuck_svg_docx.py
+```
+等价步骤：删除 `fuck_svg.docx` → `copy fuck.docx fuck_svg.docx` → 138 张流程图 EMF 换 SVG（尺寸按 docx extent + SVG viewBox）。
+
+**禁止**：在 `fuck.docx` 上跑 EMF→SVG；在 `fuck_svg.docx` 上手改版式后不回写 `fuck.docx`（真源为 `fuck.docx`）；**用 `fuck.docx` 导出/更新 PDF**（见 §6.5）。
+
+**PDF 与双副本关系**：`fuck.docx` 仅编辑；凡生成或更新 `final.pdf`，**输入必须是 `fuck_svg.docx`**。若用户刚编辑 `fuck.docx` 未同步，先 `update_fuck_svg_docx.py` 再 `word_to_pdf.py --Word fuck_svg.docx`。
 
 ---
 
@@ -408,6 +481,7 @@ python word_to_pdf.py --Word final_sdd.docx -o final.pdf
 | 插图（一般） | 目标宽 14 cm；高度 = 宽 × **源 SVG viewBox 的 H/W**；禁止 Pandoc 2:3 默认 extent |
 | 插图（§3.2 Files） | 目标宽 12 cm；同上 |
 | 插图（§5.7 / §6.7 时序图） | 同上；宽时序图不得被压成 2:3 |
+| 插图（ACTIVITY 流程图） | `format_final_sdd` 任务 5 统一设宽后，管线 C 末步 `scale_flow_diagram_typography` 按 viewBox+字号再缩放，Word 内正文约 **小四 12pt**（仅 `data-diagram-type="ACTIVITY"`） |
 | 标题 | 保留样式行，删重复编号段落 |
 | §3.3/3.4 | 插图前插入 “processing flow”；删插图下旧 processing flow 行 |
 | §3.2 | 删插图下 “3.2.x … 头文件依赖（组件 UML）” 单行说明 |

@@ -81,7 +81,7 @@ Copy-Item cursor_tmp/cursorrules_backups/.cursorrules.snapshot .cursorrules -For
 
 | 位置 | 内容 |
 |------|------|
-| **根目录（交付物）** | `ipcs/`、`*.md`、`final_sdd.docx`、`final.pdf`、`fuck.docx`、`fuck_svg.docx`、`ipcs-architecture.pdf`、`plantuml.jar`、`.cursorrules` |
+| **根目录（交付物）** | `ipcs/`、`*.md`、`final_sdd.docx`、`final.pdf`、`ipcs-architecture.pdf`、`plantuml.jar`、`.cursorrules` |
 | **`format_refer/`** | Word 版式/页眉页脚模板 `format_refer.docx`（MD→DOCX **必须**套用，勿删） |
 | **`cursor_tmp/`** | `mem_info.md`（跨会话记忆）、`SDD_TOOLCHAIN.md`、`format_docx_py/`、`scripts/`、`flow_svgs/`、`flow_umls/`、`files_32_svgs/`、`files_32_umls/`、`cursorrules_backups/`、构建临时与校验报告 |
 
@@ -92,12 +92,11 @@ Copy-Item cursor_tmp/cursorrules_backups/.cursorrules.snapshot .cursorrules -For
 **工具链手册（跑脚本前必读）**：`cursor_tmp/SDD_TOOLCHAIN.md`  
 **Project Skill**：`.cursor/skills/ipcs-sdd-toolchain/SKILL.md`（任务匹配时自动加载）
 
-**常用命令（在根目录执行）** — 完整管线见手册 §3；交付闭环见 §2.1 / §6.5 / §6.6。
+**常用命令（在根目录执行）** — 完整管线见手册 §3；交付闭环见 §2.1。
 ```bash
 python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
 python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
-python cursor_tmp/format_docx_py/update_fuck_svg_docx.py   # 改 fuck.docx 后
-python word_to_pdf.py --Word fuck_svg.docx -o final.pdf    # PDF 禁止用 fuck.docx
+python word_to_pdf.py --Word final_sdd.docx -o final.pdf
 python cursor_tmp/scripts/render_flow_svgs.py
 ```
 
@@ -389,86 +388,36 @@ python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 
 ### 6.5 Word → PDF 交付导出（`word_to_pdf.py`）
 
-**交付物**：根目录 `final.pdf`。
-
-**PDF 输入真源（强制，task-17 任务 2）**
-
-| 允许 | 禁止 |
-|------|------|
-| **`fuck_svg.docx`**（流程图为 SVG，与 MD 一致） | **`fuck.docx`**（流程图为 EMF，仅用于 Word 编辑） |
-| `final_sdd.docx`（管线 C 全量交付，非 fuck 工作流时） | 以 `fuck.docx` 作为 `--Word` 输入导出 `final.pdf` |
-
-**触发**：用户说「生成 PDF」「更新 PDF」「导出 PDF」「refresh pdf」「word to pdf」等 — **必须**基于 `fuck_svg.docx`，**禁止**用 `fuck.docx`。
-
-**推荐顺序（fuck 工作流）**
-```bash
-# 若刚改过 fuck.docx，先同步 SVG 副本
-python cursor_tmp/format_docx_py/update_fuck_svg_docx.py
-# 再从 SVG 版导出 PDF（不可改用 fuck.docx）
-python word_to_pdf.py --Word fuck_svg.docx -o final.pdf --backend libreoffice
-```
-（本机 Word COM 可用时可 `--backend word` 或 `--backend auto`。）
+**交付物**：根目录 `final.pdf`（由 `final_sdd.docx` 导出）。
 
 **前提**
-- `fuck_svg.docx` 已与 `fuck.docx` 同步（§6.6）；插图为 SVG 直嵌。
-- 本机已安装 **LibreOffice** 或 **Microsoft Word**（见 `word_to_pdf.py` `--backend`）。
+- 已执行 §6.1 流水线且 `validate_md_docx_consistency.py` **PASS**。
+- 本机已安装 **LibreOffice**（Windows：`soffice.exe` 在 PATH 或 `C:\Program Files\LibreOffice\program\`）。
 - Word 文档须使用标准 **Heading 1–4** 样式，PDF 书签/大纲才完整。
 
-**脚本**：工作区根目录 `word_to_pdf.py`。
+**脚本**：工作区根目录 `word_to_pdf.py`（LibreOffice headless；每 run 使用独立 `UserInstallation` 临时目录，避免 Windows `bootstrap.ini` 冲突）。
 
-**管线 C 交付（非 fuck 编辑流）**
+**强制命令（根目录）**
+```bash
+python word_to_pdf.py --Word final_sdd.docx -o final.pdf
+```
+
+| 参数 | 说明 |
+|------|------|
+| `--Word` | 输入 `.docx` / `.doc` 路径（必填） |
+| `-o` / `--output` | 输出 `.pdf` 路径；省略则写入当前目录 `{stem}.pdf` |
+
+**交付闭环顺序（DOCX + PDF）**
 ```bash
 python cursor_tmp/format_docx_py/md0519_to_final_sdd.py
 python cursor_tmp/format_docx_py/validate_md_docx_consistency.py
 python word_to_pdf.py --Word final_sdd.docx -o final.pdf
 ```
 
-| 参数 | 说明 |
-|------|------|
-| `--Word` | 输入 `.docx`；**fuck 工作流下填 `fuck_svg.docx`** |
-| `-o` / `--output` | 输出 `.pdf`（默认 `{stem}.pdf`） |
-| `--backend` | `auto` / `word` / `libreoffice` |
-
 **失败处理**
 - `LibreOffice executable not found`：安装 LibreOffice 或将 `program` 目录加入 PATH。
-- 转换超时（默认 300s）或 exit ≠ 0：关闭占用 docx 的 Word 进程后重试。
-- 成功标志：日志 `Success! Output saved to:` 且 `final.pdf` 存在。
-
-**AI 行为**：执行 PDF 相关命令前自检 `--Word` 路径；若为 `fuck.docx` 则**停止**并改为 `fuck_svg.docx`（必要时先跑 `update_fuck_svg_docx.py`）。
-
-### 6.6 `fuck.docx` / `fuck_svg.docx` 双副本（流程图 EMF vs SVG）
-
-**目的**：Word 中编辑版式时，138 张 ACTIVITY 流程图用 **EMF** 可稳定保存；带 **SVG** 直嵌的文档易保存失败。故成对维护两个文件：
-
-| 文件 | 流程图 | 用途 |
-|------|--------|------|
-| `fuck.docx` | **EMF** | 用户版式/表格/段落编辑（**只改此文件**） |
-| `fuck_svg.docx` | **SVG**（`cursor_tmp/flow_svgs/` 真源，不重生成） | 校验、PDF、与 MD 插图一致 |
-
-**脚本**（根目录执行；路径见 `workspace_paths.FUCK_DOCX` / `FUCK_SVG_DOCX`）：
-
-| 脚本 | 作用 |
-|------|------|
-| `cursor_tmp/format_docx_py/sync_fuck_docx_pair.py` | 全流程：① `fuck.docx` ACTIVITY → EMF（保留 `wp:extent`）② 删旧 `fuck_svg.docx` → 拷贝 `fuck.docx` → EMF → SVG |
-| `cursor_tmp/format_docx_py/update_fuck_svg_docx.py` | **仅**同步 SVG 副本（用户改完 `fuck.docx` 后） |
-| `replace_flow_svg_with_emf.py` | 底层：任意 docx ACTIVITY → EMF（Inkscape；`--replace-only` 用 `flow_emf/` 缓存） |
-| `replace_flow_emf_with_svg.py` | 底层：仅 `fuck_svg.docx` EMF → SVG |
-
-**初始/全量同步**
-```bash
-python cursor_tmp/format_docx_py/sync_fuck_docx_pair.py --replace-only
-```
-（若无 EMF 缓存则去掉 `--replace-only`，或加 `--force-emf` 强制 Inkscape 重导。）
-
-**用户改完 `fuck.docx` 后** — 对 LLM 发送 **`update fuck_svg.docx`**（或 **`updata fuck_svg.docx`**，同义）时，**必须**执行：
-```bash
-python cursor_tmp/format_docx_py/update_fuck_svg_docx.py
-```
-等价步骤：删除 `fuck_svg.docx` → `copy fuck.docx fuck_svg.docx` → 138 张流程图 EMF 换 SVG（尺寸按 docx extent + SVG viewBox）。
-
-**禁止**：在 `fuck.docx` 上跑 EMF→SVG；在 `fuck_svg.docx` 上手改版式后不回写 `fuck.docx`（真源为 `fuck.docx`）；**用 `fuck.docx` 导出/更新 PDF**（见 §6.5）。
-
-**PDF 与双副本关系**：`fuck.docx` 仅编辑；凡生成或更新 `final.pdf`，**输入必须是 `fuck_svg.docx`**。若用户刚编辑 `fuck.docx` 未同步，先 `update_fuck_svg_docx.py` 再 `word_to_pdf.py --Word fuck_svg.docx`。
+- 转换超时（默认 300s）或 exit ≠ 0：关闭占用 `final_sdd.docx` 的 Word 进程后重试。
+- 成功标志：日志 `Success! Output saved to:` 且根目录 `final.pdf` 存在。
 
 ---
 

@@ -25,6 +25,7 @@ WORKSPACE_ROOT = CURSOR_TMP.parent
 # —— 工作区根目录（交付物）——
 FINAL_SDD_DOCX = WORKSPACE_ROOT / "final_sdd.docx"
 FUCK_DOCX = WORKSPACE_ROOT / "fuck.docx"
+FUCK_SVG_DOCX = WORKSPACE_ROOT / "fuck_svg.docx"
 FORMAT_REFER_DOCX = WORKSPACE_ROOT / "format_refer" / "format_refer.docx"
 MD_SDD_0519 = WORKSPACE_ROOT / "md_sdd_0519.md"
 IPCS_SDD_MD = WORKSPACE_ROOT / "ipcs_sdd.md"

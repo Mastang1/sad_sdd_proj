@@ -70,6 +70,10 @@ python cursor_tmp/scripts/sdd_preflight.py --md-svg
 | `scripts/fix_md_h3_blank_lines.py` | `###` 前空行 | Pandoc H3 | md | — | 改 md | 按需 |
 | `scripts/docx_to_md.py` | DOCX→MD | 反向同步（慎用） | docx → md | — | 覆盖 md | 按需 |
 | `scripts/sdd_preflight.py` | 打印 G1–G5 提醒；检查 plantuml / MD svg | **执行前** | — | 只读 | 是 |
+| `format_docx_py/sync_fuck_docx_pair.py` | `fuck.docx` EMF + 生成 `fuck_svg.docx` SVG 副本 | task-17 全量同步 | `fuck.docx` → 双 docx | `flow_emf/` 缓存 | 覆盖两 docx 流程图 | 是 |
+| `format_docx_py/update_fuck_svg_docx.py` | 用户改 `fuck.docx` 后刷新 `fuck_svg.docx` | **update fuck_svg.docx** 命令 | 删/copy/EMF→SVG | `fuck.docx` EMF 版 | 覆盖 `fuck_svg.docx` | 是 |
+| `format_docx_py/replace_flow_svg_with_emf.py` | ACTIVITY → EMF（Inkscape） | 被 sync 调用 | docx + `flow_emf/` | Inkscape | 改流程图 blip | 是 |
+| `format_docx_py/replace_flow_emf_with_svg.py` | `fuck_svg.docx` EMF → SVG | 被 update 调用 | `flow_svgs/` | — | 改 `fuck_svg` 流程图 | 是 |
 
 ---
 

@@ -217,6 +217,9 @@ def collect_activity_flow_inlines(
                 continue
 
             if is_flow_png_inline(inline_el, doc):
+                png_svg = svg_text_from_inline(inline_el, doc)
+                if png_svg and svg_diagram_type(png_svg) != "ACTIVITY":
+                    continue
                 cx, cy = inline_extent_emu(inline_el)
                 if cx <= 0 or cy <= 0:
                     continue
@@ -233,6 +236,10 @@ def collect_activity_flow_inlines(
             if not is_flow_emf_inline(inline_el, doc):
                 continue
 
+            emf_svg = svg_text_from_inline(inline_el, doc)
+            if emf_svg and svg_diagram_type(emf_svg) != "ACTIVITY":
+                continue
+
             cx, cy = inline_extent_emu(inline_el)
             if cx <= 0 or cy <= 0:
                 continue
@@ -244,6 +251,9 @@ def collect_activity_flow_inlines(
             row = emf_rows[emf_row_idx]
             emf_row_idx += 1
             _append_from_report_row(records, inline_el, row, cx, cy, src_dirs)
+
+    return records
+
 
 def collect_emf_flow_inlines(
     doc: Document,

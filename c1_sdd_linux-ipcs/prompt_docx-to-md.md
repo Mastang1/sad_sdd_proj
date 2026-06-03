@@ -93,4 +93,8 @@ L2 Linux：UIO 实现、CDEV 实现、全内核实现
  - 1. @fuck.docx是我调整好格式的文档，内部的流程图为emf格式。现在添加py工具，实现用对应的svg替换所有emf，并执行存储word；
  - 要求：只需要执行步骤0 步骤1；只可以执行 @fuck.docx中的流程图替换操作；此外不许操作其他任何地方；svg替换中，要查询对应文件的size信息，执行每个svg的大小调整；
 
-# task-17: 用svg替换 @fuck.docx中对应的的流程图
+# task-17: @fuck.docx 及 fuck_svg.docx 生成规则设置
+ - 任务目标描述：需要在工程中同时保存fuck.docx文件和fuck_svg.docx文件，其中，fuck.docx文件中的流程图都是emf格式的，fuck_svg.docx文件中的流程图都是svg格式的。
+ - 保留两个docx的原因：fuck.docx文档用作user格式编辑用，因为插入emf格式的fuck.docx可以正常保存，但是插入一百多个svg文件的文档会有保存失败的问题。
+ - 任务1：生成rule到.cursorrules，同时生成对应的python脚本。实现：1. 修改现有的fuck.docx,替换所有的流程图为对应大小的emf格式图片；2. 拷贝fuck.docx并重命名为fuck_svg.docx,并开发脚本替换fuck_svg.docx的所有流程图为对应大小的svg文件。注意：svg文件采用当前存储区的svg文件，不必重新生成；2. 添加rule，后续当我修改fuck.docx后，发送updata fuck_svg.docx命令到LLM，需要执行删除原始fuck_svg.docx/拷贝并重命名fuck.docx为fuck_svg.docx文件的操作流程；
+ - 任务2：添加规则，当接收到更新或者生成pdf文档命令后，必须基于fuck_svg.docx生成，不可采用fuck.docx生成，将该要求提取总结为rule存入cursorrules中

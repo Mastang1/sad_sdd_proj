@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-将 ``fuck.docx`` 中 ACTIVITY 流程图 EMF 替换为 ``cursor_tmp/flow_svgs`` 对应 SVG，
+将 ``fuck_svg.docx`` 中 ACTIVITY 流程图 EMF 替换为 ``cursor_tmp/flow_svgs`` 对应 SVG，
 保留 Word 显示宽度并按 SVG viewBox 调整高度；其它插图不动。
 
 用法::
 
     python cursor_tmp/format_docx_py/replace_flow_emf_with_svg.py
-    python cursor_tmp/format_docx_py/replace_flow_emf_with_svg.py fuck.docx --dry-run
+    python cursor_tmp/format_docx_py/replace_flow_emf_with_svg.py fuck_svg.docx --dry-run
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ from flow_diagram_image_replace import (
 from workspace_paths import (
     EMF_EXTENT_REPORT,
     FLOW_EMF,
-    FUCK_DOCX,
+    FUCK_SVG_DOCX,
     MD_SDD_0519,
     WORKSPACE_ROOT,
 )
@@ -69,9 +69,14 @@ def apply_emf_to_svg(
     md_path: Path = MD_SDD_0519,
     report_path: Path = REPORT_PATH,
     dry_run: bool = False,
+    allowed_names: tuple[str, ...] = ("fuck_svg.docx",),
 ) -> tuple[int, int]:
-    if docx_path.resolve().name.lower() != "fuck.docx":
-        sys.exit("[ERROR] 本脚本仅允许操作 fuck.docx")
+    name = docx_path.resolve().name.lower()
+    if name not in allowed_names:
+        sys.exit(
+            f"[ERROR] 本脚本仅允许操作 {', '.join(allowed_names)}，"
+            f"收到 {docx_path.name}"
+        )
 
     svg_paths = list_activity_flow_svg_paths(md_path, workspace_root=WORKSPACE_ROOT)
     doc = Document(str(docx_path))
@@ -110,9 +115,9 @@ def apply_emf_to_svg(
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description="Replace ACTIVITY EMF inlines with SVG (fuck.docx only)."
+        description="Replace ACTIVITY EMF inlines with SVG (fuck_svg.docx only)."
     )
-    ap.add_argument("docx", nargs="?", type=Path, default=FUCK_DOCX)
+    ap.add_argument("docx", nargs="?", type=Path, default=FUCK_SVG_DOCX)
     ap.add_argument("--report", type=Path, default=REPORT_PATH)
     ap.add_argument("--md", type=Path, default=MD_SDD_0519)
     ap.add_argument("--dry-run", action="store_true")
