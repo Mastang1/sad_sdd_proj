@@ -86,3 +86,11 @@ L2 Linux：UIO 实现、CDEV 实现、全内核实现
  - 1. final_sdd.docx文件中的svg数量太多，导致编写后不能保存，现在需要批量转换指定的svg为emf格式的图片，存储在cursor_tmp下的flow_emf路径下，然后用指定的emf文件，替换docx中的svg；
  - 2. 要求：只可以替换执行的流程图svg，保持当前的缩放尺寸(所以要先记录每个svg的宽高和位置)；不许修改其他任何地方
  - 3. 规则：必须使用 inkscape命令，现有的"C:\tangyapeng\docs\StarGather\sad_sdd_proj\c1_sdd_linux-ipcs\cursor_tmp\flow_emf"实测在word中打不开
+
+
+# task-16: 用svg替换 @fuck.docx中对应的的流程图
+ - 0. @fuck.docx中的章节6.4.1对用的函数的流程图有fatal error，根据源码对应函数重新生成并存储到svg指定路径，不用重新生成对应的其他格式的文件，只用重新生成这一个svg文件；
+ - 1. @fuck.docx是我调整好格式的文档，内部的流程图为emf格式。现在添加py工具，实现用对应的svg替换所有emf，并执行存储word；
+ - 要求：只需要执行步骤0 步骤1；只可以执行 @fuck.docx中的流程图替换操作；此外不许操作其他任何地方；svg替换中，要查询对应文件的size信息，执行每个svg的大小调整；
+
+# task-17: 用svg替换 @fuck.docx中对应的的流程图

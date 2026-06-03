@@ -165,6 +165,7 @@ stop
     # --- 6.4 UIO user proxy ---
     "linux_6_4_1_line_from_file": """
 start
+:memset(buf, 0, IPC_UIO_PARAMS_LEN);
 :file = fopen(filename, "r");
 if (file == NULL?) then (yes)
   :return -ENONET;
@@ -177,7 +178,17 @@ if (s == NULL?) then (yes)
   stop
 else (no)
 endif
-:while ((*s) && (i < IPC_SHM_UIO_BUF_LEN))\nif (*s == '\\n') *s = 0\ns++\ni++\nfclose(file);;
+:i = 0;
+while ((*s) && (i < IPC_SHM_UIO_BUF_LEN)?) is (yes)
+  if (*s == '\\n'?) then (yes)
+    :*s = 0;
+    break
+  else (no)
+  endif
+  :s++;
+  :i++;
+endwhile (no)
+:fclose(file);
 :return 0;
 stop
 """,

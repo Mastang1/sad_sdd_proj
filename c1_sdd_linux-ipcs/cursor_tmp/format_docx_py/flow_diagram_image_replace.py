@@ -14,7 +14,7 @@ from docx.oxml.ns import qn
 from docx.shape import InlineShape
 
 from format_final_sdd import _apply_shape_extents, _iter_body_paragraphs_in_order
-from svg_extent_utils import svg_diagram_type, svg_text_from_inline
+from svg_extent_utils import parse_svg_viewbox_wh, svg_diagram_type, svg_text_from_inline
 
 _SVG_BLIP_NS = "http://schemas.microsoft.com/office/drawing/2016/SVG/main"
 _PLANTUML_SRC_RE = re.compile(r"<\?plantuml-src[^?]*\?>", re.DOTALL)
@@ -245,6 +245,35 @@ def collect_activity_flow_inlines(
             emf_row_idx += 1
             _append_from_report_row(records, inline_el, row, cx, cy, src_dirs)
 
+def collect_emf_flow_inlines(
+    doc: Document,
+    *,
+    emf_report_path: Path | None = None,
+    svg_src_dirs: list[Path] | None = None,
+) -> list[FlowInlineRecord]:
+    """Collect ACTIVITY flow inlines that embed ``image/x-emf`` only."""
+    emf_rows = parse_extent_report(emf_report_path) if emf_report_path else []
+    emf_row_idx = 0
+    src_dirs = svg_src_dirs or []
+    records: list[FlowInlineRecord] = []
+    wp_inline = qn("wp:inline")
+
+    for p_el in _iter_body_paragraphs_in_order(doc.element.body):
+        for inline_el in p_el.findall(".//" + wp_inline):
+            if not is_flow_emf_inline(inline_el, doc):
+                continue
+            cx, cy = inline_extent_emu(inline_el)
+            if cx <= 0 or cy <= 0:
+                continue
+            if emf_row_idx >= len(emf_rows):
+                raise RuntimeError(
+                    "DOCX 含 EMF 流程图，但缺少 "
+                    f"{emf_report_path} 中的 extent 记录"
+                )
+            row = emf_rows[emf_row_idx]
+            emf_row_idx += 1
+            _append_from_report_row(records, inline_el, row, cx, cy, src_dirs)
+
     return records
 
 
@@ -285,6 +314,93 @@ def replace_inline_with_emf(
     link = blip.get(qn("r:link"))
     if link is not None:
         blip.attrib.pop(qn("r:link"), None)
+
+    shape = InlineShape(inline_el)
+    _apply_shape_extents(shape, cx, cy)
+
+
+_MD_FLOW_SVG_RE = re.compile(r"!\[\]\((cursor_tmp/flow_svgs/[^)]+\.svg)\)")
+
+
+def list_activity_flow_svg_paths(
+    md_path: Path, *, workspace_root: Path
+) -> list[Path]:
+    """Return ACTIVITY flow SVG paths in ``md_sdd_0519.md`` appearance order."""
+    text = md_path.read_text(encoding="utf-8")
+    out: list[Path] = []
+    for rel in _MD_FLOW_SVG_RE.findall(text):
+        svg_path = (workspace_root / rel).resolve()
+        if not svg_path.is_file():
+            raise FileNotFoundError(f"Missing flow SVG: {svg_path}")
+        head = svg_path.read_text(encoding="utf-8")[:800]
+        if svg_diagram_type(head) != "ACTIVITY":
+            continue
+        out.append(svg_path)
+    return out
+
+
+def display_extent_from_svg_file(svg_path: Path, cx: int, cy: int) -> tuple[int, int]:
+    """Keep EMF display width ``cx``; adjust ``cy`` from SVG viewBox aspect ratio."""
+    wh = parse_svg_viewbox_wh(svg_path.read_text(encoding="utf-8"))
+    if wh is None or cx <= 0:
+        return cx, cy
+    w, h = wh
+    if w <= 0 or h <= 0:
+        return cx, cy
+    new_cy = max(1, int(round(cx * h / w)))
+    return cx, new_cy
+
+
+def add_svg_image_part(doc: Document, svg_path: Path) -> str:
+    """Register SVG bytes for ``asvg:svgBlip`` embedding."""
+    from docx.opc.constants import RELATIONSHIP_TYPE as RT
+    from docx.opc.packuri import PackURI
+    from docx.opc.part import Part
+
+    existing = {part.partname for part in doc.part.package.iter_parts()}
+    for i in range(1, 10000):
+        partname = PackURI(f"/word/media/flow_svg_{i}.svg")
+        if partname not in existing:
+            break
+    else:
+        raise RuntimeError("no free SVG part name")
+
+    blob = svg_path.read_bytes()
+    part = Part(partname, "image/svg+xml", blob, doc.part.package)
+    return doc.part.relate_to(part, RT.IMAGE)
+
+
+def replace_inline_with_svg(
+    inline_el, doc: Document, svg_path: Path, cx: int, cy: int
+) -> None:
+    """Replace EMF/PNG blip with Pandoc-style ``asvg:svgBlip`` (extent preserved)."""
+    from docx.oxml import parse_xml
+
+    blip = inline_el.find(".//" + qn("a:blip"))
+    if blip is None:
+        raise RuntimeError("no a:blip")
+
+    for child in list(blip):
+        blip.remove(child)
+    for attr in (qn("r:embed"), qn("r:link")):
+        if attr in blip.attrib:
+            blip.attrib.pop(attr, None)
+
+    r_id = add_svg_image_part(doc, svg_path)
+    ext_lst = parse_xml(
+        f'<a:extLst xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" '
+        f'xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" '
+        f'xmlns:asvg="{_SVG_BLIP_NS}" '
+        f'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        f'<a:ext uri="{{28A0092B-C50C-407E-A947-70E740481C1C}}">'
+        f'<a14:useLocalDpi xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" val="0"/>'
+        f"</a:ext>"
+        f'<a:ext uri="{{96DAC541-7B7A-43D3-8B79-37D633B846F1}}">'
+        f'<asvg:svgBlip xmlns:asvg="{_SVG_BLIP_NS}" r:embed="{r_id}"/>'
+        f"</a:ext>"
+        f"</a:extLst>"
+    )
+    blip.append(ext_lst)
 
     shape = InlineShape(inline_el)
     _apply_shape_extents(shape, cx, cy)

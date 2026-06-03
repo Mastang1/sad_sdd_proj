@@ -3,6 +3,7 @@
 skinparam conditionStyle insideDiamond
 skinparam linetype ortho
 start
+:memset(buf, 0, IPC_UIO_PARAMS_LEN);
 :file = fopen(filename, "r");
 if (file == NULL?) then (yes)
   :return -ENONET;
@@ -13,11 +14,16 @@ if (s == NULL?) then (yes)
   :return -EIO;
 stop
 endif
-:while ((*s) && (i < IPC_SHM_UIO_BUF_LEN));
-if (*s == '\n') *s = 0
-s++
-i++
-fclose(file);
+:i = 0;
+while ((*s) && (i < IPC_SHM_UIO_BUF_LEN)?) is (yes)
+  if (*s == '\n'?) then (yes)
+    :*s = 0;
+    break
+    endif
+  :s++;
+  :i++;
+endwhile (no)
+:fclose(file);
 :return 0;
 stop
 @enduml
