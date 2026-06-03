@@ -33,6 +33,10 @@ IPCS_SRC = WORKSPACE_ROOT / "ipcs"
 
 # —— cursor_tmp 内资源 ——
 FLOW_SVGS = CURSOR_TMP / "flow_svgs"
+FLOW_EMF = CURSOR_TMP / "flow_emf"
+FLOW_PNG = CURSOR_TMP / "flow_png"
+EMF_EXTENT_REPORT = CURSOR_TMP / "flow_svg_to_emf_report.txt"
+PNG_EXTENT_REPORT = CURSOR_TMP / "flow_svg_to_png_report.txt"
 FLOW_UMLS = CURSOR_TMP / "flow_umls"
 FILES_32_SVGS = CURSOR_TMP / "files_32_svgs"
 FILES_32_UMLS = CURSOR_TMP / "files_32_umls"
